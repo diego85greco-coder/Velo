@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1473',
+      'Velo v1474',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -28390,6 +28390,17 @@ function _adminTabFinanzas(panel){
     +'<div id="adminPageStats">'+_adminPageViewStats()+'</div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 INGRESOS Y DONACIONES</div>'
     +'<div id="adminDonations"><p style="font-size:13px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,165,100,.8);margin-bottom:10px">⭐ SUSCRIPTORES VELO PLUS</div>'
+    +'<div style="background:rgba(200,165,100,.06);border:1px solid rgba(200,165,100,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px">'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:8px;line-height:1.5">Activá Plus a mano si un pago no se reflejó, o para regalarlo. (Días = cuánto dura.)</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+        +'<input id="adminGrantPlusEmail" type="email" placeholder="correo del usuario" autocapitalize="none" style="flex:1;min-width:150px;padding:8px 10px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;font-family:Jost,sans-serif;outline:none">'
+        +'<input id="adminGrantPlusDays" type="number" value="31" min="1" title="días" style="width:60px;padding:8px 10px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;font-family:Jost,sans-serif;outline:none">'
+        +'<button onclick="pAdminGrantPlus()" style="padding:8px 14px;background:linear-gradient(135deg,#C8A560,#A07840);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">⭐ Activar</button>'
+      +'</div>'
+      +'<div id="adminGrantPlusResult" style="font-size:12px;color:rgba(180,235,210,.92);margin-top:8px;min-height:14px"></div>'
+    +'</div>'
+    +'<div id="adminPlusSubs"><p style="font-size:13px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
     +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
     +'<div style="margin-top:18px">'+_adminMonthlyReportTracker()+'</div>'
@@ -28412,6 +28423,72 @@ function _adminTabFinanzas(panel){
   _adminLoadModerationStats();
   _adminLoadReferralStats();
   _renderAdminDonations();
+  _renderAdminPlusSubs();
+}
+
+// ── ADMIN: SUSCRIPTORES VELO PLUS (activar / cancelar a mano) ──────────────
+async function _renderAdminPlusSubs(){
+  var el = document.getElementById('adminPlusSubs');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
+  try{
+    var res = await sbClient.from('profiles').select('id,nombre,email,role,plus_expires_at').eq('role','plus').order('plus_expires_at',{ascending:false,nullsFirst:false}).limit(300);
+    var data = res.data || [];
+    if(!data.length){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3);font-style:italic">Todavía no hay suscriptores Plus activos.</p>'; return; }
+    var now = Date.now();
+    var head = '<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:6px">'+data.length+' CON PLUS</div>';
+    el.innerHTML = head + data.map(function(p){
+      var exp = p.plus_expires_at ? new Date(p.plus_expires_at) : null;
+      var active = !exp || exp.getTime() > now; // sin fecha = activado por retorno (aún sin vencimiento del webhook)
+      var expTxt = exp
+        ? (active ? ('vence '+exp.toLocaleDateString('es',{day:'2-digit',month:'short',year:'2-digit'})) : ('venció '+exp.toLocaleDateString('es',{day:'2-digit',month:'short'})))
+        : 'sin vencimiento';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<span style="font-size:15px">'+(active?'⭐':'🔒')+'</span>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(p.nombre||'—')+'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(p.email||'')+' · '+expTxt+'</div></div>'
+        +'<button onclick="pAdminCancelPlus('+_jsAttr(p.id)+','+_jsAttr(p.nombre||p.email||'')+')" style="flex-shrink:0;padding:6px 11px;background:rgba(255,80,80,.14);border:1px solid rgba(255,80,80,.4);border-radius:8px;color:rgba(255,140,140,.95);font-size:11px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Quitar</button>'
+        +'</div>';
+    }).join('');
+  }catch(e){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Error al cargar suscriptores</p>'; }
+}
+
+async function pAdminGrantPlus(){
+  var emailEl  = document.getElementById('adminGrantPlusEmail');
+  var daysEl   = document.getElementById('adminGrantPlusDays');
+  var resultEl = document.getElementById('adminGrantPlusResult');
+  if(!emailEl || !emailEl.value.trim()){ pToast('⚠️','Ingresá el correo del usuario'); return; }
+  var email = emailEl.value.trim().toLowerCase();
+  var days  = parseInt((daysEl && daysEl.value)||'31', 10) || 31;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
+  var expires = new Date(Date.now() + days*24*3600*1000).toISOString();
+  if(resultEl) resultEl.textContent = 'Activando…';
+  try{
+    var pr = await sbClient.from('profiles').select('id,nombre').ilike('email', email).limit(1);
+    if(pr.data && pr.data[0]){
+      await sbClient.from('profiles').update({ role:'plus', plus_expires_at:expires }).eq('id', pr.data[0].id);
+      if(resultEl) resultEl.textContent = '✅ Plus activado para '+(pr.data[0].nombre||email)+' ('+days+' días)';
+      emailEl.value = '';
+      _renderAdminPlusSubs();
+    } else {
+      if(resultEl) resultEl.textContent = '❌ No hay ningún usuario con ese correo';
+    }
+  }catch(e){ if(resultEl) resultEl.textContent = '❌ Error al activar'; }
+}
+
+function pAdminCancelPlus(userId, name){
+  if(!userId) return;
+  _pConfirm('¿Quitar Velo Plus a '+_escHtml(name||'este usuario')+'? Perderá los beneficios.', async function(){
+    _initSupabase();
+    if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+    try{
+      await sbClient.from('profiles').update({ role:'user', plus_expires_at:new Date(Date.now()-1000).toISOString() }).eq('id', userId);
+      pToast('✓','Velo Plus quitado');
+      _renderAdminPlusSubs();
+    }catch(e){ pToast('⚠️','No se pudo quitar'); }
+  });
 }
 
 // ── DETECCIÓN DE CONTENIDO EN CRISIS ─────────────────────────────────
@@ -35956,7 +36033,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1473;
+    var _BUILT_V = 1474;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
