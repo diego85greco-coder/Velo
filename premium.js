@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1474',
+      'Velo v1475',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -25923,7 +25923,7 @@ function pSelAmt(el, amt){
 
 function pDonate(){
   var amt = _selectedDonAmt || '10';
-  pOpenPayPalDonate(amt, false, 'Donación Velo');
+  pOpenPayPalDonate(amt, false, 'Apoyo a Velo');
 }
 
 function pSetDonateAmt(n){
@@ -25947,9 +25947,9 @@ function pDonateCTA(){
       return;
     }
     if(errEl) errEl.style.display = 'none';
-    pOpenPayPalDonate(amt.toFixed(2), false, 'Donación Velo');
+    pOpenPayPalDonate(amt.toFixed(2), false, 'Apoyo a Velo');
   } else {
-    pOpenPayPalDonate('10', false, 'Donación Velo');
+    pOpenPayPalDonate('10', false, 'Apoyo a Velo');
   }
 }
 
@@ -33744,7 +33744,7 @@ function _checkPayPalReturn(){
     pGoTo('pro-panel');
   } else {
     // donation
-    pToast('💚','¡Donación recibida! Gracias por apoyar Velo 🌿');
+    pToast('💚','¡Gracias por apoyar a Velo! 🌿');
     // Send donation thank-you email (fire-and-forget)
     var _ppEmail = safeLS('get','velo_user_email');
     var _ppName  = safeLS('get','velo_user_name') || '';
@@ -36033,7 +36033,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1474;
+    var _BUILT_V = 1475;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

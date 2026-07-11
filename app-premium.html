@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1474">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1474">
+  <link rel="stylesheet" href="premium.css?v=20260626-1475">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1475">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -236,7 +236,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1474</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1475</div>
 </div>
 
 <!-- APP SHELL -->
@@ -369,7 +369,7 @@
         <span id="topbarEstiloLbl" style="font-size:9px;font-weight:700;color:rgba(200,230,210,.80);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Estilo</span>
       </button>
       <div style="flex:1;display:flex;justify-content:center;align-items:center;gap:4px">
-        <button id="topbarDonateBtn" onclick="pGoTo('donate-cta')" title="Donar" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">💛</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Donar</span></button>
+        <button id="topbarDonateBtn" onclick="pGoTo('donate-cta')" title="Apoyá a Velo" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">💛</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Apoyar</span></button>
         <button id="topbarPlusBtn" onclick="pShowPlusModal()" title="Plus" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">🕊️</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Plus</span></button>
         <button onclick="pOpenGuide()" title="Guía de Velo" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">📖</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Guía</span></button>
       </div>
@@ -1640,7 +1640,7 @@
                   </button>
                   <button onclick="pGoTo('donation-exit')" class="home-dqa-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-                    <span>Donar</span>
+                    <span>Apoyar</span>
                   </button>
                   <button onclick="pShowPlusModal()" class="home-dqa-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -1757,7 +1757,7 @@
                   <div class="p-card-title" style="margin-bottom:4px">Apoyá a Velo</div>
                   <div class="p-card-sub" style="margin-bottom:14px">Mantenemos este espacio gratuito y seguro gracias a personas como vos.</div>
                   <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pGoTo('donate-cta')">🌻 Donar</button>
+                    <button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pGoTo('donate-cta')">🌻 Apoyar</button>
                     <button class="p-btn p-btn--secondary p-btn--sm" onclick="event.stopPropagation();pShowPlusModal()">⭐ Velo Plus</button>
                   </div>
                 </div>
@@ -1792,7 +1792,7 @@
               </div>
             </div>
             <div style="display:flex;gap:8px;margin-top:14px">
-              <button class="p-btn p-btn--primary p-btn--sm" style="flex:1" onclick="pGoTo('donate-cta')">🌻 Donar</button>
+              <button class="p-btn p-btn--primary p-btn--sm" style="flex:1" onclick="pGoTo('donate-cta')">🌻 Apoyar</button>
               <button class="p-btn p-btn--secondary p-btn--sm" style="flex:1" onclick="pShowPlusModal()">⭐ Velo Plus $2.99/mes</button>
             </div>
           </div>
@@ -2945,7 +2945,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                 <div class="p-label p-label-sage">Apoyar a Velo</div>
                 <p style="font-size:12px;color:var(--ink4);margin-top:4px;line-height:1.5">Ayudamos a mantener este espacio gratuito para quienes más lo necesitan.</p>
               </div>
-              <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pGoTo('donate-cta')" style="margin-bottom:8px">🌻 Hacer una donación</button>
+              <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pGoTo('donate-cta')" style="margin-bottom:8px">🌻 Apoyá a Velo</button>
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pShowPlusModal()">⭐ Obtener Velo Plus ($2.99/mes)</button>
               <div id="subStatusDisplay" style="font-size:11px;color:var(--ink5);text-align:center;margin-top:8px"></div>
             </div>
@@ -3113,7 +3113,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
             <h2 class="p-hero-text" style="color:var(--sage);margin-bottom:10px">Apoyá a Velo</h2>
             <p class="p-subtitle" style="max-width:400px;margin:0 auto 32px">Cada contribución nos ayuda a mantener este espacio gratuito y seguro para quienes más lo necesitan.</p>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px" id="donationAmounts"></div>
-            <button class="p-btn p-btn--primary p-btn--xl p-btn--full" id="donateBtn" onclick="pDonate()">Donar con PayPal 💚</button>
+            <button class="p-btn p-btn--primary p-btn--xl p-btn--full" id="donateBtn" onclick="pDonate()">Apoyá a Velo con PayPal 💚</button>
             <div style="height:12px"></div>
             <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('home')">Volver al inicio</button>
           </div>
@@ -3267,7 +3267,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                 </div>
                 <div id="donateAmtErr" style="font-size:11px;color:#e74c3c;margin-top:5px;display:none">El monto mínimo es $5 USD.</div>
               </div>
-              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pDonateCTA()" style="margin-bottom:10px">💚 Donar ahora</button>
+              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pDonateCTA()" style="margin-bottom:10px">💚 Apoyar ahora</button>
               <button class="p-btn" onclick="pShowPlusModal()" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(200,165,100,.12));border:1.5px solid rgba(200,165,100,.35);color:#C8A560;font-size:14px;font-weight:700;border-radius:100px;padding:13px 20px;width:100%;cursor:pointer">⭐ Velo Plus — $2.99/mes</button>
             </div>
             <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('home')">Volver al inicio</button>
@@ -4453,8 +4453,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1474"></script>
-<script src="premium-redesign.js?v=20260626-1474"></script>
+<script src="premium.js?v=20260626-1475"></script>
+<script src="premium-redesign.js?v=20260626-1475"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
@@ -4525,7 +4525,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   <div style="font-size:24px;margin-bottom:6px;text-align:center">💚</div>
   <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sage2);text-align:center;margin-bottom:5px">Apoyá a Velo</div>
   <div style="font-size:10.5px;color:var(--ink4);line-height:1.45;text-align:center;margin-bottom:10px">Mantenemos este espacio gratuito gracias a vos.</div>
-  <button class="p-btn p-btn--primary p-btn--sm p-btn--full" onclick="pGoTo('donate-cta')" style="margin-bottom:6px;font-size:11px">🌻 Donar</button>
+  <button class="p-btn p-btn--primary p-btn--sm p-btn--full" onclick="pGoTo('donate-cta')" style="margin-bottom:6px;font-size:11px">🌻 Apoyar</button>
   <button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pShowPlusModal()" style="font-size:11px">⭐ Velo Plus</button>
 </div>
 
