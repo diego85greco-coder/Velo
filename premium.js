@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1471',
+      'Velo v1472',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -19355,8 +19355,14 @@ function pLoadProfile(){
   // Sub status display
   var subEl = document.getElementById('subStatusDisplay');
   if(subEl){
-    subEl.textContent = _isPremium() ? '✅ Velo Plus activo' : 'Sin suscripción activa';
-    subEl.style.color = _isPremium() ? 'var(--sage)' : 'var(--ink4)';
+    if(_isPremium()){
+      subEl.style.color = '';
+      subEl.innerHTML = '<div style="color:var(--sage);font-weight:700;margin-bottom:6px">✅ Velo Plus activo</div>'
+        + '<button onclick="pManagePlusSubscription()" style="background:none;border:none;color:var(--ink4);font-size:12px;text-decoration:underline;cursor:pointer;font-family:\'Jost\',sans-serif;padding:2px">Gestionar o cancelar suscripción</button>';
+    } else {
+      subEl.style.color = 'var(--ink4)';
+      subEl.textContent = 'Sin suscripción activa';
+    }
   }
 
   // Incognito toggle
@@ -26046,6 +26052,28 @@ function pShowPlusModal(){
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme por $2.99/mes · PayPal</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove()">Ahora no</button>'
     +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+// v1472: gestión/cancelación de la suscripción a Velo Plus. Una suscripción
+// recurrente de PayPal la cancela el propio suscriptor desde su cuenta (Pagos
+// automáticos) — lo llevamos ahí. Plus sigue activo hasta el fin del período pago.
+function pManagePlusSubscription(){
+  var ex = document.getElementById('plusManageOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'plusManageOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    + '<div class="p-sheet-handle"></div>'
+    + '<div style="text-align:center;margin-bottom:16px">'
+    + '<div style="font-size:34px;margin-bottom:8px">⭐</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Tu suscripción a Velo Plus</div>'
+    + '<div style="font-size:14px;color:var(--ink4);line-height:1.6">Podés cancelarla cuando quieras desde tu cuenta de PayPal, en <strong>Pagos automáticos</strong>. Seguís teniendo Plus hasta el final del período que ya pagaste — no se te cobra de nuevo.</div>'
+    + '</div>'
+    + '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="window.open(\'https://www.paypal.com/myaccount/autopay/\',\'_blank\')" style="margin-bottom:10px">↗ Gestionar / cancelar en PayPal</button>'
+    + '<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusManageOv\').remove()">Cerrar</button>'
+    + '</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
@@ -35921,7 +35949,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1471;
+    var _BUILT_V = 1472;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
