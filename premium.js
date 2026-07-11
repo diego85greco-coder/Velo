@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1459',
+      'Velo v1460',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -14357,17 +14357,14 @@ function _hideRecordingIndicator(){
 // NO puede reproducir (requiere MSE). Pero AudioContext.decodeAudioData SÍ lo
 // decodifica nativamente. Este player usa WebAudio como primario y <audio>
 // como fallback, con colores legibles sobre el fondo beige del modal.
-// ── "Unmute" iOS (reproducir aunque el teléfono esté en silencio 🔕) ───────
-// En iOS un AudioContext usa por defecto la categoría de sesión "ambient", que
-// respeta el interruptor de silencio. Si ruteamos un <audio> silencioso a
-// través del contexto (createMediaElementSource) mientras suena, la sesión pasa
-// a categoría "playback", que IGNORA el silencio — y entonces la nota de voz se
-// escucha igual. Un único contexto compartido para TODOS los reproductores de
-// audio (todos los chats). Solo mantenemos el <audio> silencioso sonando
-// MIENTRAS se reproduce una nota de voz, para no interrumpir de fondo la música
-// del usuario el resto del tiempo.
+// ── AudioContext compartido para las notas de voz ─────────────────────────
+// Un único contexto para todos los reproductores (iOS limita ~4 contextos).
+// NOTA: en iOS Safari/PWA NO se puede, de forma confiable, hacer que el audio
+// ignore el interruptor de silencio físico 🔕 — es una restricción de la
+// plataforma para páginas web (solo apps nativas pueden, vía AVAudioSession).
+// Se probó el truco "unmute-ios" (rutear un <audio> silencioso por el contexto)
+// pero iOS moderno lo cerró. Por eso las notas de voz respetan el silencio.
 var _veloSharedAudioCtx = null;
-var _veloUnmuteTag = null;
 function _veloGetAudioCtx(){
   if(!_veloSharedAudioCtx){
     var AC = window.AudioContext || window.webkitAudioContext;
@@ -14375,56 +14372,11 @@ function _veloGetAudioCtx(){
   }
   return _veloSharedAudioCtx;
 }
-function _veloSilentWavUri(){
-  // WAV silencioso 0.4s, PCM 16-bit mono 44.1kHz — formato robusto que iOS
-  // reproduce siempre. Silencio = muestras en 0 (el ArrayBuffer ya viene en 0).
-  var sr=44100, n=Math.floor(sr*0.4), dataSize=n*2, bytes=44+dataSize;
-  var buf=new ArrayBuffer(bytes), dv=new DataView(buf);
-  function wr(o,s){ for(var i=0;i<s.length;i++) dv.setUint8(o+i, s.charCodeAt(i)); }
-  wr(0,'RIFF'); dv.setUint32(4,bytes-8,true); wr(8,'WAVE'); wr(12,'fmt ');
-  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
-  dv.setUint32(24,sr,true); dv.setUint32(28,sr*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
-  wr(36,'data'); dv.setUint32(40,dataSize,true);
-  var u8=new Uint8Array(buf), bin=''; for(var j=0;j<u8.length;j++) bin+=String.fromCharCode(u8[j]);
-  return 'data:audio/wav;base64,'+btoa(bin);
-}
-function _veloUnmuteSetup(){
-  var ctx = _veloGetAudioCtx();
-  if(!ctx) return null;
-  try{ if(ctx.state === 'suspended') ctx.resume(); }catch(e){}
-  if(!_veloUnmuteTag){
-    try{
-      var tag = document.createElement('audio');
-      tag.setAttribute('playsinline',''); tag.setAttribute('webkit-playsinline','');
-      tag.setAttribute('x-webkit-airplay','deny');
-      try{ tag.disableRemotePlayback = true; }catch(e){}
-      tag.loop = true; tag.src = _veloSilentWavUri(); tag.load();
-      // Conexión DIRECTA a destination (sin gain). Con gain a 0 iOS optimizaba
-      // la salida y NO cambiaba la sesión de audio a "playback"; el WAV ya es
-      // silencioso, así que suena igual (nada) pero activa la sesión.
-      var src = ctx.createMediaElementSource(tag);
-      src.connect(ctx.destination);
-      _veloUnmuteTag = tag;
-    }catch(e){ _veloUnmuteTag = null; }
-  }
-  return _veloUnmuteTag;
-}
 function _veloUnmuteStart(){
-  var tag = _veloUnmuteSetup();
-  if(tag){ try{ var p = tag.play(); if(p && p.catch) p.catch(function(){}); }catch(e){} }
+  var ctx = _veloGetAudioCtx();
+  try{ if(ctx && ctx.state === 'suspended') ctx.resume(); }catch(e){}
 }
-function _veloUnmuteStop(){
-  if(_veloUnmuteTag){ try{ _veloUnmuteTag.pause(); }catch(e){} }
-}
-// Prime del contexto/tag en el primer gesto del usuario (autoplay iOS), sin
-// sonar todavía — así al tocar ▶ ya está todo listo para el bypass del silencio.
-(function(){
-  function _prime(){
-    try{ _veloUnmuteSetup(); }catch(e){}
-    if(_veloUnmuteTag){ ['touchend','click','pointerdown'].forEach(function(ev){ document.removeEventListener(ev, _prime); }); }
-  }
-  try{ ['touchend','click','pointerdown'].forEach(function(ev){ document.addEventListener(ev, _prime, { passive:true }); }); }catch(e){}
-})();
+function _veloUnmuteStop(){}
 
 var _veloPlayerState = {}; // ts → {ctx, buffer, source, playing, startedAt, offset, duration, statusEl, btn}
 function _renderVeloAudioPlayer(container, ts, audioData){
@@ -35855,7 +35807,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1459;
+    var _BUILT_V = 1460;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
