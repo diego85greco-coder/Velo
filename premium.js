@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1465',
+      'Velo v1466',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -344,7 +344,7 @@ function safeLS(action, key, val){
 // ── DAILY LIMITS ────────────────────────────────────────────
 function _dailyKey(type){ return 'velo_daily_'+type+'_'+new Date().toISOString().slice(0,10); }
 function _checkDailyLimit(type){
-  var limits = { bottle:4, help:4, guardian:4, calmai:15 };
+  var limits = { bottle:4, help:4, guardian:4, calmai:25 };
   var plan = safeLS('get','velo_plan') || 'free';
   if(plan === 'plus') return true;
   var used = parseInt(safeLS('get',_dailyKey(type))||'0',10);
@@ -3244,6 +3244,50 @@ async function pOpenMonthlyWrapped(){
         )
       + '</div>'
   });
+  // 7.5 ANÁLISIS PLUS (Velo Plus) — comparación con el mes anterior + mejor
+  // semana. Para no-Plus: slide con candado que ofrece Plus. v1466 (#3).
+  var _wrapPlus = false; try{ _wrapPlus = _isPremium(); }catch(_){}
+  if(_wrapPlus){
+    // Promedio del mes anterior para comparar
+    var _prevAvg = null;
+    try{
+      var _pT = new Date(yr, mo, 1); _pT.setMonth(_pT.getMonth()-1);
+      var _pYr = _pT.getFullYear(), _pMo = _pT.getMonth();
+      var _pMap = {}, _pDays = new Date(_pYr, _pMo+1, 0).getDate();
+      for(var _pd=1; _pd<=_pDays; _pd++){ var _pdk=_pYr+'-'+String(_pMo+1).padStart(2,'0')+'-'+String(_pd).padStart(2,'0'); var _pst=safeLS('get','velo_mood_'+_pdk); if(_pst){ try{ var _pms=JSON.parse(_pst); if(_pms.emoji) _pMap[_pdk]=_pms; }catch(e){} } }
+      if(sbClient){ try{ var _pSb = await sbLoadAllMoods(_pYr, _pMo+1); if(_pSb) _pSb.forEach(function(e){ if(e.emoji && !_pMap[e.date_key]) _pMap[e.date_key]=e; }); }catch(e){} }
+      var _pEntries = Object.keys(_pMap).map(function(k){ return _pMap[k]; });
+      if(_pEntries.length) _prevAvg = _pEntries.reduce(function(s,e){ return s+(moodScore[e.emoji]||3); },0)/_pEntries.length;
+    }catch(e){}
+    var _cmpTxt, _cmpIco;
+    if(_prevAvg==null){ _cmpTxt='Es tu primer mes con datos suficientes para comparar 🌱'; _cmpIco='🌱'; }
+    else { var _diff = avgScore - _prevAvg; if(_diff>0.15){ _cmpTxt='Tu ánimo promedio subió respecto al mes anterior'; _cmpIco='📈'; } else if(_diff<-0.15){ _cmpTxt='Tu ánimo promedio bajó un poco respecto al mes anterior — cuidate 💚'; _cmpIco='📉'; } else { _cmpTxt='Tu ánimo promedio se mantuvo estable'; _cmpIco='➡️'; } }
+    // Semana más luminosa del mes
+    var _wkB = {};
+    moodEntries.forEach(function(e){ var _wd=new Date(e.date); var _wk=Math.floor((_wd.getDate()-1)/7); if(!_wkB[_wk]) _wkB[_wk]={s:0,n:0}; _wkB[_wk].s+=(moodScore[e.emoji]||3); _wkB[_wk].n++; });
+    var _bestWk=-1, _bestWkAvg=-1; Object.keys(_wkB).forEach(function(k){ var _a=_wkB[k].s/_wkB[k].n; if(_a>_bestWkAvg){ _bestWkAvg=_a; _bestWk=parseInt(k,10); } });
+    var _wkNames=['la 1ª semana','la 2ª semana','la 3ª semana','la 4ª semana','la última semana'];
+    slides.push({
+      bg:'linear-gradient(155deg,#2e2410 0%,#241a08 45%,#140f04 100%)',
+      html: sparkles
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(235,205,120,.78);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:16px">⭐ ANÁLISIS PLUS</div>'
+        + '<div style="font-size:54px;line-height:1;margin-bottom:18px">📊</div>'
+        + '<div style="width:100%;max-width:344px;display:flex;flex-direction:column;gap:11px">'
+          + '<div style="background:rgba(235,205,120,.10);border:1px solid rgba(235,205,120,.32);border-radius:16px;padding:14px 16px"><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(235,205,120,.78);text-transform:uppercase;margin-bottom:5px">'+_cmpIco+' Vs. mes anterior</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:19px;color:#fff;line-height:1.4">'+_cmpTxt+'</div></div>'
+          + (_bestWk>=0 ? '<div style="background:rgba(235,205,120,.10);border:1px solid rgba(235,205,120,.32);border-radius:16px;padding:14px 16px"><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(235,205,120,.78);text-transform:uppercase;margin-bottom:5px">✨ Tu semana más luminosa</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:19px;color:#fff;line-height:1.4">Brillaste en '+(_wkNames[_bestWk]||'una semana')+' del mes</div></div>' : '')
+        + '</div>'
+    });
+  } else {
+    slides.push({
+      bg:'linear-gradient(155deg,#2e2410 0%,#241a08 45%,#140f04 100%)',
+      html: sparkles
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(235,205,120,.78);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:8px">⭐ ANÁLISIS COMPLETO</div>'
+        + '<div style="font-size:60px;line-height:1;margin-bottom:16px">🔒</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:#fff;line-height:1.2;margin-bottom:14px;padding:0 12px">Hay más de tu mes<br>para descubrir</div>'
+        + '<div style="font-size:14px;color:rgba(235,220,180,.82);line-height:1.6;font-family:Jost,sans-serif;padding:0 16px;margin-bottom:22px">Con <strong style="color:rgba(245,225,150,.95)">Velo Plus</strong> desbloqueás la comparación con tu mes anterior, tu semana más luminosa y un análisis más profundo de tus emociones ✨</div>'
+        + '<button onclick="var o=document.getElementById(\'wrappedOv\');if(o)o.remove();if(typeof pShowPlusModal===\'function\')pShowPlusModal()" style="padding:13px 26px;background:linear-gradient(135deg,#e6c86a,#c8a03e);border:none;border-radius:100px;color:#3a2c00;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 18px rgba(200,160,62,.35)">⭐ Desbloquear con Velo Plus</button>'
+    });
+  }
   // 8. CIERRE motivador
   slides.push({
     bg:'linear-gradient(155deg,#1a3d2c 0%,#0d2818 40%,#0a1f14 100%)',
@@ -25976,7 +26020,7 @@ function pShowPlusModal(){
     +'<li>✅ Vibes, Bitácora, Momentos y Pregunta del día</li>'
     +'<li>✅ Sala de Ayuda y guardianes (4 por día)</li>'
     +'<li>✅ Guardá hasta 5 momentos en tu historial</li>'
-    +'<li>✅ Velo IA · 15 mensajes por día</li>'
+    +'<li>✅ Velo IA · 25 mensajes por día</li>'
     +'</ul></div>'
     // ── Bloque PLUS (todo lo gratis + extras) ──
     +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.22),rgba(200,165,100,.07));border-radius:14px;padding:14px 15px;border:1.5px solid rgba(200,165,100,.55);box-shadow:0 4px 18px rgba(200,165,100,.12)">'
@@ -34438,7 +34482,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
         var _subCol = _isDarkTheme ? 'rgba(240,215,155,.75)' : 'rgba(120,80,15,.90)';
         var _btnBg  = isUser ? 'rgba(255,220,120,.30)' : 'rgba(200,158,56,.32)';
         var _btnBrd = isUser ? 'rgba(255,240,180,.65)' : 'rgba(255,220,120,.55)';
-        attachHtml = '<div class="dm-attach dm-attach--audio" data-attach-audio="'+_escHtml(_audData)+'" data-attach-ts="'+id+'"><div style="display:flex;align-items:center;gap:10px;padding:8px 4px;min-width:180px"><button type="button" onclick="_dmPlayAttachAudio(this)" style="width:38px;height:38px;border-radius:50%;background:'+_btnBg+';border:1.5px solid '+_btnBrd+';color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button><div style="flex:1;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;color:'+_lblCol+';letter-spacing:.3px">🎙️ Nota de voz<div class="dm-attach-status" style="font-size:11px;font-weight:600;color:'+_subCol+';margin-top:2px">Tocá play para escuchar</div></div></div></div>';
+        attachHtml = '<div class="dm-attach dm-attach--audio" data-attach-audio="'+_escHtml(_audData)+'" data-attach-ts="'+id+'"><div style="display:flex;align-items:center;gap:10px;padding:8px 4px;min-width:180px"><button type="button" onclick="_dmPlayAttachAudio(this)" style="width:38px;height:38px;border-radius:50%;background:'+_btnBg+';border:1.5px solid '+_btnBrd+';color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button><div style="flex:1;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;color:'+_lblCol+';letter-spacing:.3px">🎙️ Nota de voz<div class="dm-attach-status" style="font-size:11px;font-weight:600;color:'+_subCol+';margin-top:2px">Tocá play para escuchar</div><div style="font-size:10px;font-weight:600;color:'+_subCol+';opacity:.8;margin-top:3px">🔕 Para escucharla, sacá el teléfono de silencio</div></div></div></div>';
       }
     } else if(_imgIdx >= 0){
       var _imgPipe = text.indexOf('|', _imgIdx);
@@ -35871,7 +35915,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1465;
+    var _BUILT_V = 1466;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
