@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1455',
+      'Velo v1456',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -4142,7 +4142,7 @@ function _startHomeTour(){
     {sel:'#tileNews, #hgNews',                                e:'🌞',  t:'Buenas Noticias',       d:'Historias reales que dan esperanza. Una dosis de luz cuando el mundo se siente pesado.'},
     {sel:'#tileDiary, #hgDiary',                              e:'📔',  t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
     {sel:'#tileCircles, #hgCircles',                          e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
-    {sel:'#homeVibesCard, #homeMomentoSection',               e:'✨',  t:'Vibes',                 d:'Momentos del día en foto o video. Compartí el tuyo, reaccioná a los demás y guardá tus favoritos en el perfil.'},
+    {sel:'#homeVibesCardTop, #homeVibesCard, #homeMomentoSection', e:'✨',  t:'Vibes',             d:'Momentos del día en foto o video. Compartí el tuyo, reaccioná a los demás y guardá tus favoritos en el perfil.'},
     {sel:'#homeDailyQ',                                       e:'💭',  t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
     {sel:'#homeAmbientPanel',                                 e:'🌧️', t:'Sonidos Ambientales',   d:'Lluvia, bosque, fuego, mar. Ponete uno de fondo mientras escribís o respirás.'},
     {sel:'#homeBreathingBtn',                                 e:'🌬️', t:'Ejercicio de respiración', d:'Un guiado de respiración 4-7-8 para calmar la ansiedad en 2 minutos. Simple y efectivo.'},
@@ -4233,6 +4233,17 @@ function _startHomeTour(){
     var firstEl = els[0] || null;
     var elVisible = !!firstEl;
 
+    // v1456: si el paso apunta a una sección concreta que NO está visible (oculta
+    // o ausente), saltearlo — antes se mostraba una tarjeta centrada describiendo
+    // algo que no está en pantalla. Los pasos sin selector (sel:null, ej. bienvenida
+    // final) SÍ usan la tarjeta centrada a propósito.
+    if(s.sel && !elVisible){
+      step = idx + 1;
+      if(step >= STEPS.length){ _done(); return; }
+      _place(step);
+      return;
+    }
+
     tip.style.opacity = '0';
 
     if(!elVisible){
@@ -4263,7 +4274,18 @@ function _startHomeTour(){
         }
         // Wait for scroll to settle, then compute rect + render spotlight and tip
         setTimeout(function(){
-          var r2 = els.length > 1 ? _unionRect(els) : firstEl.getBoundingClientRect();
+          // v1456: unir solo si el conjunto queda compacto. Un selector doble
+          // (móvil #tile… + escritorio #hg…) puede matchear dos elementos muy
+          // separados; unirlos dibujaba un recuadro gigante en vez de marcar la
+          // tarjeta. Si la unión ocupa más de la mitad de la pantalla, uso el
+          // primer elemento visible (el de la vista actual).
+          var r2;
+          if(els.length > 1){
+            r2 = _unionRect(els);
+            if(!r2 || r2.height > window.innerHeight * 0.55){ r2 = firstEl.getBoundingClientRect(); }
+          } else {
+            r2 = firstEl.getBoundingClientRect();
+          }
           spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none'
             +';left:'+(r2.left-pad)+'px;top:'+(r2.top-pad)+'px'
             +';width:'+(r2.width+pad*2)+'px;height:'+(r2.height+pad*2)+'px'
@@ -35754,7 +35776,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1455;
+    var _BUILT_V = 1456;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
