@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1447',
+      'Velo v1448',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -7137,6 +7137,14 @@ async function pToggleDqReaction(responseId, reaction, btn){
       await sbClient.from('dq_reactions').delete().eq('response_id',responseId).eq('user_id',uid).eq('reaction',reaction);
     } else {
       await sbClient.from('dq_reactions').upsert({response_id:responseId, user_id:uid, reaction:reaction},{onConflict:'response_id,user_id,reaction'});
+      // v1448: notificar al autor de la respuesta que alguien reaccionó (actividad)
+      try{
+        var _dqOwner = _dqAllResponses && _dqAllResponses.find(function(x){ return String(x.id)===String(responseId); });
+        if(_dqOwner && _dqOwner.user_id){
+          var _rNm = safeLS('get','velo_user_name')||'Alguien';
+          _createVeloNotif(_dqOwner.user_id,'dq_reaction',_rNm+' reaccionó '+reaction+' a tu respuesta del día','',responseId);
+        }
+      }catch(_){}
     }
   }catch(e){}
 }
@@ -7880,7 +7888,7 @@ function _navToNotif(type, relatedId){
     return;
   }
   if(!relatedId) return;
-  if(type === 'dq_comment'){
+  if(type === 'dq_comment' || type === 'dq_reaction'){
     pOpenDqResponseSheet(relatedId);
   } else if(type === 'momento_comment'){
     // Navigate home so cache is populated, then open the sheet
@@ -7914,8 +7922,8 @@ function _veloNotifsEmptyState(){
     +'</div>';
 }
 function _renderVeloNotifs(notifs){
-  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️',buddy_request:'🌱',buddy_matched:'🤝',bt_comment:'📓',bt_reaction:'💚'};
-  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true, buddy_request:true, buddy_matched:true, bt_comment:true, bt_reaction:true};
+  var typeIcon={dq_comment:'💬',dq_reaction:'💚',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️',buddy_request:'🌱',buddy_matched:'🤝',bt_comment:'📓',bt_reaction:'💚'};
+  var typeNavigable={dq_comment:true, dq_reaction:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true, buddy_request:true, buddy_matched:true, bt_comment:true, bt_reaction:true};
   if(!notifs||!notifs.length) return '';
   return notifs.map(function(n){
     var icon=typeIcon[n.type]||'🔔';
@@ -35718,7 +35726,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1447;
+    var _BUILT_V = 1448;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
