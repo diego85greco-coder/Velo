@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1461',
+      'Velo v1462',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -34103,7 +34103,20 @@ function _onPageEnter(id){
     case 'inbox':       pRenderInbox(); break;
     case 'contacts':    pRenderContacts(); break;
     case 'vibes':       pRenderVibesHome(); break;
-    case 'dm-chat':     /* initialized by pOpenDM */ break;
+    case 'dm-chat':
+      // v1462: la pantalla se abre normalmente vía _enterDMChat (que renderiza),
+      // pero al VOLVER a entrar (back, cambio de sección y regreso, restauración)
+      // esto no corría y el chat quedaba EN BLANCO. Si hay un peer activo,
+      // re-renderizamos el hilo y re-suscribimos (idempotente). Si no hay peer
+      // (p.ej. restauración tras recarga), evitamos la pantalla vacía.
+      if(_dmPeer && _dmPeer.id){
+        try{ _renderDMThread(); }catch(_){}
+        try{ _subscribeToDMThread(); }catch(_){}
+        try{ _dmSubscribeToTyping(_dmPeer.id); _dmSubscribeToReadReceipts(_dmPeer.id); }catch(_){}
+      } else {
+        pGoTo('contacts');
+      }
+      break;
     case 'donation-exit': pInitDonation(); break;
     case 'session-room': pInitSessionRoom(); break;
     case 'post-chat':   pInitPostChat(); break;
@@ -35812,7 +35825,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1461;
+    var _BUILT_V = 1462;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
