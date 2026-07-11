@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1458',
+      'Velo v1459',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -14376,14 +14376,15 @@ function _veloGetAudioCtx(){
   return _veloSharedAudioCtx;
 }
 function _veloSilentWavUri(){
-  // WAV silencioso ~0.2s, 8-bit mono 8kHz, generado en runtime (sin base64 fijo)
-  var sr=8000, n=Math.floor(sr*0.2), bytes=44+n, buf=new ArrayBuffer(bytes), dv=new DataView(buf);
+  // WAV silencioso 0.4s, PCM 16-bit mono 44.1kHz — formato robusto que iOS
+  // reproduce siempre. Silencio = muestras en 0 (el ArrayBuffer ya viene en 0).
+  var sr=44100, n=Math.floor(sr*0.4), dataSize=n*2, bytes=44+dataSize;
+  var buf=new ArrayBuffer(bytes), dv=new DataView(buf);
   function wr(o,s){ for(var i=0;i<s.length;i++) dv.setUint8(o+i, s.charCodeAt(i)); }
   wr(0,'RIFF'); dv.setUint32(4,bytes-8,true); wr(8,'WAVE'); wr(12,'fmt ');
   dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
-  dv.setUint32(24,sr,true); dv.setUint32(28,sr,true); dv.setUint16(32,1,true); dv.setUint16(34,8,true);
-  wr(36,'data'); dv.setUint32(40,n,true);
-  for(var i=0;i<n;i++) dv.setUint8(44+i,128); // 128 = silencio en 8-bit unsigned
+  dv.setUint32(24,sr,true); dv.setUint32(28,sr*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+  wr(36,'data'); dv.setUint32(40,dataSize,true);
   var u8=new Uint8Array(buf), bin=''; for(var j=0;j<u8.length;j++) bin+=String.fromCharCode(u8[j]);
   return 'data:audio/wav;base64,'+btoa(bin);
 }
@@ -14395,10 +14396,14 @@ function _veloUnmuteSetup(){
     try{
       var tag = document.createElement('audio');
       tag.setAttribute('playsinline',''); tag.setAttribute('webkit-playsinline','');
-      tag.loop = true; tag.src = _veloSilentWavUri();
+      tag.setAttribute('x-webkit-airplay','deny');
+      try{ tag.disableRemotePlayback = true; }catch(e){}
+      tag.loop = true; tag.src = _veloSilentWavUri(); tag.load();
+      // Conexión DIRECTA a destination (sin gain). Con gain a 0 iOS optimizaba
+      // la salida y NO cambiaba la sesión de audio a "playback"; el WAV ya es
+      // silencioso, así que suena igual (nada) pero activa la sesión.
       var src = ctx.createMediaElementSource(tag);
-      var g = ctx.createGain(); g.gain.value = 0; // inaudible: solo activa la sesión "playback"
-      src.connect(g); g.connect(ctx.destination);
+      src.connect(ctx.destination);
       _veloUnmuteTag = tag;
     }catch(e){ _veloUnmuteTag = null; }
   }
@@ -14545,7 +14550,10 @@ function _stopVeloAudio(ts, atEnd){
   }
   state.playing = false;
   state.source = null;
-  _veloUnmuteStop(); // soltar la sesión "playback" para no interrumpir música de fondo
+  // NO pausamos el loop silencioso entre notas: mantener la sesión "playback"
+  // activa hace que la próxima nota suene sí o sí en silencio (evita que iOS
+  // revierta la sesión y la primera fracción se pierda). Se libera al salir del
+  // chat (_cleanupVeloAudioPlayers).
   state.btn.textContent = '▶';
   state.btn.setAttribute('aria-label','Reproducir');
   var mm = Math.floor(state.duration/60), ss = Math.floor(state.duration%60);
@@ -35847,7 +35855,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1458;
+    var _BUILT_V = 1459;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
