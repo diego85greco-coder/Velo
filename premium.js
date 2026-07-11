@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1475',
+      'Velo v1476',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -25909,7 +25909,7 @@ var _selectedDonAmt = '10';
 function pInitDonation(){
   var grid = document.getElementById('donationAmounts');
   if(!grid) return;
-  var amts = ['5','10','15','25'];
+  var amts = ['5','10','25'];
   grid.innerHTML = amts.map(function(a){
     return '<div class="amt-opt'+(a==='10'?' selected':'')+'" onclick="pSelAmt(this,\''+a+'\')"><div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+a+'</div><div style="font-size:13px;color:var(--ink4)">USD</div></div>';
   }).join('');
@@ -25953,20 +25953,20 @@ function pDonateCTA(){
   }
 }
 
+// v1476: "Apoyá a Velo" con botones hosted "Comprar ahora" → permiten pagar con
+// tarjeta SIN cuenta PayPal. Montos fijos $5/$10/$25 tienen su botón; cualquier
+// otro monto va al botón de importe libre (el donante escribe cuánto).
+var VELO_DONATE_BTNS = { '5':'AD9H9TDYRT9UJ', '10':'5JUEENZ7JXR4N', '25':'BDC7HWHSUUXGG' };
+var VELO_DONATE_BTN_VARIABLE = '2M75VGVXVADQC';
 function pOpenPayPalDonate(amount, monthly, description){
-  // v1469: el flujo /donate/ exige que la cuenta esté inscripta en "PayPal
-  // Donations" (por eso daba "esta organización no puede aceptar donativos").
-  // Usamos el endpoint clásico webscr, que funciona con cualquier cuenta que
-  // reciba pagos: _xclick (único) o _xclick-subscribe (mensual).
   var returnUrl = window.location.origin + window.location.pathname + '?pp=donation';
-  var name = encodeURIComponent(description || 'Apoyo a Velo 💚');
+  var amtKey = String(parseInt(amount, 10)); // "10.00" → "10"
+  var btnId = VELO_DONATE_BTNS[amtKey] || VELO_DONATE_BTN_VARIABLE;
   var baseURL = 'https://www.paypal.com/cgi-bin/webscr';
-  var params;
-  if(monthly){
-    params = '?cmd=_xclick-subscribe&business='+PAYPAL_EMAIL+'&item_name='+name+'&currency_code=USD&a3='+amount+'&p3=1&t3=M&src=1&sra=1&no_shipping=1';
-  } else {
-    params = '?cmd=_xclick&business='+PAYPAL_EMAIL+'&item_name='+name+'&currency_code=USD&amount='+amount+'&no_shipping=1';
-  }
+  var params = '?cmd=_s-xclick&hosted_button_id='+btnId+'&currency_code=USD';
+  // En el botón de importe libre, sugerimos el monto elegido.
+  if(!VELO_DONATE_BTNS[amtKey]) params += '&amount='+encodeURIComponent(amount);
+  params += '&custom='+encodeURIComponent('donation');
   params += '&return='+encodeURIComponent(returnUrl);
   safeLS('set','velo_pp_pending', JSON.stringify({ type:'donation', amount:amount, ts:Date.now() }));
   window.open(baseURL+params, '_blank');
@@ -36033,7 +36033,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1475;
+    var _BUILT_V = 1476;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
