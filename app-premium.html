@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1450">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1450">
+  <link rel="stylesheet" href="premium.css?v=20260626-1451">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1451">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -218,7 +218,7 @@
   <div style="font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.55);padding:14px 16px 6px;font-family:Jost,sans-serif">🌿 COMUNIDAD</div>
   <button class="p-mobile-nav-item" onclick="pGoTo('guardians');toggleMobileMenu()"><span class="p-mobile-nav-icon">🛡️</span> Guardianes</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('help');toggleMobileMenu()"><span class="p-mobile-nav-icon">🆘</span> Sala de Ayuda</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('bottle');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌊</span> Al Mar</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('bottle');toggleMobileMenu()" style="display:none"><span class="p-mobile-nav-icon">🌊</span> Al Mar</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('contacts');toggleMobileMenu()"><span class="p-mobile-nav-icon">⭐</span> Contactos favoritos</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('professionals');toggleMobileMenu()"><span class="p-mobile-nav-icon">🩺</span> Profesionales</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('circles');toggleMobileMenu()"><span class="p-mobile-nav-icon">☮️</span> Círculos</button>
@@ -236,7 +236,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1450</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1451</div>
 </div>
 
 <!-- APP SHELL -->
@@ -267,7 +267,7 @@
         <span class="p-sn-label">Sala de Ayuda</span>
         <span class="p-sn-badge p-hidden" id="sn-help-badge" aria-live="polite">!</span>
       </button>
-      <button class="p-sn-item" data-screen="bottle" onclick="pGoTo('bottle')" aria-label="Al Mar">
+      <button class="p-sn-item" data-screen="bottle" onclick="pGoTo('bottle')" aria-label="Al Mar" style="display:none">
         <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 16c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg></span>
         <span class="p-sn-label">Al Mar</span>
       </button>
@@ -1402,7 +1402,7 @@
                     <span style="font-size:12px;font-weight:800;letter-spacing:.2px;font-family:'Jost',sans-serif">Momentos</span>
                     <span id="hfTab-momento-cnt" style="font-size:10px;font-weight:600;opacity:.65;font-family:'Jost',sans-serif"></span>
                   </button>
-                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy" style="flex:1;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:7px">
+                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy" style="flex:1;display:none;flex-direction:row;align-items:center;justify-content:center;gap:7px">
                     <span style="font-size:15px;line-height:1">☀️</span>
                     <span style="font-size:12px;font-weight:800;letter-spacing:.2px;font-family:'Jost',sans-serif">Muro Feliz</span>
                     <span id="hfTab-happy-cnt" style="font-size:10px;font-weight:600;opacity:.65;font-family:'Jost',sans-serif"></span>
@@ -1452,8 +1452,8 @@
               </div>
               <!-- Guardianes + Sala de Ayuda — integrado: descripción + botón -->
               <div class="r-hero-actions">
-                <!-- Card Mensajes al Mar -->
-                <div style="flex-basis:100%;width:100%;background:rgba(20,80,180,.10);border:1px solid rgba(80,160,240,.22);border-radius:18px;padding:16px;box-sizing:border-box">
+                <!-- Card Mensajes al Mar — oculto v1451 (sección "Al Mar" desactivada por ahora) -->
+                <div style="display:none;flex-basis:100%;width:100%;background:rgba(20,80,180,.10);border:1px solid rgba(80,160,240,.22);border-radius:18px;padding:16px;box-sizing:border-box">
                   <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                     <span style="font-size:20px;line-height:1">🌊</span>
                     <span style="font-size:13px;font-weight:800;color:rgba(170,215,255,.92);font-family:'Jost',sans-serif;letter-spacing:.3px">Mensajes al Mar</span>
@@ -1625,11 +1625,11 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                     Diario
                   </button>
-                  <button onclick="pGoTo('happy')" class="r-desk-qlink">
+                  <button onclick="pGoTo('happy')" class="r-desk-qlink" style="display:none">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>
                     Muro
                   </button>
-                  <button onclick="pGoTo('bottle')" class="r-desk-qlink">
+                  <button onclick="pGoTo('bottle')" class="r-desk-qlink" style="display:none">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5s2.5 2 5 2 2.5-2 5-2"/><path d="M2 12c.6.5 1.2 1 2.5 1C7 13 7 11 9.5 11s2.5 2 5 2 2.5-2 5-2"/><path d="M2 18c.6.5 1.2 1 2.5 1C7 19 7 17 9.5 17s2.5 2 5 2 2.5-2 5-2"/></svg>
                     Al Mar
                   </button>
@@ -1678,7 +1678,7 @@
                 <span class="p-pill p-pill--live" style="background:rgba(116,198,157,.1);border-color:rgba(116,198,157,.2)"><span class="p-ldot p-ldot--on"></span> Siempre disponible</span>
               </div>
             </div>
-            <div id="hgBottle" class="p-card p-card--feature p-card--hover fc-ocean" onclick="pGoTo('bottle')">
+            <div id="hgBottle" class="p-card p-card--feature p-card--hover fc-ocean" onclick="pGoTo('bottle')" style="display:none">
               <span class="p-card-icon">🌊</span>
               <div class="p-card-title">Al Mar</div>
               <div class="p-card-sub">Mensajes al mundo</div>
@@ -1702,7 +1702,7 @@
                 <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Comunidad activa</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('happy')" style="background:linear-gradient(135deg,rgba(255,230,100,.20),rgba(255,200,80,.12));border-color:rgba(255,210,60,.25)">
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('happy')" style="display:none;background:linear-gradient(135deg,rgba(255,230,100,.20),rgba(255,200,80,.12));border-color:rgba(255,210,60,.25)">
               <span class="p-card-icon">☀️</span>
               <div class="p-card-title">Muro Feliz</div>
               <div class="p-card-sub">Momentos de alegría</div>
@@ -1743,7 +1743,7 @@
                 <span class="p-pill p-pill--sky">Calma</span>
               </div>
             </div>
-            <div id="hgMusic" class="p-card p-card--feature p-card--hover" onclick="pGoTo('meditacion')" style="background:linear-gradient(135deg,rgba(147,112,219,.18),rgba(138,43,226,.08))">
+            <div id="hgMusic" class="p-card p-card--feature p-card--hover" onclick="pGoTo('meditacion')" style="display:none;background:linear-gradient(135deg,rgba(147,112,219,.18),rgba(138,43,226,.08))">
               <span class="p-card-icon">🎵</span>
               <div class="p-card-title">Música</div>
               <div class="p-card-sub">5 tracks de relajación</div>
@@ -4455,8 +4455,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1450"></script>
-<script src="premium-redesign.js?v=20260626-1450"></script>
+<script src="premium.js?v=20260626-1451"></script>
+<script src="premium-redesign.js?v=20260626-1451"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

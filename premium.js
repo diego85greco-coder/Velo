@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1450',
+      'Velo v1451',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -5105,6 +5105,10 @@ function _closeAndroidInstallModal(){
 function _renderHomeMedWidget(){
   var el = document.getElementById('homeMedWidget');
   if(!el) return;
+  // v1451: sección "Música y Relajación" oculta por ahora — no mostramos el widget.
+  el.style.display = 'none';
+  el.innerHTML = '';
+  return;
   var emojiRow = _MEDITATIONS.map(function(m){ return m.emoji; }).join(' ');
   el.innerHTML =
     '<div onclick="pGoTo(\'meditacion\')" style="cursor:pointer;background:linear-gradient(145deg,rgba(12,8,28,.96),rgba(22,12,44,.96));border:1.5px solid rgba(130,90,200,.38);border-radius:22px;overflow:hidden;box-shadow:0 8px 40px rgba(100,60,180,.22),inset 0 1px 0 rgba(180,140,255,.10);position:relative;-webkit-tap-highlight-color:transparent" onmousedown="this.style.opacity=\'.88\'" onmouseup="this.style.opacity=\'1\'" ontouchstart="this.style.opacity=\'.88\'" ontouchend="this.style.opacity=\'1\'">'
@@ -5401,12 +5405,13 @@ function _initHomeNavTiles(){
   var heroLeft = document.querySelector('.r-hero-left');
   if(!heroLeft) return;
 
-  // ── TOP 4: compact strip ABOVE the greeting (order 0) ──────
+  // ── TOP 3: compact strip ABOVE the greeting (order 0) ──────
+  // v1451: grilla de comunidad reducida a 3+3 (se ocultaron Al Mar, Música y
+  // Relajación y Muro Feliz — no se usan por ahora).
   var topFour = [
-    { id:'tileGuardians', icon:'🤝', title:'Apoyo',      sub:'Guardianes', bg:'rgba(80,185,140,.18)',  border:'rgba(80,185,140,.50)',  glow:'rgba(80,185,140,.12)',  action:"pGoTo('guardians')" },
-    { id:'tileBitacora',  icon:'📖', title:'Bitácora',   sub:'Historias', bg:'rgba(100,145,240,.18)', border:'rgba(100,145,240,.48)', glow:'rgba(100,145,240,.12)', action:"pGoTo('bitacora')" },
-    { id:'tileBottle',    icon:'🌊', title:'Al Mar',     sub:'Lanzá un mensaje', bg:'rgba(50,135,220,.18)',  border:'rgba(50,135,220,.48)',  glow:'rgba(50,135,220,.12)',  action:"pGoTo('bottle')" },
-    { id:'tileCircles',   icon:'☮️', title:'Círculos',   sub:'Grupos de chat',   bg:'rgba(165,105,235,.18)', border:'rgba(165,105,235,.48)', glow:'rgba(165,105,235,.12)', action:"pGoTo('circles')" },
+    { id:'tileGuardians', icon:'🤝', title:'Apoyo',        sub:'Guardianes',           bg:'rgba(80,185,140,.18)',  border:'rgba(80,185,140,.50)',  glow:'rgba(80,185,140,.12)',  action:"pGoTo('guardians')" },
+    { id:'tileHelp',      icon:'💬', title:'Sala de Ayuda', sub:'Apoyo en tiempo real', bg:'rgba(80,190,140,.18)',  border:'rgba(80,190,140,.50)',  glow:'rgba(80,190,140,.12)',  action:"pGoTo('help')" },
+    { id:'tileBitacora',  icon:'📖', title:'Bitácora',      sub:'Historias',            bg:'rgba(100,145,240,.18)', border:'rgba(100,145,240,.48)', glow:'rgba(100,145,240,.12)', action:"pGoTo('bitacora')" },
   ];
   var stripHtml = topFour.map(function(t){
     return '<div id="'+t.id+'" onclick="'+t.action+'" class="home-nav-top-tile"'
@@ -5424,12 +5429,11 @@ function _initHomeNavTiles(){
   stripEl.innerHTML = stripHtml;
   heroLeft.insertAdjacentElement('afterbegin', stripEl);
 
-  // ── SECOND ROW 4: compact strip ABOVE frase del día (order 25) ──
+  // ── SECOND ROW 3: compact strip ABOVE frase del día (order 25) ──
   var midFour = [
-    { id:'tileHelp',   icon:'💬', title:'Sala de Ayuda',       sub:'Apoyo en tiempo real', bg:'rgba(80,190,140,.18)',  border:'rgba(80,190,140,.50)',  glow:'rgba(80,190,140,.12)',  action:"pGoTo('help')" },
-    { id:'tileDiary',  icon:'📔', title:'Diario Íntimo',        sub:'Tu espacio privado',   bg:'rgba(175,130,230,.18)', border:'rgba(175,130,230,.50)', glow:'rgba(175,130,230,.12)', action:"pGoTo('diary')" },
-    { id:'tileNews',   icon:'☀️', title:'Buenas Noticias',      sub:'Historias que suman',  bg:'rgba(240,175,45,.18)',  border:'rgba(240,175,45,.50)',  glow:'rgba(240,175,45,.12)',  action:"pGoTo('news')" },
-    { id:'tileMusic',  icon:'🎶', title:'Música y Relajación',  sub:'Sonidos y meditación', bg:'rgba(70,155,210,.18)',  border:'rgba(70,155,210,.50)',  glow:'rgba(70,155,210,.12)',  action:"pGoTo('meditacion')" },
+    { id:'tileNews',    icon:'☀️', title:'Buenas Noticias', sub:'Historias que suman', bg:'rgba(240,175,45,.18)',  border:'rgba(240,175,45,.50)',  glow:'rgba(240,175,45,.12)',  action:"pGoTo('news')" },
+    { id:'tileDiary',   icon:'📔', title:'Diario Íntimo',   sub:'Tu espacio privado',  bg:'rgba(175,130,230,.18)', border:'rgba(175,130,230,.50)', glow:'rgba(175,130,230,.12)', action:"pGoTo('diary')" },
+    { id:'tileCircles', icon:'☮️', title:'Círculos de Paz', sub:'Grupos de chat',      bg:'rgba(165,105,235,.18)', border:'rgba(165,105,235,.48)', glow:'rgba(165,105,235,.12)', action:"pGoTo('circles')" },
   ];
   var stripHtml2 = midFour.map(function(t){
     return '<div id="'+t.id+'" onclick="'+t.action+'" class="home-nav-top-tile"'
@@ -12786,7 +12790,6 @@ function pOpenGuide(){
   var sections=[
     {icon:'🛡️',name:'Guardianes',desc:'Al activar "Modo Guardián" aparecés en la lista de guardianes disponibles. Si alguien necesita apoyo puede pedirte ayuda para iniciar un chat contigo en tiempo real.'},
     {icon:'🤝',name:'Sala de Ayuda',desc:'Las personas publican con lo que necesitan ayuda. Podés acompañarlas sin necesitar estar en modo guardián. Si la persona está online puede aceptar el chat, o bien podés dejarle un mensaje de aliento. Las publicaciones se eliminan automáticamente a las 24 hs.'},
-    {icon:'🌊',name:'Al Mar',desc:'Publicás algo que necesitás soltar o con lo que necesitás apoyo. Otros usuarios pueden responderte con mensajes de aliento y podés responderles por privado. Las publicaciones se eliminan automáticamente a las 24 hs.'},
     {icon:'☮️',name:'Círculos de Paz',desc:'Grupos de chat comunitarios creados por Velo donde podés hablar y debatir sobre distintos temas. Con insignia dorada o plan Plus podés crear tu propio grupo de chat.'},
     {icon:'🌞',name:'Buenas Noticias',desc:'Noticias positivas que pasan en el mundo 🌍. Un canal para leer y descubrir buenas noticias reales que elevan el ánimo.'},
     {icon:'📔',name:'Diario',desc:'Tu espacio privado de escritura. Anotá pensamientos, emociones y reflexiones personales. Solo vos podés leerlo — nunca se comparte.'},
@@ -12796,12 +12799,10 @@ function pOpenGuide(){
     {icon:'🩺',name:'Profesionales',desc:'Directorio de profesionales que forman parte de la comunidad Velo. Podés ver sus perfiles, reseñas de la comunidad y contactarlos.'},
     {icon:'🌬️',name:'Respiración',desc:'Ejercicios guiados de respiración y técnicas de mindfulness para calmar la ansiedad y bajar el estrés en momentos difíciles.'},
     {icon:'⭐',name:'Contactos Favoritos',desc:'Tus usuarios favoritos de la comunidad guardados en un lugar de fácil acceso. Para conectarte rápido con las personas que te importan.'},
-    {icon:'🌈',name:'Muro Feliz',desc:'Un tablón comunitario donde se comparten fotos, frases y momentos que hacen bien. Pura energía positiva para cuando necesitás un impulso.'},
     {icon:'😊',name:'Estado de Ánimo',desc:'Registrá cómo te sentís cada día con un emoji y una nota. Velo genera tu resumen mensual personalizado basado en tus registros.'},
     {icon:'✨',name:'Momentos',desc:'Compartí micro-momentos de tu día: un pensamiento, algo que te alegró, una imagen que te emocionó. Aparecen en el feed de la comunidad y en el widget del inicio.'},
     {icon:'💭',name:'Pregunta del Día',desc:'Cada día una nueva pregunta para reflexionar sobre vos mismo/a. Podés responderla de forma privada en tu diario o compartirla con la comunidad. Una forma simple de conocerte mejor.'},
     {icon:'📖',name:'Bitácora',desc:'Espacio comunitario de historias reales: apoyo, superación y debate. Todo es anónimo. Podés seguir publicaciones, filtrar por tema, guardarlas y buscar por palabras clave.'},
-    {icon:'🧘',name:'Relajación y Meditación',desc:'Meditaciones guiadas y sesiones de mindfulness para calmar la mente. Elegís la duración según el tiempo que tengas — desde 3 minutos hasta sesiones completas.'},
     {icon:'🎵',name:'Sonidos de Ambiente',desc:'Sonidos relajantes para concentrarte, descansar o simplemente estar. Lluvia, bosque, fuego y mar. Suenan en segundo plano mientras usás el resto de la app.'},
   ];
   var cards=sections.map(function(s){
@@ -35752,7 +35753,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1450;
+    var _BUILT_V = 1451;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
