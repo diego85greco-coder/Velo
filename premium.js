@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1464',
+      'Velo v1465',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -344,7 +344,7 @@ function safeLS(action, key, val){
 // ── DAILY LIMITS ────────────────────────────────────────────
 function _dailyKey(type){ return 'velo_daily_'+type+'_'+new Date().toISOString().slice(0,10); }
 function _checkDailyLimit(type){
-  var limits = { bottle:4, help:4, guardian:4 };
+  var limits = { bottle:4, help:4, guardian:4, calmai:15 };
   var plan = safeLS('get','velo_plan') || 'free';
   if(plan === 'plus') return true;
   var used = parseInt(safeLS('get',_dailyKey(type))||'0',10);
@@ -12498,9 +12498,22 @@ async function _geminiChat(systemPrompt, msgs, cfg){
   return _geminiCall(fallbackPrompt, Object.assign({ temperature:0.88, maxOutputTokens:220 }, cfg||{}));
 }
 
+function _calmAILimitNotice(){
+  var typingEl = document.getElementById('calmAITyping'); if(typingEl) typingEl.remove();
+  _calmAIAddMsg('Por hoy llegamos al límite de mensajes gratuitos conmigo 🌿 Podemos seguir mañana. Si necesitás hablar con alguien ahora mismo, la Sala de Ayuda y el botón SOS están siempre disponibles 💚 Con Velo Plus podés charlar conmigo sin límite.', false);
+  try{ setTimeout(function(){ if(typeof pShowPlusModal === 'function') pShowPlusModal(); }, 1200); }catch(_){}
+}
 async function pSendCalmAIMsg(){
   var ta = document.getElementById('calmAIInput');
   if(!ta || !ta.value.trim()) return;
+  // v1465: límite diario de mensajes al Acompañante IA en el plan gratuito
+  // (Velo Plus = sin límite). El aviso es cálido y deja a la persona con
+  // recursos humanos disponibles (Sala de Ayuda + SOS), no la corta en seco.
+  if(!_checkDailyLimit('calmai')){
+    _calmAILimitNotice();
+    return;
+  }
+  _incDailyLimit('calmai');
   var text = ta.value.trim();
   ta.value = '';
   ta.style.height = '';
@@ -25963,12 +25976,14 @@ function pShowPlusModal(){
     +'<li>✅ Vibes, Bitácora, Momentos y Pregunta del día</li>'
     +'<li>✅ Sala de Ayuda y guardianes (4 por día)</li>'
     +'<li>✅ Guardá hasta 5 momentos en tu historial</li>'
+    +'<li>✅ Velo IA · 15 mensajes por día</li>'
     +'</ul></div>'
     // ── Bloque PLUS (todo lo gratis + extras) ──
     +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.22),rgba(200,165,100,.07));border-radius:14px;padding:14px 15px;border:1.5px solid rgba(200,165,100,.55);box-shadow:0 4px 18px rgba(200,165,100,.12)">'
     +'<div style="font-size:12.5px;font-weight:800;color:#C8A560;margin-bottom:6px;letter-spacing:1px">⭐ CON PLUS · $2.99/MES</div>'
     +'<div style="font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:11px">Todo lo del plan gratuito, y además:</div>'
     +'<ul style="font-size:14px;color:var(--ink3);line-height:1.9;list-style:none;padding:0;margin:0">'
+    +'<li>✨ <strong>Velo IA sin límite</strong></li>'
     +'<li>✨ Grupos privados en Vibes</li>'
     +'<li>✨ Guardá momentos <strong>sin límite</strong></li>'
     +'<li>✨ <strong>Sin topes diarios</strong> en Sala de Ayuda y guardianes</li>'
@@ -35856,7 +35871,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1464;
+    var _BUILT_V = 1465;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
