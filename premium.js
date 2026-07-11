@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1452',
+      'Velo v1453',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -4153,8 +4153,6 @@ function _startHomeTour(){
     {sel:'#quickBtn-contact',                                 e:'✉️',  t:'Contáctanos',          d:'¿Sugerencias, consultas o querés reportar algo? Escribinos y te responde el equipo.'},
     {sel:'#tileContacts',                                     e:'⭐',  t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
     {sel:'#tileCalmAi',                                       e:'🤖',  t:'Calma IA',              d:'Un chatbot empático listo para escucharte 24/7. No reemplaza atención profesional — sí te abraza.'},
-    {sel:'#tilePros',                                         e:'👨‍⚕️', t:'Profesionales',        d:'Especialistas verificados en bienestar emocional. Si necesitás apoyo profesional, están ahí.'},
-    {sel:'#tileVela',                                         e:'🙏',  t:'Velo Vela por Ti',      d:'Solicitá sesiones donadas por profesionales o anotate en la lista de espera. Apoyo real, sin costo.'},
     {sel:'.p-bn-item.p-bn-sos, .p-sos-pill',                  e:'🆘',  t:'Botón SOS',             d:'Acceso rápido a tu red de apoyo y contactos de emergencia. Siempre visible abajo.'},
     {sel:'.p-bn-item[data-screen="contacts"]',                e:'⭐',  t:'Barra: Contactos',      d:'Desde acá vas rapidísimo a tus contactos favoritos, en cualquier momento.'},
     {sel:'.p-bn-item[data-screen="diary"]',                   e:'📔',  t:'Barra: Diario',         d:'Acceso rápido a tu diario íntimo desde la barra inferior — siempre a un toque.'},
@@ -5452,11 +5450,10 @@ function _initHomeNavTiles(){
   heroLeft.insertAdjacentElement('beforeend', strip2El);
 
   // ── REMAINING 6: 2-column grid below frase del día (order 4) ──
+  // v1453: Profesionales y Velo Vela por Ti ocultos por ahora (no se usan).
   var gridSix = [
-    { id:'tileContacts', icon:'⭐', title:'Contactos favoritos', sub:'Tus personas de confianza',    bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('contacts')" },
-    { id:'tileCalmAi',   icon:'🤖', title:'Calma IA',         sub:'Tu asistente de bienestar',    bg:'linear-gradient(135deg,rgba(70,178,160,.20),rgba(50,148,130,.14))',  border:'rgba(90,208,185,.38)', action:"pGoTo('calm-ai')" },
-    { id:'tilePros',     icon:'👨‍⚕️', title:'Profesionales',  sub:'Especialistas en bienestar emocional', bg:'linear-gradient(135deg,rgba(50,118,200,.20),rgba(30,88,168,.14))',  border:'rgba(80,148,230,.38)', action:"pGoTo('professionals')" },
-    { id:'tileVela',     icon:'🙏', title:'Velo Vela por Ti', sub:'Tu espacio personal',          bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('vela')" },
+    { id:'tileContacts', icon:'⭐', title:'Contactos favoritos', sub:'Tus personas de confianza', bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('contacts')" },
+    { id:'tileCalmAi',   icon:'🤖', title:'Calma IA',            sub:'Tu asistente de bienestar', bg:'linear-gradient(135deg,rgba(70,178,160,.20),rgba(50,148,130,.14))',  border:'rgba(90,208,185,.38)', action:"pGoTo('calm-ai')" },
   ];
   var gridHtml = gridSix.map(function(t){
     return '<div id="'+t.id+'" onclick="'+t.action+'" class="home-nav-tile"'
@@ -12794,9 +12791,7 @@ function pOpenGuide(){
     {icon:'🌞',name:'Buenas Noticias',desc:'Noticias positivas que pasan en el mundo 🌍. Un canal para leer y descubrir buenas noticias reales que elevan el ánimo.'},
     {icon:'📔',name:'Diario',desc:'Tu espacio privado de escritura. Anotá pensamientos, emociones y reflexiones personales. Solo vos podés leerlo — nunca se comparte.'},
     {icon:'🤖',name:'Velo IA (Chatbot Calma)',desc:'Un acompañante emocional disponible 24/7 entrenado en técnicas de psicología humanista. Podés hablar de lo que sentís, explorar emociones y recibir apoyo empático en cualquier momento.'},
-    {icon:'🕯️',name:'Velo Vela por Ti',desc:'Pedí una sesión gratuita o subsidiada con un profesional de acompañamiento emocional de la comunidad Velo. Completás un breve formulario con tu situación, el tipo de apoyo que necesitás y tu disponibilidad horaria. En 7-14 días te contactamos para coordinar. Los profesionales de Velo donan 1 sesión mensual como parte del programa solidario 💙'},
     {icon:'🆘',name:'SOS',desc:'Acceso rápido a recursos de crisis emocional: líneas de ayuda, información de emergencia y contacto inmediato. Para cuando el momento es urgente.'},
-    {icon:'🩺',name:'Profesionales',desc:'Directorio de profesionales que forman parte de la comunidad Velo. Podés ver sus perfiles, reseñas de la comunidad y contactarlos.'},
     {icon:'🌬️',name:'Respiración',desc:'Ejercicios guiados de respiración y técnicas de mindfulness para calmar la ansiedad y bajar el estrés en momentos difíciles.'},
     {icon:'⭐',name:'Contactos Favoritos',desc:'Tus usuarios favoritos de la comunidad guardados en un lugar de fácil acceso. Para conectarte rápido con las personas que te importan.'},
     {icon:'😊',name:'Estado de Ánimo',desc:'Registrá cómo te sentís cada día con un emoji y una nota. Velo genera tu resumen mensual personalizado basado en tus registros.'},
@@ -35753,7 +35748,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1452;
+    var _BUILT_V = 1453;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

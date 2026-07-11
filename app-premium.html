@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1452">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1452">
+  <link rel="stylesheet" href="premium.css?v=20260626-1453">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1453">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -220,14 +220,14 @@
   <button class="p-mobile-nav-item" onclick="pGoTo('help');toggleMobileMenu()"><span class="p-mobile-nav-icon">💬</span> Sala de Ayuda</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('bottle');toggleMobileMenu()" style="display:none"><span class="p-mobile-nav-icon">🌊</span> Al Mar</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('contacts');toggleMobileMenu()"><span class="p-mobile-nav-icon">⭐</span> Contactos favoritos</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('professionals');toggleMobileMenu()"><span class="p-mobile-nav-icon">🩺</span> Profesionales</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('professionals');toggleMobileMenu()" style="display:none"><span class="p-mobile-nav-icon">🩺</span> Profesionales</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('circles');toggleMobileMenu()"><span class="p-mobile-nav-icon">☮️</span> Círculos</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('bitacora');toggleMobileMenu()"><span class="p-mobile-nav-icon">📖</span> Bitácora</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('diary');toggleMobileMenu()"><span class="p-mobile-nav-icon">📔</span> Diario Íntimo</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('news');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌞</span> Buenas Noticias</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('calm-ai');toggleMobileMenu()"><span class="p-mobile-nav-icon">🤖</span> Velo IA</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('respira');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌬️</span> Respira</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('vela');toggleMobileMenu()"><span class="p-mobile-nav-icon">🕯️</span> Vela por Ti</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('vela');toggleMobileMenu()" style="display:none"><span class="p-mobile-nav-icon">🕯️</span> Vela por Ti</button>
   <!-- ── Cuenta / utilidades ── -->
   <div style="font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(155,120,220,.60);padding:14px 16px 6px;font-family:Jost,sans-serif">👤 CUENTA</div>
   <button class="p-mobile-nav-item" onclick="pGoTo('profile');toggleMobileMenu()"><span class="p-mobile-nav-icon">👤</span> Mi Perfil</button>
@@ -236,7 +236,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1452</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1453</div>
 </div>
 
 <!-- APP SHELL -->
@@ -276,7 +276,7 @@
         <span class="p-sn-label">Contactos</span>
       </button>
       <div class="p-sidebar-section" aria-hidden="true">Comunidad</div>
-      <button class="p-sn-item" data-screen="professionals" onclick="pGoTo('professionals')" aria-label="Profesionales">
+      <button class="p-sn-item" data-screen="professionals" onclick="pGoTo('professionals')" aria-label="Profesionales" style="display:none">
         <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
         <span class="p-sn-label">Profesionales</span>
       </button>
@@ -323,7 +323,7 @@
         <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg></span>
         <span class="p-sn-label">Respira</span>
       </button>
-      <button class="p-sn-item" data-screen="vela" onclick="pGoTo('vela')" aria-label="Vela por Ti">
+      <button class="p-sn-item" data-screen="vela" onclick="pGoTo('vela')" aria-label="Vela por Ti" style="display:none">
         <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="4"/><path d="M12 4c0 2-2 3-2 5a2 2 0 0 0 4 0c0-2-2-3-2-5z"/><rect x="8" y="14" width="8" height="8" rx="1"/><line x1="9" y1="14" x2="9" y2="22"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="15" y1="14" x2="15" y2="22"/></svg></span>
         <span class="p-sn-label">Vela por Ti</span>
       </button>
@@ -1526,7 +1526,7 @@
                       <span style="font-size:20px;line-height:1">🔍</span>
                       <span>Buscar personas</span>
                     </button>
-                    <button onclick="pGoTo('professionals')" class="para-vos-bottom-btn" title="Profesionales" style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(190,148,50,.90)">
+                    <button onclick="pGoTo('professionals')" class="para-vos-bottom-btn" title="Profesionales" style="display:none;flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(190,148,50,.90)">
                       <span style="font-size:20px;line-height:1">🧑‍⚕️👩‍⚕️</span>
                       <span>Profesionales</span>
                     </button>
@@ -1767,7 +1767,7 @@
             </div>
           </div>
           <!-- Velo Vela por Ti — full width -->
-          <div id="homeVelaCard" class="p-card p-card--hover" onclick="pGoTo('vela')" style="margin-top:4px;height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(218,160,30,.18),rgba(200,130,20,.10));border:1.5px solid rgba(218,160,30,.28);cursor:pointer;display:flex;align-items:center;gap:16px">
+          <div id="homeVelaCard" class="p-card p-card--hover" onclick="pGoTo('vela')" style="display:none;margin-top:4px;height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(218,160,30,.18),rgba(200,130,20,.10));border:1.5px solid rgba(218,160,30,.28);cursor:pointer;display:flex;align-items:center;gap:16px">
             <div style="width:52px;height:52px;border-radius:14px;background:rgba(218,160,30,.15);border:1.5px solid rgba(218,160,30,.28);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🕯️</div>
             <div style="flex:1;min-width:0">
               <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Velo Vela por Ti</div>
@@ -4455,8 +4455,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1452"></script>
-<script src="premium-redesign.js?v=20260626-1452"></script>
+<script src="premium.js?v=20260626-1453"></script>
+<script src="premium-redesign.js?v=20260626-1453"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
