@@ -32056,11 +32056,7 @@ async function _checkWeeklySummary(){
       var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
       var _wqB = _pickWeeklyQuote(dominantMood);
       var _moodCat = (dominantMood==='😄'||dominantMood==='😊') ? 'feliz' : (dominantMood==='😞'||dominantMood==='😢') ? 'dificil' : 'neutral';
-      var _mediaRec = {
-        feliz:   { libro:'El Alquimista — Paulo Coelho', peli:'Coco (Pixar, 2017)' },
-        neutral: { libro:'El Poder del Ahora — Eckhart Tolle', peli:'Into the Wild (2007)' },
-        dificil: { libro:'El Hombre en Busca de Sentido — Viktor Frankl', peli:'Good Will Hunting (1997)' }
-      }[_moodCat];
+      var _mediaRec = _pickWeeklyMedia(_moodCat);
 
       var _rachaTag = (_isRecord&&streak>=3)?' 🔥 ¡Tu mejor marca!':(streak>=7?' 🔥 ¡Una semana completa!':streak>=3?' 💪 ¡Excelente ritmo!':'');
 
@@ -32213,6 +32209,96 @@ function _pickWeeklyQuote(dominantMood){
           : 'neutral';
   var pool = _WEEKLY_QUOTES[cat];
   return pool[Math.floor(Math.random()*pool.length)];
+}
+
+// v1481: recomendaciones de libro/película variadas — antes recomendaba siempre
+// las mismas 3. Ahora rota por un pool amplio por estado de ánimo y evita repetir
+// las últimas usadas (guardadas en velo_media_used).
+var _VELO_MEDIA = {
+  feliz: {
+    libros: [
+      'El Alquimista — Paulo Coelho',
+      'El Principito — Antoine de Saint-Exupéry',
+      'Siddhartha — Hermann Hesse',
+      'Como Agua para Chocolate — Laura Esquivel',
+      'Momo — Michael Ende',
+      'La Tregua — Mario Benedetti',
+      'Mujercitas — Louisa May Alcott',
+      'El Curioso Incidente del Perro a Medianoche — Mark Haddon'
+    ],
+    pelis: [
+      'Coco (Pixar, 2017)',
+      'Amélie (2001)',
+      'Up: Una Aventura de Altura (2009)',
+      'Intensa-Mente / Inside Out (2015)',
+      'Soul (2020)',
+      'Little Miss Sunshine (2006)',
+      'Paddington (2014)',
+      'Forrest Gump (1994)'
+    ]
+  },
+  neutral: {
+    libros: [
+      'El Poder del Ahora — Eckhart Tolle',
+      'Meditaciones — Marco Aurelio',
+      'Cartas a un Joven Poeta — Rainer Maria Rilke',
+      'El Arte de Amar — Erich Fromm',
+      'Walden — Henry David Thoreau',
+      'Tao Te Ching — Lao-Tsé',
+      'La Insoportable Levedad del Ser — Milan Kundera',
+      'El Hombre en Busca de Sentido — Viktor Frankl'
+    ],
+    pelis: [
+      'Into the Wild (2007)',
+      'Perfect Days (2023)',
+      'Náufrago / Cast Away (2000)',
+      'Lost in Translation (2003)',
+      'El Árbol de la Vida (2011)',
+      'Paterson (2016)',
+      'Historias Mínimas (2002)',
+      'Vivir / Ikiru (1952)'
+    ]
+  },
+  dificil: {
+    libros: [
+      'El Hombre en Busca de Sentido — Viktor Frankl',
+      'La Biblioteca de la Medianoche — Matt Haig',
+      'Razones para Seguir Viviendo — Matt Haig',
+      'Cuando Todo se Derrumba — Pema Chödrön',
+      'Una Pena en Observación — C.S. Lewis',
+      'El Año del Pensamiento Mágico — Joan Didion',
+      'El Profeta — Khalil Gibran',
+      'Option B — Sheryl Sandberg y Adam Grant'
+    ],
+    pelis: [
+      'En Busca de la Felicidad (2006)',
+      'Good Will Hunting (1997)',
+      'La Vida es Bella (1997)',
+      'Intensa-Mente / Inside Out (2015)',
+      'Un Monstruo Viene a Verme (2016)',
+      'Cadena de Favores (2000)',
+      'Manchester Frente al Mar (2016)',
+      'Cinema Paradiso (1988)'
+    ]
+  }
+};
+
+function _pickWeeklyMedia(cat){
+  var pool = _VELO_MEDIA[cat] || _VELO_MEDIA.neutral;
+  var used = {}; try{ used = JSON.parse(safeLS('get','velo_media_used')||'{}'); }catch(e){}
+  used.libros = used.libros || []; used.pelis = used.pelis || [];
+  function pickFresh(arr, recent){
+    var fresh = arr.filter(function(x){ return recent.indexOf(x)<0; });
+    var src = fresh.length ? fresh : arr;
+    return src[Math.floor(Math.random()*src.length)];
+  }
+  var libro = pickFresh(pool.libros, used.libros);
+  var peli  = pickFresh(pool.pelis,  used.pelis);
+  // Recordar las últimas 6 de cada tipo para no repetir por ~6 semanas.
+  used.libros = [libro].concat(used.libros.filter(function(x){ return x!==libro; })).slice(0, 6);
+  used.pelis  = [peli ].concat(used.pelis.filter(function(x){ return x!==peli;  })).slice(0, 6);
+  try{ safeLS('set','velo_media_used', JSON.stringify(used)); }catch(e){}
+  return { libro: libro, peli: peli };
 }
 
 function pShowWeeklySummary(data){
@@ -36223,7 +36309,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1480;
+    var _BUILT_V = 1481;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

@@ -89,6 +89,15 @@ const FALLBACK = {
     { title: '🌱 Buenos días', body: 'Cada mañana es una hoja en blanco 💛 ¿Cómo te sientes hoy? Regístralo en un toque.' },
     { title: '🌤️ ¡A comenzar!', body: 'Registra tu ánimo antes de comenzar el día 💚 Aunque sea de paso.' },
     { title: '🌸 Buen día para ti', body: '¿Cómo llegas hoy? 🌿 Un registro de 5 segundos hace toda la diferencia.' },
+    { title: '🌅 Un nuevo comienzo', body: 'No tienes que tenerlo todo resuelto hoy 💚 Solo empezar. ¿Cómo amaneciste?' },
+    { title: '☀️ Respira y arranca', body: 'Una respiración profunda antes de todo 🌿 Y si quieres, anota cómo te sientes.' },
+    { title: '🌱 Paso a paso', body: 'Hoy no hace falta correr 💛 Ve a tu ritmo. Empieza registrando tu ánimo.' },
+    { title: '🌸 Hola de nuevo', body: 'Qué bueno tenerte hoy por acá 🌿 Cuéntanos cómo llegas en un toque.' },
+    { title: '🌤️ Tu momento', body: 'Antes del ruido del día, un instante para ti 💚 ¿Cómo te sientes esta mañana?' },
+    { title: '☀️ Buen día', body: 'Sea como sea que amaneciste, es válido 💛 Regístralo y sigamos juntos.' },
+    { title: '🌱 Empieza suave', body: 'Un pequeño gesto de cuidado: anotar cómo estás hoy 🌿 Toma 5 segundos.' },
+    { title: '🌅 Aquí estamos', body: 'Un día más para intentarlo 💪 ¿Con qué ánimo arrancas hoy?' },
+    { title: '🌸 Mañana tranquila', body: 'No todo tiene que ser productividad 💚 Empieza sintiéndote. ¿Cómo estás?' },
   ],
   afternoon: [
     { title: '🌤️ ¿Cómo va tu día?', body: 'Si viene bien, celébralo. Si viene difícil, no estás solo/a 💚 Escribe algo en Bitácora.' },
@@ -98,6 +107,13 @@ const FALLBACK = {
     { title: '🤝 ¿Mal momento?', body: 'Está bien no estar bien 💚 Cuenta con Bitácora o Sala de Ayuda cuando lo necesites.' },
     { title: '✨ Te recordamos', body: '¿Cómo va la tarde? Si hay algo pesándote, lánzalo Al Mar 🌊 o escríbelo en Bitácora 📖' },
     { title: '💙 Un poco de aire', body: 'Respira. Si necesitas hablar, hay guardianes disponibles en Sala de Ayuda. No estás solo/a 🌿' },
+    { title: '🌿 Mitad del día', body: '¿Te diste una pausa hoy? Aunque sea un minuto para respirar 💚 Te lo mereces.' },
+    { title: '💛 ¿Cómo sigues?', body: 'Si algo se puso cuesta arriba, escríbelo en tu Diario 📖 Sacarlo afuera alivia.' },
+    { title: '🌊 Deja ir un poco', body: 'Eso que das vueltas en la cabeza, suéltalo Al Mar 💙 No tienes que cargarlo todo.' },
+    { title: '🤝 No estás solo/a', body: 'Hay personas reales listas para escucharte en Sala de Ayuda 🌿 Solo si lo necesitas.' },
+    { title: '✨ Pequeña victoria', body: '¿Algo bueno pasó hoy, aunque sea chiquito? Anótalo en Bitácora 📖 Cuenta igual.' },
+    { title: '☮️ Un espacio seguro', body: 'En los Círculos de Paz hay gente hablando de lo mismo que tú sientes 🌿 Únete.' },
+    { title: '💙 Está bien parar', body: 'No tienes que poder con todo hoy 💚 Si necesitas, estamos a un toque de distancia.' },
   ],
   night: [
     { title: '🌙 Buenas noches', body: 'Llegaste hasta aquí. Eso solo ya es mucho 💪 Descansa bien. Nos vemos mañana.' },
@@ -106,10 +122,71 @@ const FALLBACK = {
     { title: '🌙 Ya está', body: 'Suelta el día. Lo que quedó pendiente, mañana. Descansa tranquilo/a 💚' },
     { title: '💙 Cierre suave', body: 'Sea como sea que hoy te sentiste, es válido. Descansa 💪 Mañana te esperamos.' },
     { title: '🌙 Descanso', body: 'Gracias por seguir apareciendo en Velo. Eso ya dice mucho de ti 💚 Buenas noches.' },
+    { title: '🌙 Un día menos', body: 'Hoy resististe, y con eso basta 💪 Cierra los ojos tranquilo/a. Mañana seguimos.' },
+    { title: '💙 Deja el día', body: 'Lo que no salió hoy, no te define 💚 Descansa. Fuiste suficiente igual.' },
+    { title: '🌙 Hora de soltar', body: 'Respira hondo y suelta lo del día 🌿 El descanso también es cuidarte.' },
+    { title: '💪 Lo lograste', body: 'Otro día completo a tu espalda 💚 No es poco. Descansa lo que mereces.' },
+    { title: '🌙 Buenas noches', body: 'Fuiste valiente hoy, aunque no lo notes 💙 Mañana te espera con calma.' },
+    { title: '💙 Cierre del día', body: 'Hoy hiciste lo mejor que pudiste con lo que tenías 💚 Y está bien. A descansar.' },
   ],
 };
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// ── Historial para que las 3 notificaciones diarias NO se repitan ────
+// Tabla opcional push_history(slot, title, body, sent_at). Si no existe, el
+// script sigue andando: igual rota los fallbacks para no repetir el mismo día.
+async function loadRecentPush(slot, limit = 16) {
+  try {
+    const { data, error } = await supabase
+      .from('push_history')
+      .select('title, body')
+      .eq('slot', slot)
+      .order('sent_at', { ascending: false })
+      .limit(limit);
+    if (error) return [];
+    return data || [];
+  } catch { return []; }
+}
+async function recordPush(slot, notif) {
+  try {
+    await supabase.from('push_history').insert({ slot, title: notif.title || '', body: notif.body || '' });
+  } catch { /* tabla ausente → ignorar, no rompe el envío */ }
+}
+function normMsg(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/gi, '').slice(0, 60); }
+function isRecentDup(notif, recent) {
+  const nb = normMsg(notif.body);
+  if (!nb) return false;
+  return recent.some(r => normMsg(r.body) === nb);
+}
+// Elige un fallback que NO se haya usado recientemente (evita repetir día a día).
+function pickFreshFallback(slot, recent) {
+  const used = new Set((recent || []).map(r => normMsg(r.body)));
+  const fresh = FALLBACK[slot].filter(m => !used.has(normMsg(m.body)));
+  const pool = fresh.length ? fresh : FALLBACK[slot];
+  return { ...pool[Math.floor(Math.random() * pool.length)], tag: `velo-${slot}` };
+}
+// Enfoque rotativo del día — empuja a la IA a variar el tema/ángulo cada día.
+const ANGLES = {
+  morning: [
+    'agradecer algo pequeño al despertar', 'poner una intención simple para el día',
+    'una respiración consciente antes de arrancar', 'permitirse ir despacio hoy',
+    'reconectar con el cuerpo al despertar', 'la mañana como un empezar de nuevo',
+    'ser amable con uno mismo desde temprano', 'notar cómo se llega, sin juzgarlo',
+  ],
+  afternoon: [
+    'validar un momento difícil de la tarde', 'celebrar una pequeña victoria del día',
+    'invitar a una pausa breve para respirar', 'recordar que pedir ayuda es válido',
+    'soltar algo que pesa', 'escribir para ordenar lo que se siente',
+    'conectar con la comunidad si hay soledad', 'está bien no rendir al 100% hoy',
+  ],
+  night: [
+    'orgullo por haber aparecido hoy', 'soltar lo que quedó pendiente',
+    'mañana es una página nueva', 'el descanso como acto de cuidado',
+    'hiciste suficiente con lo que tenías', 'fortaleza real, sin cursilería',
+    'gratitud por el día que termina', 'ternura para cerrar la jornada',
+  ],
+};
 
 const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'];
 
@@ -137,7 +214,7 @@ async function geminiGenerate(prompt) {
   return null;
 }
 
-async function generateNotification(slot) {
+async function generateNotification(slot, recent) {
   // Features SIN muro feliz (fue removido de la app)
   const afternoonFeatures = [
     'Bitácora (escribir tu historia — anónimo o público)',
@@ -212,6 +289,15 @@ Reglas de estilo:
 - NO uses 'salud mental', NO cursilería, honesto y cálido
 - Respondé SOLO JSON: {"title":"...","body":"..."}`;
   }
+
+  // Variedad diaria: un ángulo rotativo + evitar repetir lo enviado recientemente.
+  const angle = pick(ANGLES[slot] || ['']);
+  if (angle) prompt += `\n\nENFOQUE DE HOY (inspirate en esto con naturalidad, sin nombrarlo textual): ${angle}.`;
+  if (recent && recent.length) {
+    const avoid = recent.slice(0, 10).map(r => `• ${r.body}`).join('\n');
+    prompt += `\n\nIMPORTANTE — estos mensajes YA se enviaron. Escribí algo claramente distinto: no repitas sus frases, su estructura ni su idea central:\n${avoid}`;
+  }
+  prompt += `\n\nRecordá: respondé SOLO JSON válido: {"title":"...","body":"..."}`;
 
   const raw = await geminiGenerate(prompt);
   if (!raw) return null;
@@ -1001,18 +1087,23 @@ async function main() {
     slotUsers[slot].push({ id: user.id, sub: rawSub, tz, parsedFull });
   }
 
-  // Generate one AI message per active slot
+  // Generate one message per active slot — original y sin repetir día a día.
   const notifs = {};
   for (const slot of ['morning', 'afternoon', 'night']) {
     if (!slotUsers[slot].length) continue;
-    const ai = await generateNotification(slot);
-    if (ai) {
+    const recent = await loadRecentPush(slot);
+    const ai = await generateNotification(slot, recent);
+    let chosen;
+    if (ai && !isRecentDup(ai, recent)) {
+      chosen = ai;
       console.log(`[AI ${slot}] "${ai.title}" — "${ai.body}"`);
-      notifs[slot] = ai;
     } else {
-      notifs[slot] = { ...pick(FALLBACK[slot]), tag: `velo-${slot}` };
-      console.log(`[fallback ${slot}] "${notifs[slot].title}"`);
+      if (ai) console.log(`[AI ${slot}] descartado por repetir uno reciente → fallback fresco`);
+      chosen = pickFreshFallback(slot, recent);
+      console.log(`[fallback ${slot}] "${chosen.title}"`);
     }
+    notifs[slot] = chosen;
+    await recordPush(slot, chosen); // guardar en historial para no repetirlo mañana
   }
 
   let sent = 0, failed = 0;
