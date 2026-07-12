@@ -29121,8 +29121,15 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
     return;
   }
 
-  var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay, activity);
-  pShowWeeklySummary({ timeline:timeline, dominantMood:dominantMood, checkIns:totalReg, diaryEntries:weekDiary.length, streak:streak, aiText:aiText, distribLines:distribLines, consistenciaPct:consistenciaPct, trendTxt:trendTxt, bestDay:bestDay, worstDay:worstDay, activity:activity });
+  var _wkDiaryDays = [];
+  weekDiary.forEach(function(e){ if(e.ts){ var _dd=dayNamesLong[new Date(e.ts).getDay()].slice(0,2); if(_wkDiaryDays.indexOf(_dd)<0) _wkDiaryDays.push(_dd); } });
+  var aiRes = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay, activity, _wkDiaryDays);
+  if(!aiRes) aiRes = { narrative:'', insight:'', intention:'' };
+  var _avgThisB = scores.length ? scores.reduce(function(a,b){return a+b;},0)/scores.length : 0;
+  var _wbB = Math.max(0, Math.min(100, Math.round((_avgThisB/5)*80 + (totalReg/7)*20)));
+  var _prevRegB = activity.prevWeekReg||0;
+  var _prevWbB = _prevRegB>0 ? Math.max(0, Math.min(100, Math.round(((activity.prevAvgScore||0)/5)*80 + (_prevRegB/7)*20))) : null;
+  pShowWeeklySummary({ timeline:timeline, dominantMood:dominantMood, checkIns:totalReg, diaryEntries:weekDiary.length, streak:streak, aiText:aiRes.narrative, aiInsight:aiRes.insight, aiIntention:aiRes.intention, wellbeing:_wbB, prevWellbeing:_prevWbB, distribLines:distribLines, consistenciaPct:consistenciaPct, trendTxt:trendTxt, bestDay:bestDay, worstDay:worstDay, activity:activity });
 }
 
 // ── TAB: PRIVACIDAD (GDPR / Ley 25.326) ──────────────────────────────
@@ -32007,7 +32014,44 @@ async function _checkWeeklySummary(){
     var scoresW = timeline.filter(function(d){ return d.mood; }).map(function(d){ return _moodScore[d.mood.emoji]||3; });
     if(scoresW.length) activity.thisAvgScore = scoresW.reduce(function(a,b){return a+b;},0)/scoresW.length;
     var actTxt = _weekActivityText(activity);
-    var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay, activity);
+    var aiRes = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay, activity, diaryDays);
+    if(!aiRes) aiRes = { narrative:'', insight:'', intention:'' };
+
+    // ── v1479: tira visual de la semana + puntaje de bienestar (0-100) ──
+    var _dayFull = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+    var stripTxt = timeline.map(function(d){ return d.dayName+' '+(d.mood&&d.mood.emoji?d.mood.emoji:'—'); }).join(' · ');
+    var _avgThis = scoresW.length ? scoresW.reduce(function(a,b){return a+b;},0)/scoresW.length : 0;
+    var wellbeing = Math.max(0, Math.min(100, Math.round((_avgThis/5)*80 + (totalReg/7)*20)));
+    var _wbFill = Math.max(0, Math.min(10, Math.round(wellbeing/10)));
+    var wbBar = '▓'.repeat(_wbFill) + '░'.repeat(10-_wbFill);
+    var _wbWord = wellbeing>=80?'una gran semana ✨':wellbeing>=60?'una buena semana 🌿':wellbeing>=40?'una semana con altibajos 🌤️':'una semana cuesta arriba 💙';
+
+    // ── v1479: comparativa con la semana pasada ────────────────────────
+    var _prevReg = activity.prevWeekReg||0;
+    var _prevAvg = activity.prevAvgScore||0;
+    var compTxt = '';
+    if(_prevReg>0){
+      var _prevPct = Math.round(_prevReg/7*100);
+      var _cDiff = consistenciaPct - _prevPct;
+      var _prevWb = Math.max(0, Math.min(100, Math.round((_prevAvg/5)*80 + (_prevReg/7)*20)));
+      var _wbDiff = wellbeing - _prevWb;
+      compTxt = '🔄 VS LA SEMANA PASADA\n'
+        + 'Constancia: '+consistenciaPct+'% '+(_cDiff>0?'(↑ +'+_cDiff+'%)':_cDiff<0?'(↓ '+_cDiff+'%)':'(= igual)')+'\n'
+        + 'Bienestar: '+wellbeing+'/100 '+(_wbDiff>0?'(↑ +'+_wbDiff+')':_wbDiff<0?'(↓ '+_wbDiff+')':'(= igual)')+'\n';
+      if(_prevAvg>0 && _avgThis>0){
+        var _aDiff = _avgThis - _prevAvg;
+        compTxt += 'Ánimo promedio: '+(_aDiff>0.15?'↑ subió':_aDiff<-0.15?'↓ bajó':'→ estable')+'\n';
+      }
+      compTxt += '\n';
+    } else {
+      compTxt = '🔄 VS LA SEMANA PASADA\nEs tu primera semana midiendo — la que viene ya vas a poder ver tu progreso 🌱\n\n';
+    }
+
+    // Racha récord — marcamos si es tu mejor marca hasta ahora.
+    var _bestStreak = parseInt(safeLS('get','velo_best_streak')||'0')||0;
+    var _isRecord = streak>0 && streak>=_bestStreak;
+    if(streak>_bestStreak) safeLS('set','velo_best_streak', String(streak));
+
     if(!alreadySent){
       var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
       var _wqB = _pickWeeklyQuote(dominantMood);
@@ -32018,17 +32062,24 @@ async function _checkWeeklySummary(){
         dificil: { libro:'El Hombre en Busca de Sentido — Viktor Frankl', peli:'Good Will Hunting (1997)' }
       }[_moodCat];
 
+      var _rachaTag = (_isRecord&&streak>=3)?' 🔥 ¡Tu mejor marca!':(streak>=7?' 🔥 ¡Una semana completa!':streak>=3?' 💪 ¡Excelente ritmo!':'');
+
       var bodyTxt = '¡Hola'+(userName?' '+userName:'')+'! 💚\n\n'
         +'Estamos muy felices de que formes parte de nuestra comunidad. Tu presencia hace la diferencia.\n\n'
-        +(aiText ? '─────────────────────\n'+aiText+'\n─────────────────────\n\n' : '')
+        +(aiRes.narrative ? '─────────────────────\n'+aiRes.narrative+'\n─────────────────────\n\n' : '')
+        +'📈 TU SEMANA DE UN VISTAZO\n'
+        +stripTxt+'\n'
+        +'🌡️ Bienestar: '+wellbeing+'/100  '+wbBar+'\n'
+        +'Fue '+_wbWord+'\n\n'
         +'📊 TUS ÁNIMOS ESTA SEMANA\n'
         +'Registraste '+totalReg+' de 7 días ('+consistenciaPct+'% de consistencia)\n'
         +(distribLines.length ? distribLines.map(function(l){ return '  · '+l; }).join('\n')+'\n' : '')
         +(dominantMood ? 'Estado dominante: '+dominantMood+' '+(_moodLabel[dominantMood]||'')+'\n' : '')
         +'Tendencia: '+trendTxt+'\n'
-        +(bestDay&&bestDay.mood?'🏆 Mejor día: '+dayNamesLong[['Do','Lu','Ma','Mi','Ju','Vi','Sa'].indexOf(bestDay.dayName)]||bestDay.dayName+' '+bestDay.mood.emoji+'\n':'')
-        +(worstDay&&worstDay.mood&&worstDay!==bestDay?'⚡ Día más desafiante: '+(dayNamesLong[['Do','Lu','Ma','Mi','Ju','Vi','Sa'].indexOf(worstDay.dayName)]||worstDay.dayName)+' '+worstDay.mood.emoji+'\n':'')
+        +(bestDay&&bestDay.mood?'🏆 Mejor día: '+(dayNamesLong[_dayFull.indexOf(bestDay.dayName)]||bestDay.dayName)+' '+bestDay.mood.emoji+'\n':'')
+        +(worstDay&&worstDay.mood&&worstDay!==bestDay?'⚡ Día más desafiante: '+(dayNamesLong[_dayFull.indexOf(worstDay.dayName)]||worstDay.dayName)+' '+worstDay.mood.emoji+'\n':'')
         +'\n'
+        +compTxt
         +(weekDiary.length
           ? '📔 TU DIARIO\n'
             +'Escribiste '+weekDiary.length+' entrada'+(weekDiary.length!==1?'s':'')+' esta semana'
@@ -32036,20 +32087,36 @@ async function _checkWeeklySummary(){
           : '')
         +(actTxt ? '🌱 TU ACTIVIDAD EN LA COMUNIDAD\n'+actTxt+'\n' : '')
         +'📅 RACHA\n'
-        +streak+' día'+(streak!==1?'s':'')+' seguidos en Velo'
-        +(streak>=7?' 🔥 ¡Una semana completa!':streak>=3?' 💪 ¡Excelente ritmo!':'')+'\n\n'
+        +streak+' día'+(streak!==1?'s':'')+' seguidos en Velo'+_rachaTag+'\n\n'
+        +(aiRes.insight ? '🔮 LO QUE NOTAMOS\n'+aiRes.insight+'\n\n' : '')
+        +(aiRes.intention ? '🎯 PARA ESTA SEMANA\n'+aiRes.intention+'\n\n' : '')
         +(_wqB ? '❝ '+_wqB.q+'❞\n— '+_wqB.a+(_wqB.b?', '+_wqB.b:'')+'\n\n' : '')
         +(_mediaRec ? '📚 Para esta semana:\n  Libro: '+_mediaRec.libro+'\n  Película: '+_mediaRec.peli+'\n\n' : '')
         +'📋 El 1° de cada mes recibís un análisis completo de tu mes.\n\n¡Hasta el próximo domingo! 🌱';
 
-      _inbox2.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱'+(dominantMood?' '+dominantMood:'')+' | '+consistenciaPct+'% constancia',extracto:aiText?aiText.slice(0,80)+'…':totalReg+'/7 días registrados ('+consistenciaPct+'%)',cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+      var _extract = aiRes.narrative || aiRes.insight || (totalReg+'/7 días registrados ('+consistenciaPct+'%)');
+      _inbox2.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱'+(dominantMood?' '+dominantMood:'')+' | '+wellbeing+'/100',extracto:_extract.slice(0,80)+(_extract.length>80?'…':''),cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
       safeLS('set','velo_inbox',JSON.stringify(_inbox2.slice(0,100)));
       if(typeof _updateInboxDot==='function') _updateInboxDot();
     }
   }, 3000);
 }
 
-async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns, diaryCount, userName, distribLines, trendTxt, bestDay, worstDay, activity){
+// Parsea la respuesta de la IA en 3 partes (narrativa, patrón, intención).
+function _parseAIWeekParts(text){
+  var out = { narrative:'', insight:'', intention:'' };
+  if(!text) return out;
+  var nm = text.match(/NARRATIVA:\s*([\s\S]*?)(?:\n?PATRON:|\n?INTENCION:|$)/i);
+  var pm = text.match(/PATRON:\s*([\s\S]*?)(?:\n?INTENCION:|\n?NARRATIVA:|$)/i);
+  var im = text.match(/INTENCION:\s*([\s\S]*?)$/i);
+  if(nm) out.narrative = nm[1].trim();
+  if(pm) out.insight = pm[1].trim();
+  if(im) out.intention = im[1].trim();
+  if(!out.narrative && !out.insight && !out.intention) out.narrative = text.trim();
+  return out;
+}
+
+async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns, diaryCount, userName, distribLines, trendTxt, bestDay, worstDay, activity, diaryDays){
   try{
     var _moodLabel = _VELO_MOOD_LABEL;
     var dayNamesLong = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -32098,18 +32165,16 @@ async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns
       +(worstDay&&worstDay.mood&&worstDay!==bestDay?'Día más difícil: '+(dayNamesLong[dayNamesShort.indexOf(worstDay.dayName)]||worstDay.dayName)+' '+worstDay.mood.emoji+'\n':'')
       +'Racha: '+streak+' días seguidos en la app. '
       +(diaryCount>0?'Escribió en su diario '+diaryCount+' vez'+(diaryCount>1?'es':'')+' esta semana. ':'')
+      +(diaryDays&&diaryDays.length?'Días que escribió en su diario: '+diaryDays.join(', ')+'. ':'')
       +activityLines
-      +'\nEscribí 3-4 oraciones cálidas y ULTRA específicas que:\n'
-      +'1. Mencionen algo CONCRETO de su semana real (un día específico, o una actividad — ej: "acompañaste a X personas", "compartiste tu historia y recibiste apoyo")\n'
-      +'2. Reconozcan gestos de generosidad hacia la comunidad si los hubo (comentarios que dejó, gente que acompañó)\n'
-      +'3. Validen sus emociones con naturalidad\n'
-      +'4. Cierren con una invitación GENUINA para la próxima semana basada en lo que ya está haciendo bien\n\n'
-      +'REGLAS: NO empieces con "Hola" ni con el nombre. Empezá directo con la observación. '
-      +'Tono cercano, cálido y humano — como un amigo cercano, no clínico. Sin hashtags. Sin listas. NUNCA uses "salud mental". '
-      +'Máximo 90 palabras.';
-    var text = await _geminiCall(prompt, { temperature:0.85, maxOutputTokens:220 });
-    return text || null;
-  }catch(e){ return null; }
+      +'\nEscribí tu respuesta EXACTAMENTE en estas tres líneas, con estas etiquetas al inicio de cada una, sin nada más:\n'
+      +'NARRATIVA: 3-4 oraciones cálidas y ULTRA específicas que mencionen algo CONCRETO de su semana real (un día puntual, o una actividad — ej: "acompañaste a X personas", "compartiste tu historia y recibiste apoyo"), reconozcan gestos de generosidad hacia la comunidad si los hubo, validen sus emociones con naturalidad y cierren con calidez. NO empieces con "Hola" ni con el nombre; empezá directo con la observación.\n'
+      +'PATRON: una sola oración con un patrón REAL y específico que hayas notado en sus datos (por ejemplo una relación entre un día, una actividad o el diario y su ánimo). Si no hay datos suficientes para un patrón honesto, hacé una observación suave y concreta sobre su constancia o su ritmo.\n'
+      +'INTENCION: una sola oración con una micro-meta concreta y alcanzable para la próxima semana, escrita en segunda persona (vos), basada en algo que ya está haciendo bien.\n'
+      +'REGLAS: tono cercano, cálido y humano, como un amigo cercano — nunca clínico. Sin hashtags. Sin listas con viñetas. NUNCA uses la frase "salud mental". Mantené cada parte breve.';
+    var text = await _geminiCall(prompt, { temperature:0.85, maxOutputTokens:340 });
+    return _parseAIWeekParts(text);
+  }catch(e){ return { narrative:'', insight:'', intention:'' }; }
 }
 
 var _WEEKLY_QUOTES = {
@@ -32179,10 +32244,31 @@ function pShowWeeklySummary(data){
   var trendColor = trend==='↗'?'#74c69d':trend==='↘'?'#e07a5f':'#e9b949';
   var trendLabel = trend==='↗'?'Semana en mejora':trend==='↘'?'Semana desafiante':'Semana estable';
 
-  // AI text or fallback
-  var aiParagraph = data.aiText
-    ? '<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.7;text-align:center;margin:20px 0;padding:0 4px">'+_escHtml(data.aiText)+'</div>'
+  // AI text or fallback (data.aiText puede venir como string o como objeto)
+  var _aiNarr = (data.aiText && typeof data.aiText==='object') ? (data.aiText.narrative||'') : (data.aiText||'');
+  var aiParagraph = _aiNarr
+    ? '<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.7;text-align:center;margin:20px 0;padding:0 4px">'+_escHtml(_aiNarr)+'</div>'
     : '<div style="font-size:15px;color:rgba(255,255,255,.55);text-align:center;margin:18px 0;font-style:italic">¡Cada registro es un acto de cuidado hacia vos. Seguí así! 🌱</div>';
+
+  // v1479: insight (patrón detectado) + intención sugerida por la IA
+  var insightHtml = data.aiInsight
+    ? '<div style="margin:2px 0 12px;padding:13px 15px;background:rgba(116,165,210,.10);border:1px solid rgba(116,165,210,.24);border-radius:14px">'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(122,180,216,.9);margin-bottom:6px">🔮 Lo que notamos</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.6;font-family:Jost,sans-serif">'+_escHtml(data.aiInsight)+'</div>'
+      +'</div>'
+    : '';
+  var intentionHtml = data.aiIntention
+    ? '<div style="margin:2px 0 16px;padding:13px 15px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.26);border-radius:14px">'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(116,198,157,.95);margin-bottom:6px">🎯 Para esta semana</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.9);line-height:1.6;font-family:Jost,sans-serif">'+_escHtml(data.aiIntention)+'</div>'
+      +'</div>'
+    : '';
+  // v1479: puntaje de bienestar (0-100) con comparación opcional a la semana pasada
+  var wellbeingHtml = (data.wellbeing!=null)
+    ? '<div style="text-align:center;margin:8px 0 2px"><span style="font-size:12.5px;font-weight:700;color:rgba(200,158,56,.92);letter-spacing:.4px">🌡️ Bienestar '+data.wellbeing+'/100'
+      +((data.prevWellbeing!=null)?' <span style="color:'+(data.wellbeing>=data.prevWellbeing?'#74c69d':'#e07a5f')+'">('+(data.wellbeing>=data.prevWellbeing?'↑ +'+(data.wellbeing-data.prevWellbeing):'↓ '+(data.wellbeing-data.prevWellbeing))+')</span>':'')
+      +'</span></div>'
+    : '';
 
   // Literary quote matched to dominant mood
   var _wq = _pickWeeklyQuote(data.dominantMood);
@@ -32206,8 +32292,12 @@ function pShowWeeklySummary(data){
     +'<div style="display:flex;gap:4px;margin-bottom:6px">'+timelineHtml+'</div>'
     // Trend
     +'<div style="display:flex;justify-content:center;margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:'+trendColor+';letter-spacing:.5px">'+trend+' '+trendLabel+'</span></div>'
+    // Wellbeing score
+    + wellbeingHtml
     // AI paragraph
     + aiParagraph
+    // Insight (patrón detectado)
+    + insightHtml
     // Literary quote
     + quoteHtml
     // Stats row
@@ -32264,6 +32354,8 @@ function pShowWeeklySummary(data){
         }
         return body;
       })()
+    // Intención sugerida para la próxima semana
+    + intentionHtml
     // Footer note
     +'<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.3);margin-bottom:18px">El 1° de cada mes recibís un análisis completo del mes 📋</div>'
     // CTA
@@ -36131,7 +36223,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1479;
+    var _BUILT_V = 1480;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
