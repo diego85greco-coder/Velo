@@ -25949,22 +25949,52 @@ async function pStripeDonate(amtUSD){
   }catch(e){ pToast('⚠️','Error de conexión, probá de nuevo'); }
 }
 
-function _checkStripeReturn(){
+// v1479: suscripción a Velo Plus con Stripe ($2.99/mes, recurrente). Tarjeta de
+// cualquier país o Apple/Google Pay, sin cuenta. Reutiliza la Edge Function
+// stripe-checkout (modo subscription). El webhook activa/renueva/cancela solo.
+async function pStripePlusSubscribe(){
+  var uid   = safeLS('get','velo_user_id') || '';
+  var email = safeLS('get','velo_user_email') || '';
+  if(!uid){ pToast('⚠️','Iniciá sesión para suscribirte a Velo Plus 🌿'); return; }
+  try{ pToast('💳','Preparando tu suscripción segura…'); }catch(_){}
   try{
-    var params = new URLSearchParams(window.location.search);
-    var status = params.get('stripe');
-    if(!status) return;
-    var pending = null; try{ pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null'); }catch(e){}
-    if(status === 'ok'){
-      pToast('💚','¡Gracias por apoyar a Velo! 🌿');
-      try{ if(pending && pending.amt) _recordDonation('donation', pending.amt); }catch(_){}
-      safeLS('del','velo_stripe_pending');
-    } else if(status === 'cancel'){
-      pToast('↩️','Pago cancelado. No se te cobró nada.');
-      safeLS('del','velo_stripe_pending');
+    var baseUrl = window.location.origin + window.location.pathname;
+    var resp = await fetch(SUPABASE_URL + '/functions/v1/stripe-checkout', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+SUPABASE_ANON },
+      body: JSON.stringify({ sessionType:'plus_subscription', veloUserId: uid, veloEmail: email, returnUrl: baseUrl, cancelUrl: baseUrl })
+    });
+    var data = await resp.json().catch(function(){ return {}; });
+    if(data && data.url){
+      safeLS('set','velo_stripe_pending', JSON.stringify({ type:'plus', ts:Date.now() }));
+      window.location.href = data.url;
+    } else {
+      pToast('⚠️', (data && data.error) || 'No se pudo iniciar la suscripción');
     }
-    try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
-  }catch(e){}
+  }catch(e){ pToast('⚠️','Error de conexión, probá de nuevo'); }
+}
+
+// v1479: cancela la suscripción de Velo Plus desde la app (sin ir a Stripe).
+// Marca cancel_at_period_end: conserva Plus hasta el final del período pago.
+async function pCancelStripePlus(){
+  var uid   = safeLS('get','velo_user_id') || '';
+  var email = safeLS('get','velo_user_email') || '';
+  if(!email){ pToast('⚠️','No pudimos identificar tu cuenta'); return; }
+  try{ pToast('⏳','Procesando tu cancelación…'); }catch(_){}
+  try{
+    var resp = await fetch(SUPABASE_URL + '/functions/v1/stripe-checkout', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+SUPABASE_ANON },
+      body: JSON.stringify({ sessionType:'cancel_plus', veloUserId: uid, veloEmail: email })
+    });
+    var data = await resp.json().catch(function(){ return {}; });
+    var ov = document.getElementById('plusManageOv'); if(ov) ov.remove();
+    if(data && data.ok){
+      pToast('💚','Suscripción cancelada. Seguís con Plus hasta el final del período que ya pagaste — no se te cobra de nuevo.');
+    } else {
+      pToast('ℹ️','No encontramos una suscripción activa con tu email. Si creés que es un error, escribinos y lo revisamos 🌿');
+    }
+  }catch(e){ pToast('⚠️','Error de conexión, probá de nuevo'); }
 }
 
 function pSetDonateAmt(n){
@@ -26058,7 +26088,7 @@ function pShowPlusModal(){
     +'<div style="text-align:center;margin-bottom:18px">'
     +'<div style="font-size:36px;margin-bottom:8px">⭐</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:var(--ink);margin-bottom:6px">Suscripción a Velo Plus</div>'
-    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5">Seguís teniendo <strong>todo lo del plan gratuito</strong> y sumás más contenido y beneficios, por <strong>$2.99 USD/mes</strong>.<br>Pago por PayPal · cancelás cuando quieras.</div>'
+    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5">Seguís teniendo <strong>todo lo del plan gratuito</strong> y sumás más contenido y beneficios, por <strong>$2.99 USD/mes</strong>.<br>Pago con tarjeta o Apple&nbsp;Pay · cancelás cuando quieras.</div>'
     +'</div>'
     +'<div style="margin-bottom:16px">'
     // ── Bloque GRATIS ──
@@ -26088,18 +26118,18 @@ function pShowPlusModal(){
     +'</ul></div>'
     +'</div>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:18px;border:1px solid var(--border2)">'
-    +'<p style="font-size:14px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD/mes · se renueva solo, cancelás cuando quieras desde PayPal. Tu suscripción ayuda a mantener Velo gratuito y accesible para todas las personas que lo necesitan 💚</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro con tarjeta o Apple&nbsp;Pay</strong> · $2.99 USD/mes · se renueva solo, cancelás cuando quieras desde tu perfil. Tu suscripción ayuda a mantener Velo gratuito y accesible para todas las personas que lo necesitan 💚</p>'
     +'</div>'
-    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme por $2.99/mes · PayPal</button>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pStripePlusSubscribe()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme por $2.99/mes</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove()">Ahora no</button>'
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
-// v1472: gestión/cancelación de la suscripción a Velo Plus. Una suscripción
-// recurrente de PayPal la cancela el propio suscriptor desde su cuenta (Pagos
-// automáticos) — lo llevamos ahí. Plus sigue activo hasta el fin del período pago.
+// v1479: gestión/cancelación de la suscripción a Velo Plus. La suscripción de
+// Stripe se cancela desde acá con un toque (cancel_at_period_end): Plus sigue
+// activo hasta el fin del período ya pagado y no se cobra de nuevo.
 function pManagePlusSubscription(){
   var ex = document.getElementById('plusManageOv'); if(ex) ex.remove();
   var ov = document.createElement('div');
@@ -26110,9 +26140,9 @@ function pManagePlusSubscription(){
     + '<div style="text-align:center;margin-bottom:16px">'
     + '<div style="font-size:34px;margin-bottom:8px">⭐</div>'
     + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Tu suscripción a Velo Plus</div>'
-    + '<div style="font-size:14px;color:var(--ink4);line-height:1.6">Podés cancelarla cuando quieras desde tu cuenta de PayPal, en <strong>Pagos automáticos</strong>. Seguís teniendo Plus hasta el final del período que ya pagaste — no se te cobra de nuevo.</div>'
+    + '<div style="font-size:14px;color:var(--ink4);line-height:1.6">Podés cancelarla cuando quieras con un toque. Seguís teniendo Plus hasta el final del período que ya pagaste — no se te cobra de nuevo.</div>'
     + '</div>'
-    + '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="window.open(\'https://www.paypal.com/myaccount/autopay/\',\'_blank\')" style="margin-bottom:10px">↗ Gestionar / cancelar en PayPal</button>'
+    + '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="if(confirm(\'¿Cancelar tu suscripción a Velo Plus? Seguirás con Plus hasta el final del período que ya pagaste.\')){pCancelStripePlus();}" style="margin-bottom:10px">Cancelar mi suscripción</button>'
     + '<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusManageOv\').remove()">Cerrar</button>'
     + '</div>';
   document.body.appendChild(ov);
@@ -33687,40 +33717,91 @@ async function pHeartMomento(id, btn){
 }
 
 // ── STRIPE RETURN CHECK ───────────────────────────────────────
+// v1479: unificado. Un solo _checkStripeReturn que decide según pending.type:
+//   'donation' → gracias por el aporte
+//   'plus'     → activa Velo Plus (suscripción Stripe)
+//   (otro)     → pago de sesión con profesional (flujo original)
 function _checkStripeReturn(){
-  var params = new URLSearchParams(window.location.search);
-  var stripeStatus = params.get('stripe');
-  var session = params.get('session_id') || params.get('stripe_session');
-  if(stripeStatus === 'cancel'){
-    pToast('ℹ️','Pago cancelado. Podés intentarlo de nuevo cuando quieras.');
-    window.history.replaceState({}, '', window.location.pathname);
-    return;
-  }
-  if(stripeStatus === 'ok' || session){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var stripeStatus = params.get('stripe');
+    var session = params.get('session_id') || params.get('stripe_session');
+    if(!stripeStatus && !session) return;
     var pending = null; try{ pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null'); }catch(e){}
-    if(pending){
-      // Assign a session ID if not present (needed for Supabase update in pEndSession)
-      if(!pending.id) pending.id = 'bk-stripe-'+Date.now();
-      pToast('✅','¡Pago confirmado! Tu sesión ha sido reservada 💚');
-      safeLS('set','velo_current_session', JSON.stringify(pending));
-      // Set postchat guardian so the review flow knows which professional to rate
-      safeLS('set','velo_postchat_guardian', JSON.stringify({id:pending.proId, name:pending.name}));
+    var ptype = (pending && pending.type) || '';
+
+    if(stripeStatus === 'cancel'){
+      pToast('↩️','Pago cancelado. No se te cobró nada.');
       safeLS('del','velo_stripe_pending');
-      // Persist to Supabase sessions table
-      _initSupabase();
-      if(sbClient){
-        var userId = safeLS('get','velo_user_email')||'guest';
-        var userName = safeLS('get','velo_user_name')||'Usuario';
-        sbClient.from('sessions').upsert({
-          id: pending.id, pro_id: pending.proId, pro_name: pending.name,
-          user_id: userId, user_name: userName,
-          status: 'confirmed', amount: pending.amount || 0,
-          created_at: new Date().toISOString()
-        }, {onConflict:'id'}).then(function(){}).catch(function(){});
-      }
-      window.history.replaceState({}, '', window.location.pathname);
-      setTimeout(function(){ pGoTo('session-room'); }, 1000);
+      try{ window.history.replaceState({}, '', window.location.pathname); }catch(e){}
+      return;
     }
+
+    if(stripeStatus === 'ok' || session){
+      if(ptype === 'donation'){
+        pToast('💚','¡Gracias por apoyar a Velo! 🌿');
+        try{ if(pending && pending.amt) _recordDonation('donation', pending.amt); }catch(_){}
+        safeLS('del','velo_stripe_pending');
+      } else if(ptype === 'plus'){
+        _activatePlusLocal('stripe');
+        safeLS('del','velo_stripe_pending');
+      } else if(pending){
+        // Pago de sesión con profesional (flujo original)
+        if(!pending.id) pending.id = 'bk-stripe-'+Date.now();
+        pToast('✅','¡Pago confirmado! Tu sesión ha sido reservada 💚');
+        safeLS('set','velo_current_session', JSON.stringify(pending));
+        safeLS('set','velo_postchat_guardian', JSON.stringify({id:pending.proId, name:pending.name}));
+        safeLS('del','velo_stripe_pending');
+        _initSupabase();
+        if(sbClient){
+          var userId = safeLS('get','velo_user_email')||'guest';
+          var userName = safeLS('get','velo_user_name')||'Usuario';
+          sbClient.from('sessions').upsert({
+            id: pending.id, pro_id: pending.proId, pro_name: pending.name,
+            user_id: userId, user_name: userName,
+            status: 'confirmed', amount: pending.amount || 0,
+            created_at: new Date().toISOString()
+          }, {onConflict:'id'}).then(function(){}).catch(function(){});
+        }
+        try{ window.history.replaceState({}, '', window.location.pathname); }catch(e){}
+        setTimeout(function(){ pGoTo('session-room'); }, 1000);
+        return;
+      } else {
+        safeLS('del','velo_stripe_pending');
+      }
+      try{ window.history.replaceState({}, '', window.location.pathname); }catch(e){}
+    }
+  }catch(e){}
+}
+
+// Activa Velo Plus en el cliente (localStorage + perfil Supabase) + email de
+// bienvenida. Lo usan tanto el retorno de Stripe como el de PayPal.
+function _activatePlusLocal(source){
+  safeLS('set','velo_plan','plus');
+  var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
+  var email = safeLS('get','velo_user_email');
+  if(email && !subs.find(function(s){ return s.email===email; })){
+    subs.push({ email:email, status:'active', ts:Date.now(), source: source||'' });
+    safeLS('set','velo_subscribers', JSON.stringify(subs));
+  }
+  _initSupabase();
+  if(sbClient){
+    var uid = safeLS('get','velo_user_id');
+    if(uid){
+      var upd = { role:'plus' };
+      try{ upd.plus_expires_at = new Date(Date.now()+33*864e5).toISOString(); }catch(e){}
+      sbClient.from('profiles').update(upd).eq('id', uid).then(function(){}).catch(function(){});
+    }
+  }
+  try{ _recordDonation('plus', 2.99); }catch(_){}
+  pToast('⭐','¡Velo Plus activado! Bienvenido/a 🌿');
+  var _email = safeLS('get','velo_user_email');
+  var _name  = safeLS('get','velo_user_name') || '';
+  if(_email){
+    fetch(SEND_EMAIL_PROXY, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email:_email, name:_name, type:'plus' })
+    }).catch(function(){});
   }
 }
 
@@ -33749,32 +33830,8 @@ function _checkPayPalReturn(){
   var pending = null; try{ pending = JSON.parse(safeLS('get','velo_pp_pending')||'null'); }catch(e){}
   var effectiveType = (pending && pending.type) || ppParam || 'donation';
   if(effectiveType === 'plus'){
-    // Activate Plus locally
-    safeLS('set','velo_plan','plus');
-    var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
-    var email = safeLS('get','velo_user_email');
-    if(email && !subs.find(function(s){ return s.email===email; })){
-      subs.push({ email:email, status:'active', ts:Date.now() });
-      safeLS('set','velo_subscribers', JSON.stringify(subs));
-    }
-    // Update Supabase profile role to 'plus'
-    _initSupabase();
-    if(sbClient){
-      var uid = safeLS('get','velo_user_id');
-      if(uid) sbClient.from('profiles').update({ role:'plus' }).eq('id', uid).then(function(){});
-    }
     safeLS('del','velo_pp_pending');
-    _recordDonation('plus', 2.99);
-    pToast('⭐','¡Velo Plus activado! Bienvenido/a 🌿');
-    // Send Plus welcome email (fire-and-forget)
-    var _ppEmail = safeLS('get','velo_user_email');
-    var _ppName  = safeLS('get','velo_user_name') || '';
-    if(_ppEmail){
-      fetch(SEND_EMAIL_PROXY, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email:_ppEmail, name:_ppName, type:'plus' })
-      }).catch(function(){});
-    }
+    _activatePlusLocal('paypal');
     window.history.replaceState({}, '', window.location.pathname);
   } else if(effectiveType === 'pro'){
     safeLS('set','velo_pro_approved','true');
@@ -36069,13 +36126,12 @@ document.addEventListener('DOMContentLoaded', function(){
 
 window.addEventListener('load', function(){
   _initSupabase();
-  _checkStripeReturn();
-  _checkPayPalReturn();
   try{ _checkStripeReturn(); }catch(_){}
+  try{ _checkPayPalReturn(); }catch(_){}
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1478;
+    var _BUILT_V = 1479;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

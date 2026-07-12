@@ -11,19 +11,79 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { amount, proName, sessionType, returnUrl, cancelUrl } = await req.json()
+    const body = await req.json()
+    const { amount, proName, sessionType, returnUrl, cancelUrl, veloUserId, veloEmail } = body
 
-    if (!amount || amount < 1) {
-      return new Response(JSON.stringify({ error: 'Monto inválido' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // ── Cancelar la suscripción a Velo Plus ──────────────────────────
+    // Marca cancel_at_period_end=true: la persona conserva Plus hasta el final
+    // del período que ya pagó, y no se le cobra de nuevo. El webhook baja el
+    // perfil a gratis cuando llega el fin del período (customer.subscription.deleted).
+    if (sessionType === 'cancel_plus') {
+      const email = String(veloEmail || '').trim().toLowerCase()
+      if (!email) return json({ error: 'Falta el email' }, 400)
+      const customers = await stripe.customers.list({ email, limit: 10 })
+      let cancelled = 0
+      for (const c of customers.data) {
+        const subs = await stripe.subscriptions.list({ customer: c.id, status: 'active', limit: 10 })
+        for (const s of subs.data) {
+          await stripe.subscriptions.update(s.id, { cancel_at_period_end: true })
+          cancelled++
+        }
+      }
+      return json({ ok: cancelled > 0, cancelled })
+    }
+
+    // ── Suscripción mensual a Velo Plus ($2.99/mes) ──────────────────
+    // El precio/nombre/ciclo se definen inline (price_data): no hace falta crear
+    // ningún producto ni "Price" en el panel de Stripe. Se renueva solo cada mes.
+    if (sessionType === 'plus_subscription') {
+      const meta = {
+        veloUserId: String(veloUserId || ''),
+        veloEmail:  String(veloEmail  || ''),
+        platform:   'velo',
+        kind:       'plus',
+      }
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Velo Plus ⭐',
+              description: 'Suscripción mensual · acceso ilimitado y beneficios extra. Cancelás cuando quieras.',
+            },
+            unit_amount: 299,
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        }],
+        client_reference_id: veloUserId || undefined,
+        customer_email: veloEmail || undefined,
+        metadata: meta,
+        subscription_data: { metadata: meta },
+        allow_promotion_codes: true,
+        success_url: (returnUrl || 'https://heyvelo.app') + '?stripe=ok&session_id={CHECKOUT_SESSION_ID}',
+        cancel_url:  (cancelUrl  || 'https://heyvelo.app') + '?stripe=cancel',
       })
+      return json({ url: session.url, id: session.id })
+    }
+
+    // ── Pago único: donación ("Apoyá a Velo") o sesión con profesional ──
+    if (!amount || amount < 1) {
+      return json({ error: 'Monto inválido' }, 400)
     }
 
     const isDonation = sessionType === 'donation'
@@ -48,8 +108,8 @@ Deno.serve(async (req) => {
       }],
       mode: 'payment',
       submit_type: isDonation ? 'donate' : 'pay',
-      success_url: (returnUrl || 'https://velo.app') + '?stripe=ok&session_id={CHECKOUT_SESSION_ID}',
-      cancel_url:  (cancelUrl  || 'https://velo.app') + '?stripe=cancel',
+      success_url: (returnUrl || 'https://heyvelo.app') + '?stripe=ok&session_id={CHECKOUT_SESSION_ID}',
+      cancel_url:  (cancelUrl  || 'https://heyvelo.app') + '?stripe=cancel',
       metadata: {
         proName:     proName     || '',
         sessionType: sessionType || 'paid',
@@ -58,15 +118,10 @@ Deno.serve(async (req) => {
       },
     })
 
-    return new Response(JSON.stringify({ url: session.url, id: session.id }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return json({ url: session.url, id: session.id })
 
   } catch (err) {
     console.error('Stripe error:', err)
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return json({ error: (err as Error).message }, 500)
   }
 })
