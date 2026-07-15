@@ -14647,7 +14647,7 @@ body.r-dark #homeDailyQuoteAuthor {
   0%,100% { box-shadow: 0 0 0 0 rgba(116,198,157,.42); }
   50%     { box-shadow: 0 0 0 12px rgba(116,198,157,0); }
 }
-.velo-pulse-glow { animation: velo-pulse-glow 2.6s ease-in-out infinite; }
+.velo-pulse-glow { box-shadow: 0 0 22px rgba(116,198,157,.30); } /* v1492: estático — el pulso resultaba molesto */
 
 /* Bounce tap — para pills y botones */
 @keyframes velo-bounce-tap {
@@ -15647,21 +15647,17 @@ body.r-dark .review-reply-btn {
    La clase rfx-pN se aplica por JS al card unificado (reflexión + pregunta).
    En modo claro el póster CONSERVA su fondo rico (los selectores con
    body:not(.r-dark) + clase ganan por especificidad a los overrides cream). */
-#homeReflexionDia > div.rfx-p0, body:not(.r-dark) #homeReflexionDia > div.rfx-p0 { background: linear-gradient(155deg,#191540 0%,#3b2a6b 52%,#221a4e 100%) !important; }
-#homeReflexionDia > div.rfx-p1, body:not(.r-dark) #homeReflexionDia > div.rfx-p1 { background: linear-gradient(155deg,#042e28 0%,#0d5a45 52%,#06382e 100%) !important; }
-#homeReflexionDia > div.rfx-p2, body:not(.r-dark) #homeReflexionDia > div.rfx-p2 { background: linear-gradient(155deg,#380d22 0%,#6b1e3f 52%,#45132a 100%) !important; }
-#homeReflexionDia > div.rfx-p3, body:not(.r-dark) #homeReflexionDia > div.rfx-p3 { background: linear-gradient(155deg,#06283a 0%,#0e4b66 52%,#083144 100%) !important; }
-#homeReflexionDia > div.rfx-p4, body:not(.r-dark) #homeReflexionDia > div.rfx-p4 { background: linear-gradient(155deg,#1c2808 0%,#3d5013 52%,#26360b 100%) !important; }
-#homeReflexionDia > div.rfx-p5, body:not(.r-dark) #homeReflexionDia > div.rfx-p5 { background: linear-gradient(155deg,#280a31 0%,#581d5b 52%,#381240 100%) !important; }
-#homeReflexionDia > div.rfx-p6, body:not(.r-dark) #homeReflexionDia > div.rfx-p6 { background: linear-gradient(155deg,#312208 0%,#664713 52%,#402e0c 100%) !important; }
-#homeReflexionDia > div.rfx-poster { border-color: rgba(255,255,255,.16) !important; }
+body.r-dark #homeReflexionDia > div.rfx-p0 { background: linear-gradient(155deg,#191540 0%,#3b2a6b 52%,#221a4e 100%) !important; }
+body.r-dark #homeReflexionDia > div.rfx-p1 { background: linear-gradient(155deg,#042e28 0%,#0d5a45 52%,#06382e 100%) !important; }
+body.r-dark #homeReflexionDia > div.rfx-p2 { background: linear-gradient(155deg,#380d22 0%,#6b1e3f 52%,#45132a 100%) !important; }
+body.r-dark #homeReflexionDia > div.rfx-p3 { background: linear-gradient(155deg,#06283a 0%,#0e4b66 52%,#083144 100%) !important; }
+body.r-dark #homeReflexionDia > div.rfx-p4 { background: linear-gradient(155deg,#1c2808 0%,#3d5013 52%,#26360b 100%) !important; }
+body.r-dark #homeReflexionDia > div.rfx-p5 { background: linear-gradient(155deg,#280a31 0%,#581d5b 52%,#381240 100%) !important; }
+body.r-dark #homeReflexionDia > div.rfx-p6 { background: linear-gradient(155deg,#312208 0%,#664713 52%,#402e0c 100%) !important; }
+body.r-dark #homeReflexionDia > div.rfx-poster { border-color: rgba(255,255,255,.16) !important; }
 /* Tipografía protagonista de póster */
 #homeReflexionDia > div.rfx-poster #homeDailyQuoteText { font-size: 20px !important; line-height: 1.55 !important; }
 /* Texto claro legible en modo claro (el fondo sigue siendo rico/oscuro) */
-body:not(.r-dark) #homeReflexionDia > div.rfx-poster .dq-label { color: rgba(255,222,140,.92) !important; }
-body:not(.r-dark) #homeReflexionDia > div.rfx-poster .dq-text { color: rgba(255,252,235,.94) !important; }
-body:not(.r-dark) #homeReflexionDia > div.rfx-poster #homeDailyQuoteText { color: rgba(255,246,214,.96) !important; }
-body:not(.r-dark) #homeReflexionDia > div.rfx-poster #homeDailyQuoteDay { color: rgba(255,255,255,.55) !important; }
 
 /* ── v1488: card "¿Sabías que…?" — modo claro ─────────────────────── */
 body:not(.r-dark) #homeDailyTip { background: linear-gradient(140deg,rgba(90,115,205,.12),rgba(90,115,205,.06)) !important; border-color: rgba(90,115,205,.35) !important; }
@@ -15672,3 +15668,12 @@ body:not(.r-dark) #homeDailyTip .tip-cta    { background: rgba(90,115,205,.14) !
 body:not(.r-dark) #homeDailyTip .tip-x      { color: rgba(0,0,0,.35) !important; }
 /* v1488: título "Explorá Velo" en modo claro */
 body:not(.r-dark) #homeNavTopStrip > div:first-child { color: rgba(130,95,15,.80) !important; }
+
+/* ── v1492: modo claro legible para los elementos nuevos de la card dorada ── */
+body:not(.r-dark) #dqTimerTxt { color: rgba(130,95,20,.90) !important; }
+/* Card "Registrá tus ánimos" — más protagonista (estático, sin pulso) */
+#homeMoodChip .mcc-wrap { border-width: 2px !important; }
+body.r-dark #homeMoodChip .mcc-wrap { border-color: rgba(140,220,175,.75) !important; background: linear-gradient(140deg,rgba(16,66,40,.97),rgba(10,42,52,.95)) !important; box-shadow: 0 6px 30px rgba(90,200,140,.26), inset 0 1px 0 rgba(255,255,255,.10) !important; }
+body:not(.r-dark) #homeMoodChip .mcc-wrap { border-color: rgba(60,150,100,.65) !important; box-shadow: 0 6px 24px rgba(74,160,110,.25) !important; }
+/* Sheet "Activar notificaciones en iPhone" — fondo sólido en modo claro */
+body:not(.r-dark) #iosPushInstrOv > div { background: #f7f2e4 !important; }

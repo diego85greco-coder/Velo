@@ -5900,13 +5900,16 @@ function _renderQuoteReactRow(counts, mine){
   if(!row) return;
   row.style.display = 'flex';
   row._counts = counts; row._mine = mine;
+  var _lt = !document.body.classList.contains('r-dark'); // v1492: en claro la card es crema
+  var _onCss  = _lt ? 'background:rgba(190,145,35,.18);border:1.5px solid rgba(190,145,35,.65);color:rgba(110,80,10,.95)'
+                    : 'background:rgba(255,215,110,.22);border:1.5px solid rgba(255,215,110,.65);color:rgba(255,235,170,.98)';
+  var _offCss = _lt ? 'background:rgba(0,0,0,.05);border:1px solid rgba(140,105,25,.32);color:rgba(95,70,15,.85)'
+                    : 'background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.72)';
   row.innerHTML = _RFX_REACTS.map(function(rx){
     var on = !!mine[rx.k];
     var n = counts[rx.k]||0;
     return '<button onclick="pReactQuote(\''+rx.k+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:20px;cursor:pointer;font-family:Jost,sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;-webkit-tap-highlight-color:transparent;transition:transform .12s;'
-      + (on
-        ? 'background:rgba(255,215,110,.22);border:1.5px solid rgba(255,215,110,.65);color:rgba(255,235,170,.98)'
-        : 'background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.72)')
+      + (on ? _onCss : _offCss)
       + '">'+rx.e+' '+rx.lbl+(n>0 ? ' · '+n : '')+'</button>';
   }).join('');
 }
@@ -7091,12 +7094,14 @@ function _renderDqStreak(streak, week){
     if(streak >= 1){ b.style.display = 'inline-block'; b.textContent = '🔥 '+streak+' día'+(streak!==1?'s':''); }
     else b.style.display = 'none';
   });
+  var _wkLt = !document.body.classList.contains('r-dark'); // v1492: modo claro legible
   var chipsHtml = (week||[]).map(function(c){
     var fill = c.done
       ? 'background:linear-gradient(90deg,#e9b949,#f0cf6a)'
-      : 'background:rgba(255,255,255,.10)' + (c.today ? ';box-shadow:0 0 0 1.5px rgba(233,185,73,.55)' : '');
+      : 'background:'+(_wkLt?'rgba(0,0,0,.10)':'rgba(255,255,255,.10)') + (c.today ? ';box-shadow:0 0 0 1.5px rgba(233,185,73,.55)' : '');
+    var _lblCol = c.done ? (_wkLt?'rgba(150,110,20,.95)':'rgba(240,207,106,.9)') : (_wkLt?'rgba(70,55,20,.50)':'rgba(255,255,255,.38)');
     return '<div style="flex:1;min-width:0;text-align:center">'
-      + '<div style="font-size:8.5px;font-weight:800;color:'+(c.done?'rgba(240,207,106,.9)':'rgba(255,255,255,.38)')+';font-family:Jost,sans-serif;letter-spacing:.4px;margin-bottom:3px">'+c.lbl+'</div>'
+      + '<div style="font-size:8.5px;font-weight:800;color:'+_lblCol+';font-family:Jost,sans-serif;letter-spacing:.4px;margin-bottom:3px">'+c.lbl+'</div>'
       + '<div style="height:5px;border-radius:3px;'+fill+'"></div>'
       + '</div>';
   }).join('');
@@ -7194,14 +7199,15 @@ async function _fetchDailyCount(){
           var rows = ((pv && pv.data)||[]).filter(function(x){ return x.response_text && x.response_text.trim(); });
           if(rows.length){
             tz.style.display = 'flex';
+            var _tzLt = !document.body.classList.contains('r-dark'); // v1492
             tz.innerHTML = rows.map(function(x){
               var txt = x.response_text.trim();
               if(txt.length > 64) txt = txt.slice(0,64)+'…';
               var who = ((x.user_name||'Alguien').split(' ')[0]) || 'Alguien';
-              return '<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.045);border:1px solid rgba(200,158,56,.16);border-radius:12px;padding:8px 12px">'
+              return '<div style="display:flex;align-items:center;gap:8px;background:'+(_tzLt?'rgba(0,0,0,.04)':'rgba(255,255,255,.045)')+';border:1px solid '+(_tzLt?'rgba(140,105,25,.25)':'rgba(200,158,56,.16)')+';border-radius:12px;padding:8px 12px">'
                 + '<span style="font-size:15px;flex-shrink:0">'+(x.mood_emoji||'💬')+'</span>'
-                + '<span style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:11.5px;color:rgba(255,255,255,.80);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">&ldquo;'+_escHtml(txt)+'&rdquo;</span>'
-                + '<span style="flex-shrink:0;font-family:Jost,sans-serif;font-size:10px;color:rgba(200,158,56,.70);font-weight:700">'+_escHtml(who)+'</span>'
+                + '<span style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:11.5px;color:'+(_tzLt?'rgba(60,45,10,.85)':'rgba(255,255,255,.80)')+';font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">&ldquo;'+_escHtml(txt)+'&rdquo;</span>'
+                + '<span style="flex-shrink:0;font-family:Jost,sans-serif;font-size:10px;color:'+(_tzLt?'rgba(140,105,25,.85)':'rgba(200,158,56,.70)')+';font-weight:700">'+_escHtml(who)+'</span>'
                 + '</div>';
             }).join('');
           } else tz.style.display = 'none';
@@ -7654,9 +7660,10 @@ function _renderDailyFeed(responses){
   if(!others.length){
     if(_pulseRowEl) _pulseRowEl.style.display = 'none';
     if(_dotsEl){ _dotsEl.style.display = 'none'; _dotsEl.innerHTML = ''; }
-    feedEl.innerHTML = '<div style="text-align:center;padding:16px 14px;border:1.5px dashed rgba(200,158,56,.30);border-radius:14px;background:rgba(200,158,56,.05)">'
-      + '<div style="font-size:13.5px;font-weight:700;color:rgba(255,235,180,.90);font-family:Jost,sans-serif">Fuiste la primera persona en responder hoy 💛</div>'
-      + '<div style="font-size:11.5px;color:rgba(255,255,255,.48);font-family:Jost,sans-serif;margin-top:4px;line-height:1.5">Cuando alguien más comparta su respuesta, la vas a ver acá</div>'
+    var _fbLt = !document.body.classList.contains('r-dark'); // v1492: modo claro legible
+    feedEl.innerHTML = '<div style="text-align:center;padding:16px 14px;border:1.5px dashed '+(_fbLt?'rgba(160,120,30,.42)':'rgba(200,158,56,.30)')+';border-radius:14px;background:'+(_fbLt?'rgba(190,145,35,.08)':'rgba(200,158,56,.05)')+'">'
+      + '<div style="font-size:13.5px;font-weight:700;color:'+(_fbLt?'rgba(120,88,15,.95)':'rgba(255,235,180,.90)')+';font-family:Jost,sans-serif">Fuiste la primera persona en responder hoy 💛</div>'
+      + '<div style="font-size:11.5px;color:'+(_fbLt?'rgba(80,65,30,.68)':'rgba(255,255,255,.48)')+';font-family:Jost,sans-serif;margin-top:4px;line-height:1.5">Cuando alguien más comparta su respuesta, la vas a ver acá</div>'
       + '</div>';
     if(btnEl) btnEl.innerHTML = '';
     return;
@@ -20996,7 +21003,7 @@ async function pRenderVibesHome(){
         } else if(kind === 'private'){
           emptyCta = _vibePlus
             ? '<button onclick="pCreateGroupPrompt(\'private\')" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(155,120,220,.20),rgba(120,90,180,.18));border:1.5px dashed rgba(155,120,220,.62);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">🔮 Creá tu primer grupo privado<br><span style="font-size:11px;font-weight:600;color:rgba(215,200,255,.75)">Invitá a tus favoritos a compartir con vos</span></button>'
-            : '<button onclick="pShowPlusModal()" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(200,165,100,.20),rgba(155,120,220,.16));border:1.5px solid rgba(200,165,100,.55);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.5">🔒 Grupos privados · Velo Plus ⭐<br><span style="font-size:11px;font-weight:600;color:rgba(235,220,180,.82)">Armá círculos privados e invitá a tus favoritos — desbloqueá con Plus</span></button>';
+            : '<button onclick="pShowPlusModal()" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(200,165,100,.20),rgba(155,120,220,.16));border:1.5px solid rgba(200,165,100,.55);border-radius:14px;color:'+(document.body.classList.contains('r-dark')?'#fff':'#4a3208')+';font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.5">🔒 Grupos privados · Velo Plus ⭐<br><span style="font-size:11px;font-weight:600;color:'+(document.body.classList.contains('r-dark')?'rgba(235,220,180,.82)':'rgba(110,85,25,.88)')+'">Armá círculos privados e invitá a tus favoritos — desbloqueá con Plus</span></button>';
         } else {
           emptyCta = '<div style="padding:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(180,220,195,.20);border-radius:14px;text-align:center;font-size:12.5px;color:rgba(200,230,215,.55);font-style:italic">Nada por ahora</div>';
         }
@@ -21086,7 +21093,7 @@ async function pRenderVibesHome(){
           savedHtml = '<div style="margin-bottom:22px">'
             + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,215,80,.70);margin-bottom:4px">🌟 MIS MOMENTOS GUARDADOS</div>'
             + '<div style="font-size:11.5px;color:rgba(230,210,140,.55);margin-bottom:10px;font-style:italic">Cuando subas un momento, marcá "Guardar en mi historial" para verlo acá</div>'
-            + '<div style="padding:20px;background:rgba(255,215,80,.06);border:1px dashed rgba(255,215,80,.28);border-radius:14px;text-align:center;font-size:12.5px;color:rgba(230,210,140,.62);font-style:italic">Sin momentos guardados todavía</div>'
+            + '<div style="padding:20px;background:rgba(255,215,80,.06);border:1px dashed '+(document.body.classList.contains('r-dark')?'rgba(255,215,80,.28)':'rgba(160,120,30,.40)')+';border-radius:14px;text-align:center;font-size:12.5px;color:'+(document.body.classList.contains('r-dark')?'rgba(230,210,140,.62)':'rgba(115,90,25,.80)')+';font-style:italic">Sin momentos guardados todavía</div>'
           + '</div>';
         }
         body.insertAdjacentHTML('beforeend', savedHtml);
@@ -36670,7 +36677,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1491;
+    var _BUILT_V = 1492;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
