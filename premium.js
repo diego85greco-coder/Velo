@@ -20796,7 +20796,7 @@ async function _renderHomeVibesCard(){
   // v1484: render INSTANTÁNEO desde caché al abrir la app (stale-while-revalidate).
   // Muestra la última versión conocida al toque y la refresca por detrás con datos
   // frescos — el widget ya no queda invisible esperando la red en arranque frío.
-  var _hvCacheKey = 'velo_home_vibes_html_' + (safeLS('get','velo_user_id')||'anon');
+  var _hvCacheKey = 'velo_home_vibes_html2_' + (safeLS('get','velo_user_id')||'anon'); // v1493: _2 invalida el caché del diseño viejo
   var _hvHadCache = false;
   if(!wrap.innerHTML || !wrap.innerHTML.trim()){
     try{
@@ -20887,45 +20887,48 @@ async function _renderHomeVibesCard(){
     // v1444: cadena de grupos CON contenido, en orden — para encadenar el carrusel
     // (al terminar las historias de un grupo, seguir con el siguiente).
     try{ _vibesOpenChain = visibleTiles.filter(function(t){ return t.isGroup && t.count > 0; }).map(function(t){ return {id:t.id, title:t.title, emoji:t.emoji}; }); }catch(_){ _vibesOpenChain = []; }
+    // v1493: rediseño ESTILO HISTORIAS — círculos con anillo de color (como IG).
+    // Anillo degradado = hay contenido sin ver · gris = visto · violeta = privado
+    // · dorado = instantáneos. Más fino y profesional que las fichas rectangulares.
+    var _vLight = !document.body.classList.contains('r-dark');
+    var _ringInner = _vLight ? '#fbf8ef' : '#0c2013'; // separación anillo↔contenido (matchea el fondo del widget)
     var thumbsHtml = visibleTiles.map(function(t){
       var isSeen = t.coverVibeId ? !!_seen[t.coverVibeId] : false;
       var hasCover = !!t.coverUrl;
       var isPrivate = t.kind === 'private';
-      var borderCol = isPrivate ? 'rgba(155,120,220,.95)' : (t.isInstant ? 'rgba(220,170,60,.85)' : 'rgba(116,198,157,.72)');
-      var borderWidth = isPrivate ? '3px' : '2px';
-      var opa = isSeen ? '.65' : '1';
-      var filt = isSeen ? 'grayscale(.85)' : 'none';
-      var badge = isPrivate ? '<span style="position:absolute;top:4px;right:4px;background:rgba(155,120,220,.98);color:#fff;font-family:Jost,sans-serif;font-size:10px;padding:2px 5px;border-radius:100px;box-shadow:0 2px 5px rgba(0,0,0,.4);z-index:3">🔒</span>' : '';
+      var ring = isSeen
+        ? (_vLight ? 'rgba(0,0,0,.16)' : 'rgba(255,255,255,.24)')
+        : isPrivate ? 'linear-gradient(140deg,#a988e8,#6a4fc0)'
+        : t.isInstant ? 'linear-gradient(140deg,#f0cf6a,#c8892a)'
+        : 'linear-gradient(140deg,#74c69d 5%,#e9b949 95%)';
+      var opa = isSeen ? '.72' : '1';
+      var filt = isSeen ? 'grayscale(.8)' : 'none';
+      var badge = isPrivate ? '<span style="position:absolute;bottom:-1px;right:-1px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:#8a68d8;border:2px solid '+_ringInner+';color:#fff;font-size:9px;border-radius:50%;z-index:3">🔒</span>' : '';
       var onclickAction = t.isInstant ? ('pOpenInstantVibe(\''+_escHtml(t.coverVibeId)+'\')') : ('pOpenVibeGroup(\''+_escHtml(t.id)+'\')');
-      // Contenido visual: portada real o gradient con emoji grande
       var visual;
       if(hasCover && _vibeIsVideoUrl(t.coverUrl)){
-        // Portada de video: primer frame via preload=metadata + play chip
-        visual = '<video src="'+_escHtml(t.coverUrl)+'#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none"></video><span style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;padding:2px 5px;border-radius:100px;z-index:3">▶</span>';
+        visual = '<video src="'+_escHtml(t.coverUrl)+'#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none"></video>';
       } else if(hasCover){
         visual = '<img data-vibe-src="'+_escHtml(t.coverUrl)+'" style="width:100%;height:100%;object-fit:cover;display:block">';
       } else {
-        // Colores del fondo del tile según el tema (light/dark) — se resuelven via CSS
         var emptyCls = isPrivate ? 'vibes-tile-empty--private' : (t.isInstant ? 'vibes-tile-empty--instant' : 'vibes-tile-empty--group');
-        visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px">'+_escHtml(t.emoji)+'</div>';
+        visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:26px">'+_escHtml(t.emoji)+'</div>';
       }
-      return '<div class="vibes-tile-wrap" style="flex:0 0 74px;display:flex;flex-direction:column;align-items:stretch;gap:5px">'
-        + '<button onclick="'+onclickAction+'" style="width:74px;height:88px;padding:0;background:#000;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+filt+';box-shadow:0 3px 10px rgba(0,0,0,.20);display:block">'
+      return '<div class="vibes-tile-wrap" style="flex:0 0 68px;display:flex;flex-direction:column;align-items:center;gap:6px">'
+        + '<button onclick="'+onclickAction+'" style="width:64px;height:64px;padding:2.5px;border:none;border-radius:50%;background:'+ring+';cursor:pointer;position:relative;display:block;opacity:'+opa+';filter:'+filt+';-webkit-tap-highlight-color:transparent">'
+          + '<div style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:2.5px solid '+_ringInner+';background:'+(_vLight?'#eef0e4':'#122a1c')+';display:flex;align-items:center;justify-content:center;box-sizing:border-box">'+visual+'</div>'
           + badge
-          + visual
         + '</button>'
-        + '<div class="vibes-tile-label" style="text-align:center;font-family:Jost,sans-serif;font-size:10px;font-weight:800;line-height:1.15;letter-spacing:.15px;padding:0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:24px">'+_escHtml(t.title)+'</div>'
+        + '<div class="vibes-tile-label" style="text-align:center;font-family:Jost,sans-serif;font-size:10px;font-weight:700;line-height:1.15;letter-spacing:.1px;padding:0 1px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:24px;width:68px">'+_escHtml(t.title)+'</div>'
       + '</div>';
     }).join('');
     // Fallback: sin ni un grupo (raro)
     if(!thumbsHtml){
       thumbsHtml = '<div style="flex:1;padding:22px 16px;background:linear-gradient(135deg,rgba(255,235,180,.35),rgba(255,215,140,.25));border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic">Aún nadie publicó momentos hoy — sé el primero ✨</div>';
     } else {
-      thumbsHtml += '<div class="vibes-tile-wrap" style="flex:0 0 54px;display:flex;flex-direction:column;align-items:stretch;gap:5px">'
-        + '<button onclick="pOpenVibes()" class="home-vibes-widget__see-all" style="width:54px;height:88px;padding:0;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Jost,sans-serif;font-size:20px;font-weight:900">'
-          + '→'
-        + '</button>'
-        + '<div class="vibes-tile-label" style="text-align:center;font-family:Jost,sans-serif;font-size:10px;font-weight:800;line-height:1.15;padding:0 2px;max-height:24px">Ver todos</div>'
+      thumbsHtml += '<div class="vibes-tile-wrap" style="flex:0 0 68px;display:flex;flex-direction:column;align-items:center;gap:6px">'
+        + '<button onclick="pOpenVibes()" style="width:64px;height:64px;padding:0;border:2px dashed '+(_vLight?'rgba(60,130,90,.55)':'rgba(150,220,180,.5)')+';background:transparent;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Jost,sans-serif;font-size:20px;font-weight:900;color:'+(_vLight?'rgba(40,110,70,.85)':'rgba(170,235,200,.9)')+';-webkit-tap-highlight-color:transparent">→</button>'
+        + '<div class="vibes-tile-label" style="text-align:center;font-family:Jost,sans-serif;font-size:10px;font-weight:700;line-height:1.15;padding:0 1px;max-height:24px;width:68px">Ver todos</div>'
       + '</div>';
     }
     wrap.style.display = 'block';
@@ -20938,7 +20941,6 @@ async function _renderHomeVibesCard(){
           + '<span class="home-vibes-widget__title">Vibes de hoy</span>'
         + '</button>'
         + '<div style="display:flex;align-items:center;gap:6px;min-width:0">'
-          + '<span class="home-vibes-widget__hint-top">Para publicar en más grupos 👉</span>'
           + '<button onclick="pOpenVibes()" class="home-vibes-widget__all" style="flex-shrink:0">Ver todos →</button>'
         + '</div>'
       + '</div>'
@@ -36677,7 +36679,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1492;
+    var _BUILT_V = 1493;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

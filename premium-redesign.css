@@ -15677,3 +15677,55 @@ body.r-dark #homeMoodChip .mcc-wrap { border-color: rgba(140,220,175,.75) !impor
 body:not(.r-dark) #homeMoodChip .mcc-wrap { border-color: rgba(60,150,100,.65) !important; box-shadow: 0 6px 24px rgba(74,160,110,.25) !important; }
 /* Sheet "Activar notificaciones en iPhone" — fondo sólido en modo claro */
 body:not(.r-dark) #iosPushInstrOv > div { background: #f7f2e4 !important; }
+
+/* ── v1493: widget Vibes estilo historias — contenedor y CTA refinados ──── */
+body:not(.r-dark) .home-vibes-widget {
+  background: linear-gradient(165deg, #ffffff 0%, #f8f6ec 100%) !important;
+  border: 1px solid rgba(60, 130, 90, 0.26) !important;
+  box-shadow: 0 6px 22px rgba(60, 130, 90, 0.10), 0 1px 0 rgba(255,255,255,1) inset !important;
+}
+body.r-dark .home-vibes-widget {
+  background: linear-gradient(165deg, rgba(10,30,19,.96), rgba(7,22,14,.97)) !important;
+  border: 1px solid rgba(116,198,157,.26) !important;
+}
+/* CTA: pastilla redondeada, gradiente sobrio, texto blanco en ambos temas */
+.home-vibes-widget__cta,
+.home-vibes-widget__cta span {
+  color: #ffffff !important;
+}
+.home-vibes-widget__cta {
+  border-radius: 100px !important;
+  padding: 12px 18px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: .3px !important;
+  border: none !important;
+}
+body:not(.r-dark) .home-vibes-widget__cta {
+  background: linear-gradient(135deg, #4d9e74, #37795a) !important;
+  box-shadow: 0 4px 16px rgba(60, 140, 100, 0.30) !important;
+}
+body.r-dark .home-vibes-widget__cta,
+body.r-dark .home-vibes-widget__cta span {
+  color: #071409 !important;
+}
+body.r-dark .home-vibes-widget__cta {
+  background: linear-gradient(135deg, #86d4ab, #5cb287) !important;
+  box-shadow: 0 4px 18px rgba(90, 190, 135, 0.28) !important;
+}
+/* El "+" del CTA en un circulito sutil */
+.home-vibes-widget__cta-plus {
+  background: rgba(255,255,255,.22) !important;
+  border-radius: 50% !important;
+  width: 22px !important; height: 22px !important;
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  font-size: 15px !important; line-height: 1 !important;
+}
+body.r-dark .home-vibes-widget__cta-plus { background: rgba(0,0,0,.14) !important; }
+/* Emoji-tiles vacíos dentro del círculo: fondos suaves por tipo */
+body:not(.r-dark) .vibes-tile-empty--group   { background: linear-gradient(150deg,#e8f2e6,#d9e9d8) !important; }
+body:not(.r-dark) .vibes-tile-empty--instant { background: linear-gradient(150deg,#f7edd2,#efdfb4) !important; }
+body:not(.r-dark) .vibes-tile-empty--private { background: linear-gradient(150deg,#ece4f8,#ded2f2) !important; }
+body.r-dark .vibes-tile-empty--group   { background: linear-gradient(150deg,#15382a,#0e2a1c) !important; }
+body.r-dark .vibes-tile-empty--instant { background: linear-gradient(150deg,#3a2f10,#2a2008) !important; }
+body.r-dark .vibes-tile-empty--private { background: linear-gradient(150deg,#2c2148,#201636) !important; }
