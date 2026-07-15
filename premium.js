@@ -7597,12 +7597,24 @@ function _renderDailyFeed(responses){
   var others = responses.filter(function(r){
     return r.user_id !== myUid2 && _dqHidden.indexOf(String(r.id)) === -1 && !_isBlocked(r.user_id);
   });
+  // v1486: si el único que respondió soy yo, todo el bloque de comunidad
+  // (pulso + feed + dots) se reemplaza por UN solo mensaje claro — antes
+  // convivían "1 persona compartió hoy" (yo) y "la comunidad aún no
+  // compartió" + cajas vacías: contradictorio y confuso.
+  var _pulseRowEl = document.querySelector('#homeDailyQOpen .dq-pulse-row');
+  var _dotsEl = document.getElementById('dqDots');
   if(!others.length){
-    var _dqEmCl=!document.body.classList.contains('r-dark')?'rgba(40,75,55,.55)':'rgba(255,255,255,.30)';
-    feedEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:14px;color:'+_dqEmCl+';font-family:Jost,sans-serif;font-style:italic">La comunidad aún no compartió hoy 🌱</div>';
+    if(_pulseRowEl) _pulseRowEl.style.display = 'none';
+    if(_dotsEl){ _dotsEl.style.display = 'none'; _dotsEl.innerHTML = ''; }
+    feedEl.innerHTML = '<div style="text-align:center;padding:16px 14px;border:1.5px dashed rgba(200,158,56,.30);border-radius:14px;background:rgba(200,158,56,.05)">'
+      + '<div style="font-size:13.5px;font-weight:700;color:rgba(255,235,180,.90);font-family:Jost,sans-serif">Fuiste la primera persona en responder hoy 💛</div>'
+      + '<div style="font-size:11.5px;color:rgba(255,255,255,.48);font-family:Jost,sans-serif;margin-top:4px;line-height:1.5">Cuando alguien más comparta su respuesta, la vas a ver acá</div>'
+      + '</div>';
     if(btnEl) btnEl.innerHTML = '';
     return;
   }
+  if(_pulseRowEl) _pulseRowEl.style.display = 'flex';
+  if(_dotsEl) _dotsEl.style.display = '';
   var _dqPrevL = feedEl.scrollLeft;
   feedEl.innerHTML = _buildDqCards(others.slice(0,3));
   _initCarouselDots('homeDailyQFeed','dqDots');
@@ -36603,7 +36615,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1485;
+    var _BUILT_V = 1486;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
