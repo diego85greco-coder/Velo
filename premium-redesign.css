@@ -15642,3 +15642,23 @@ body.r-dark .review-reply-btn {
   background: rgba(116,198,157,.20) !important;
   border-color: rgba(116,198,157,.60) !important;
 }
+
+/* ── v1485: Reflexión del día — PÓSTER con degradado que rota por día ─────
+   La clase rfx-pN se aplica por JS al card unificado (reflexión + pregunta).
+   En modo claro el póster CONSERVA su fondo rico (los selectores con
+   body:not(.r-dark) + clase ganan por especificidad a los overrides cream). */
+#homeReflexionDia > div.rfx-p0, body:not(.r-dark) #homeReflexionDia > div.rfx-p0 { background: linear-gradient(155deg,#191540 0%,#3b2a6b 52%,#221a4e 100%) !important; }
+#homeReflexionDia > div.rfx-p1, body:not(.r-dark) #homeReflexionDia > div.rfx-p1 { background: linear-gradient(155deg,#042e28 0%,#0d5a45 52%,#06382e 100%) !important; }
+#homeReflexionDia > div.rfx-p2, body:not(.r-dark) #homeReflexionDia > div.rfx-p2 { background: linear-gradient(155deg,#380d22 0%,#6b1e3f 52%,#45132a 100%) !important; }
+#homeReflexionDia > div.rfx-p3, body:not(.r-dark) #homeReflexionDia > div.rfx-p3 { background: linear-gradient(155deg,#06283a 0%,#0e4b66 52%,#083144 100%) !important; }
+#homeReflexionDia > div.rfx-p4, body:not(.r-dark) #homeReflexionDia > div.rfx-p4 { background: linear-gradient(155deg,#1c2808 0%,#3d5013 52%,#26360b 100%) !important; }
+#homeReflexionDia > div.rfx-p5, body:not(.r-dark) #homeReflexionDia > div.rfx-p5 { background: linear-gradient(155deg,#280a31 0%,#581d5b 52%,#381240 100%) !important; }
+#homeReflexionDia > div.rfx-p6, body:not(.r-dark) #homeReflexionDia > div.rfx-p6 { background: linear-gradient(155deg,#312208 0%,#664713 52%,#402e0c 100%) !important; }
+#homeReflexionDia > div.rfx-poster { border-color: rgba(255,255,255,.16) !important; }
+/* Tipografía protagonista de póster */
+#homeReflexionDia > div.rfx-poster #homeDailyQuoteText { font-size: 20px !important; line-height: 1.55 !important; }
+/* Texto claro legible en modo claro (el fondo sigue siendo rico/oscuro) */
+body:not(.r-dark) #homeReflexionDia > div.rfx-poster .dq-label { color: rgba(255,222,140,.92) !important; }
+body:not(.r-dark) #homeReflexionDia > div.rfx-poster .dq-text { color: rgba(255,252,235,.94) !important; }
+body:not(.r-dark) #homeReflexionDia > div.rfx-poster #homeDailyQuoteText { color: rgba(255,246,214,.96) !important; }
+body:not(.r-dark) #homeReflexionDia > div.rfx-poster #homeDailyQuoteDay { color: rgba(255,255,255,.55) !important; }

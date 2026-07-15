@@ -5821,10 +5821,89 @@ var _dailyQuoteFallbacks = [
   { text: 'Cada momento es una oportunidad de florecer.', author: 'Rainer Maria Rilke' }
 ];
 
+// ── v1485: REACCIONES A LA REFLEXIÓN DEL DÍA ──────────────────────
+// 🌱 me tocó · 💭 me hizo pensar · 💪 me dio fuerza — contadores en vivo
+// (tabla quote_reactions; si aún no existe, la fila se oculta sola).
+var _RFX_REACTS = [
+  { e:'🌱', k:'toco',   lbl:'Me tocó' },
+  { e:'💭', k:'pensar', lbl:'Me hizo pensar' },
+  { e:'💪', k:'fuerza', lbl:'Me dio fuerza' }
+];
+async function _loadQuoteReactions(){
+  var row = document.getElementById('rfxReactRow');
+  if(!row) return;
+  _initSupabase();
+  if(!sbClient) return;
+  var today = _dateKey();
+  var uid = safeLS('get','velo_user_id')||'';
+  var counts = {toco:0,pensar:0,fuerza:0}, mine = {};
+  try{
+    var r = await sbClient.from('quote_reactions').select('emoji,user_id').eq('date_key', today);
+    if(r.error){ row.style.display = 'none'; return; } // tabla aún no creada
+    (r.data||[]).forEach(function(x){
+      if(counts[x.emoji] != null) counts[x.emoji]++;
+      if(uid && x.user_id === uid) mine[x.emoji] = true;
+    });
+  }catch(e){ return; }
+  _renderQuoteReactRow(counts, mine);
+}
+function _renderQuoteReactRow(counts, mine){
+  var row = document.getElementById('rfxReactRow');
+  if(!row) return;
+  row.style.display = 'flex';
+  row._counts = counts; row._mine = mine;
+  row.innerHTML = _RFX_REACTS.map(function(rx){
+    var on = !!mine[rx.k];
+    var n = counts[rx.k]||0;
+    return '<button onclick="pReactQuote(\''+rx.k+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:20px;cursor:pointer;font-family:Jost,sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;-webkit-tap-highlight-color:transparent;transition:transform .12s;'
+      + (on
+        ? 'background:rgba(255,215,110,.22);border:1.5px solid rgba(255,215,110,.65);color:rgba(255,235,170,.98)'
+        : 'background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.72)')
+      + '">'+rx.e+' '+rx.lbl+(n>0 ? ' · '+n : '')+'</button>';
+  }).join('');
+}
+async function pReactQuote(k){
+  var row = document.getElementById('rfxReactRow');
+  if(!row) return;
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id')||'';
+  if(!sbClient || !uid){ pToast('🌿','Iniciá sesión para reaccionar'); return; }
+  var counts = row._counts||{toco:0,pensar:0,fuerza:0};
+  var mine   = row._mine||{};
+  var today  = _dateKey();
+  if(mine[k]){
+    // Quitar mi reacción (toggle off) — optimista
+    mine[k] = false; counts[k] = Math.max(0,(counts[k]||1)-1);
+    _renderQuoteReactRow(counts, mine);
+    try{ await sbClient.from('quote_reactions').delete().eq('date_key',today).eq('user_id',uid).eq('emoji',k); }catch(e){}
+  } else {
+    mine[k] = true; counts[k] = (counts[k]||0)+1;
+    _renderQuoteReactRow(counts, mine);
+    try{
+      var r = await sbClient.from('quote_reactions').insert({ date_key:today, user_id:uid, emoji:k });
+      if(r && r.error && String(r.error.code) !== '23505'){
+        // tabla faltante u otro error → revertir el optimista
+        mine[k] = false; counts[k] = Math.max(0,(counts[k]||1)-1);
+        _renderQuoteReactRow(counts, mine);
+      }
+    }catch(e){}
+  }
+}
+
 async function _loadDailyMotivationalQuote(){
   var textEl   = document.getElementById('homeDailyQuoteText');
   var authorEl = document.getElementById('homeDailyQuoteAuthor');
   if(!textEl) return;
+  // v1485: PÓSTER del día — cada día un degradado rico distinto (7 paletas)
+  try{
+    var _rfxCard = document.querySelector('#homeReflexionDia > div');
+    if(_rfxCard && _rfxCard.className.indexOf('rfx-poster') < 0){
+      var _rfxIdx = Math.floor((Date.now() - new Date().getTimezoneOffset()*60000) / 86400000) % 7;
+      _rfxCard.className = (_rfxCard.className ? _rfxCard.className + ' ' : '') + 'rfx-poster rfx-p' + _rfxIdx;
+    }
+  }catch(_){}
+  // v1485: reacciones de la comunidad a la reflexión (no bloquea el render)
+  try{ setTimeout(function(){ _loadQuoteReactions(); }, 400); }catch(_){}
   // Set day label for quote card
   var _qDayEl = document.getElementById('homeDailyQuoteDay');
   if(_qDayEl && !_qDayEl.textContent){ var _qd=new Date(); var _qDias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; var _qMes=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; _qDayEl.textContent=_qDias[_qd.getDay()]+' '+_qd.getDate()+' '+_qMes[_qd.getMonth()]; }
@@ -6903,10 +6982,82 @@ function _initDqTimer(){
     var h = Math.floor(diff / 3600);
     var m = Math.floor((diff % 3600) / 60);
     el.textContent = 'Nueva en '+h+'h '+m+'m';
+    // v1485: anillo de cuenta regresiva — se va vaciando a medida que pasa el día
+    try{
+      var ring = document.getElementById('dqTimerRingFill');
+      if(ring){
+        var C = 2*Math.PI*8; // r=8 → circunferencia ~50.27
+        var frac = Math.max(0, Math.min(1, diff/86400)); // fracción del día restante
+        ring.setAttribute('stroke-dasharray', String(C));
+        ring.setAttribute('stroke-dashoffset', String(C*(1-frac)));
+      }
+    }catch(_){}
   }
   _tick();
   if(_dqTimerInterval) clearInterval(_dqTimerInterval);
   _dqTimerInterval = setInterval(_tick, 60000);
+}
+
+// ── v1485: RACHA DE RESPUESTAS a la Pregunta del Día ────────────────
+// 🔥 días consecutivos respondiendo + fichas de la semana (Lu→Do).
+// Se calcula desde Supabase (multi-device) con caché local instantáneo.
+async function _fetchDqStreak(showToast){
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id')||'';
+  if(!sbClient || !uid) return;
+  // Render instantáneo desde caché mientras llega lo fresco
+  if(!showToast){
+    try{ var c = JSON.parse(safeLS('get','velo_dq_streak')||'null'); if(c && c.streak != null) _renderDqStreak(c.streak, c.week||[]); }catch(_){}
+  }
+  try{
+    var r = await sbClient.from('daily_responses').select('question_date').eq('user_id', uid).order('question_date',{ascending:false}).limit(90);
+    if(r.error) return;
+    var dates = {}; (r.data||[]).forEach(function(x){ if(x.question_date) dates[x.question_date] = 1; });
+    var _fk = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    // Racha: días consecutivos terminando hoy (o ayer, si hoy todavía no respondió)
+    var streak = 0;
+    var d = new Date();
+    if(!dates[_fk(d)]) d.setDate(d.getDate()-1);
+    for(var i=0; i<365; i++){
+      if(dates[_fk(d)]){ streak++; d.setDate(d.getDate()-1); } else break;
+    }
+    // Fichas de la semana (Lun→Dom)
+    var now = new Date();
+    var dow = (now.getDay()+6)%7; // 0 = lunes
+    var week = [];
+    for(var wi=0; wi<7; wi++){
+      var wd = new Date(now.getFullYear(), now.getMonth(), now.getDate()-dow+wi);
+      week.push({ lbl:['Lu','Ma','Mi','Ju','Vi','Sa','Do'][wi], done:!!dates[_fk(wd)], today:wi===dow });
+    }
+    try{ safeLS('set','velo_dq_streak', JSON.stringify({streak:streak, week:week, ts:Date.now()})); }catch(_){}
+    _renderDqStreak(streak, week);
+    if(showToast && streak >= 2){
+      setTimeout(function(){ pToast('🔥','¡'+streak+' días seguidos respondiendo! Volvé mañana para mantener tu racha'); }, 1200);
+    }
+  }catch(e){}
+}
+function _renderDqStreak(streak, week){
+  ['dqStreakBadge','dqStreakBadgeOpen'].forEach(function(id){
+    var b = document.getElementById(id);
+    if(!b) return;
+    if(streak >= 1){ b.style.display = 'inline-block'; b.textContent = '🔥 '+streak+' día'+(streak!==1?'s':''); }
+    else b.style.display = 'none';
+  });
+  var chipsHtml = (week||[]).map(function(c){
+    var fill = c.done
+      ? 'background:linear-gradient(90deg,#e9b949,#f0cf6a)'
+      : 'background:rgba(255,255,255,.10)' + (c.today ? ';box-shadow:0 0 0 1.5px rgba(233,185,73,.55)' : '');
+    return '<div style="flex:1;min-width:0;text-align:center">'
+      + '<div style="font-size:8.5px;font-weight:800;color:'+(c.done?'rgba(240,207,106,.9)':'rgba(255,255,255,.38)')+';font-family:Jost,sans-serif;letter-spacing:.4px;margin-bottom:3px">'+c.lbl+'</div>'
+      + '<div style="height:5px;border-radius:3px;'+fill+'"></div>'
+      + '</div>';
+  }).join('');
+  ['dqWeekChips','dqWeekChipsO'].forEach(function(id){
+    var w = document.getElementById(id);
+    if(!w) return;
+    if(chipsHtml){ w.style.display = 'flex'; w.innerHTML = chipsHtml; }
+    else w.style.display = 'none';
+  });
 }
 
 function _loadDailyQ(){
@@ -6914,6 +7065,7 @@ function _loadDailyQ(){
   if(!el) return;
   el.style.display = 'block';
   _initDqTimer();
+  try{ _fetchDqStreak(); }catch(_){}
   var q = _getDailyQuestion();
   var qtEl = document.getElementById('homeDailyQText');
   if(qtEl) qtEl.textContent = q.text;
@@ -6984,6 +7136,30 @@ async function _fetchDailyCount(){
     var openEl  = document.getElementById('homeDailyQOpenCount');
     if(countEl) countEl.textContent = t;
     if(openEl)  openEl.textContent  = t;
+    // v1485: adelanto de 2 respuestas reales — la card deja de sentirse vacía
+    var tz = document.getElementById('dqTeaser');
+    if(tz){
+      if(n > 0){
+        try{
+          var pv = await sbClient.from('daily_responses').select('mood_emoji,response_text,user_name')
+            .eq('question_date',today).neq('response_text','').order('created_at',{ascending:false}).limit(2);
+          var rows = ((pv && pv.data)||[]).filter(function(x){ return x.response_text && x.response_text.trim(); });
+          if(rows.length){
+            tz.style.display = 'flex';
+            tz.innerHTML = rows.map(function(x){
+              var txt = x.response_text.trim();
+              if(txt.length > 64) txt = txt.slice(0,64)+'…';
+              var who = ((x.user_name||'Alguien').split(' ')[0]) || 'Alguien';
+              return '<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.045);border:1px solid rgba(200,158,56,.16);border-radius:12px;padding:8px 12px">'
+                + '<span style="font-size:15px;flex-shrink:0">'+(x.mood_emoji||'💬')+'</span>'
+                + '<span style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:11.5px;color:rgba(255,255,255,.80);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">&ldquo;'+_escHtml(txt)+'&rdquo;</span>'
+                + '<span style="flex-shrink:0;font-family:Jost,sans-serif;font-size:10px;color:rgba(200,158,56,.70);font-weight:700">'+_escHtml(who)+'</span>'
+                + '</div>';
+            }).join('');
+          } else tz.style.display = 'none';
+        }catch(_tz){ tz.style.display = 'none'; }
+      } else tz.style.display = 'none';
+    }
   }catch(e){}
 }
 
@@ -8277,6 +8453,7 @@ async function pSubmitDailyResponse(){
   closeModal('dailyResponseOv');
   _restoreBtn();
   pToast('💚','¡Gracias por compartir!');
+  try{ _fetchDqStreak(true); }catch(_){} // v1485: actualizar racha + toast 🔥
   var lockedEl = document.getElementById('homeDailyQLocked');
   var openEl   = document.getElementById('homeDailyQOpen');
   if(lockedEl) lockedEl.style.display = 'none';
@@ -36426,7 +36603,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1484;
+    var _BUILT_V = 1485;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

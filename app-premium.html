@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1484">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1484">
+  <link rel="stylesheet" href="premium.css?v=20260626-1485">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1485">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -236,7 +236,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1484</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1485</div>
 </div>
 
 <!-- APP SHELL -->
@@ -1330,6 +1330,8 @@
                           Compartir
                         </button>
                       </div>
+                      <!-- v1485: reacciones a la reflexión (🌱💭💪) — llenado por JS -->
+                      <div id="rfxReactRow" style="display:none;gap:6px;margin-top:11px;flex-wrap:wrap"></div>
                     </div>
                   </div>
                   <!-- Pregunta del día — shown by JS -->
@@ -1338,9 +1340,14 @@
                     <!-- Locked state -->
                     <div id="homeDailyQLocked" style="padding:16px 18px 18px">
                       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                        <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.82);font-family:'Jost',sans-serif">💬 Pregunta del día</span>
-                        <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:rgba(200,158,56,.50);font-family:'Jost',sans-serif;flex-shrink:0"><span>⏱</span><span id="dqTimerTxt">Nueva a medianoche</span></div>
+                        <span style="display:inline-flex;align-items:center;gap:7px;min-width:0"><span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.82);font-family:'Jost',sans-serif">💬 Pregunta del día</span><span id="dqStreakBadge" style="display:none;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;background:rgba(255,120,20,.16);border:1px solid rgba(255,140,40,.35);color:rgba(255,175,75,.95);font-family:'Jost',sans-serif;letter-spacing:.3px;flex-shrink:0;white-space:nowrap"></span></span>
+                        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,215,110,.75);font-family:'Jost',sans-serif;flex-shrink:0">
+                          <svg width="15" height="15" viewBox="0 0 20 20" style="transform:rotate(-90deg);flex-shrink:0"><circle cx="10" cy="10" r="8" fill="none" stroke="rgba(200,158,56,.20)" stroke-width="3"/><circle id="dqTimerRingFill" cx="10" cy="10" r="8" fill="none" stroke="rgba(255,210,80,.95)" stroke-width="3" stroke-linecap="round" stroke-dasharray="50.27" stroke-dashoffset="0"/></svg>
+                          <span id="dqTimerTxt">Nueva a medianoche</span>
+                        </div>
                       </div>
+                      <!-- v1485: fichas de la semana (racha visual Lu→Do) -->
+                      <div id="dqWeekChips" style="display:none;gap:5px;margin-bottom:13px"></div>
                       <div style="position:relative;margin-bottom:14px;padding-left:14px">
                         <div style="position:absolute;top:-4px;left:-2px;font-size:36px;color:rgba(200,158,56,.20);font-family:'Cormorant Garamond',serif;line-height:1;pointer-events:none">❝</div>
                         <div id="homeDailyQText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:rgba(255,255,255,.92);line-height:1.38;letter-spacing:.08px"></div>
@@ -1354,14 +1361,18 @@
                         </div>
                         <div id="homeDailyQPulseBar" style="display:flex;gap:3px;align-items:flex-end"></div>
                       </div>
+                      <!-- v1485: adelanto de respuestas de la comunidad -->
+                      <div id="dqTeaser" style="display:none;flex-direction:column;gap:6px;margin-bottom:14px"></div>
                       <button onclick="pOpenDailyResponse()" style="width:100%;padding:14px;border-radius:14px;border:1.5px solid rgba(200,158,56,.42);background:linear-gradient(135deg,rgba(175,130,20,.88),rgba(120,86,8,.94));color:rgba(255,242,180,.97);font-size:14px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.5px;animation:dqBtnPulse 5s ease-in-out infinite;transition:transform .15s;box-shadow:0 4px 20px rgba(170,125,15,.25)">Compartir mi respuesta ✦</button>
                     </div>
                     <!-- Open state -->
                     <div id="homeDailyQOpen" style="display:none;padding:0 18px 18px">
                       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:16px;margin-bottom:10px">
-                        <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.82);font-family:'Jost',sans-serif">💬 Pregunta del día · respondida</span>
+                        <span style="display:inline-flex;align-items:center;gap:7px;min-width:0"><span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.82);font-family:'Jost',sans-serif">💬 Pregunta del día · respondida</span><span id="dqStreakBadgeOpen" style="display:none;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;background:rgba(255,120,20,.16);border:1px solid rgba(255,140,40,.35);color:rgba(255,175,75,.95);font-family:'Jost',sans-serif;letter-spacing:.3px;flex-shrink:0;white-space:nowrap"></span></span>
                         <span style="font-size:10px;color:rgba(200,158,56,.50);font-family:'Jost',sans-serif">✓</span>
                       </div>
+                      <!-- v1485: fichas de la semana (racha visual Lu→Do) -->
+                      <div id="dqWeekChipsO" style="display:none;gap:5px;margin-bottom:11px"></div>
                       <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,248,210,.93);line-height:1.38;margin-bottom:12px"></div>
                       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
                         <div id="homeDailyQMyResp" onclick="pOpenMyDqResponseFromHome()" style="font-size:12px;font-weight:700;color:rgba(255,220,90,.95);font-family:'Jost',sans-serif;flex:1;background:radial-gradient(circle at 0% 50%,rgba(200,158,56,.18),rgba(200,158,56,.08));border:1px solid rgba(200,158,56,.22);border-radius:22px;padding:10px 16px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,220,80,.06)"></div>
@@ -4452,8 +4463,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1484"></script>
-<script src="premium-redesign.js?v=20260626-1484"></script>
+<script src="premium.js?v=20260626-1485"></script>
+<script src="premium-redesign.js?v=20260626-1485"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
