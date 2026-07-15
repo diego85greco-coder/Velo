@@ -15690,31 +15690,26 @@ body.r-dark .home-vibes-widget {
   background: linear-gradient(165deg, rgba(10,30,19,.96), rgba(7,22,14,.97)) !important;
   border: 1px solid rgba(116,198,157,.26) !important;
 }
-/* CTA v1495: botón FANTASMA — fino, sobrio, profesional (adiós pastilla chicle) */
+/* CTA v1497: DORADO SUTIL con letras blancas (pedido del usuario) — fino y sobrio */
+.home-vibes-widget__cta,
+.home-vibes-widget__cta span {
+  color: #ffffff !important;
+}
 .home-vibes-widget__cta {
   border-radius: 100px !important;
-  padding: 9px 16px !important;
-  font-size: 12px !important;
+  padding: 10px 16px !important;
+  font-size: 12.5px !important;
   font-weight: 700 !important;
   letter-spacing: .4px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-body:not(.r-dark) .home-vibes-widget__cta,
-body:not(.r-dark) .home-vibes-widget__cta span {
-  color: #2f7a52 !important;
+  background: linear-gradient(135deg, rgba(196,152,52,.88), rgba(158,116,26,.92)) !important;
+  border: 1px solid rgba(222,182,85,.45) !important;
+  box-shadow: 0 3px 14px rgba(180,135,35,.24) !important;
+  text-shadow: 0 1px 2px rgba(80,55,5,.35) !important;
 }
 body:not(.r-dark) .home-vibes-widget__cta {
-  border: 1.2px solid rgba(60, 130, 90, 0.45) !important;
-  background: rgba(74, 160, 110, 0.06) !important;
-}
-body.r-dark .home-vibes-widget__cta,
-body.r-dark .home-vibes-widget__cta span {
-  color: rgba(170, 230, 198, 0.92) !important;
-}
-body.r-dark .home-vibes-widget__cta {
-  border: 1.2px solid rgba(116, 198, 157, 0.38) !important;
-  background: rgba(116, 198, 157, 0.07) !important;
+  background: linear-gradient(135deg, rgba(190,146,48,.92), rgba(155,113,25,.95)) !important;
+  border: 1px solid rgba(160,120,30,.40) !important;
+  box-shadow: 0 3px 14px rgba(160,120,30,.28) !important;
 }
 /* El "+" sin circulito — solo el signo, alineado */
 .home-vibes-widget__cta-plus {
