@@ -4496,11 +4496,13 @@ body.r-dark #pg-home #homeDailyQuoteAuthor {
     border-color: rgba(116,198,157,.40);
   }
 }
+/* v1496: sin pulso — brillo estático (las animaciones que laten molestan) */
 body:not(.r-dark) #pg-home .home-greeting {
-  animation: mood-card-glow-light 5.5s ease-in-out 0.5s infinite !important;
+  box-shadow: 0 6px 26px rgba(74,160,110,.14) !important;
 }
 body.r-dark #pg-home .home-greeting {
-  animation: mood-card-glow-dark 5.5s ease-in-out 0.5s infinite !important;
+  box-shadow: 0 8px 34px rgba(116,198,157,.14), 0 0 0 1px rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.28) !important;
 }
 
 /* Mood pill — sweeping light shimmer */
@@ -4513,18 +4515,8 @@ body.r-dark #pg-home .home-greeting {
   15%, 85%    { opacity: 1; }
   100%        { transform: translateX(300%);  opacity: 0; }
 }
-#homeCurrentMoodLine::after {
-  content: '' !important;
-  position: absolute !important;
-  inset: 0 !important;
-  width: 48% !important;
-  background: linear-gradient(
-    90deg, transparent 0%, rgba(255,255,255,.38) 50%, transparent 100%
-  ) !important;
-  border-radius: 100px !important;
-  pointer-events: none !important;
-  animation: pill-light-sweep 3.8s ease-in-out infinite !important;
-}
+/* v1496: destello de la píldora de ánimo desactivado — latía todo el tiempo */
+#homeCurrentMoodLine::after { content: none !important; }
 
 /* Username — subtle sage glow on hover/dark mode */
 @keyframes name-glow {
@@ -13031,14 +13023,10 @@ body.r-dark #pg-help .dark-seeker:hover {
   50%      { transform: scale(1.4); }
 }
 
+/* v1496: SIN animaciones infinitas — el pulso de sombra y el rebote del check
+   "latían" todo el tiempo y rompían la estética (feedback del usuario). */
 body.r-dark #homeDailyQOpen > div {
-  animation: velo-dq-pulse 3.2s ease-in-out infinite !important;
-}
-body.r-dark #homeDailyQOpen > div > div:first-child > span:last-child {
-  display: inline-block !important;
-  animation: velo-check-bounce 2s ease-in-out infinite !important;
-  color: rgba(116,198,157,.90) !important;
-  font-size: 14px !important;
+  box-shadow: 0 8px 36px rgba(200,158,56,.22), 0 0 0 1px rgba(200,158,56,.10) !important;
 }
 
 /* "My response" bubble in DQ open (v1494: burbuja de chat) */
@@ -14710,7 +14698,7 @@ body.r-dark #homeDailyQuoteAuthor {
   50%     { transform:scale(1.02) rotate(2deg); filter:drop-shadow(0 0 6px rgba(255,150,50,.60)) brightness(1.06); }
   75%     { transform:scale(1.10) rotate(-2deg); filter:drop-shadow(0 0 12px rgba(255,200,80,.90)) brightness(1.15); }
 }
-.velo-flicker-fire { animation: velo-flicker-fire 2s ease-in-out infinite; display:inline-block; }
+.velo-flicker-fire { display:inline-block; } /* v1496: sin flicker — las animaciones que laten molestan */
 
 /* Wave motion — para el strip de bottles Al Mar */
 @keyframes velo-wave-shift {

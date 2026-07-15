@@ -7558,7 +7558,7 @@ function _updateMoodChip(){
     var streakBg = isDark ? 'linear-gradient(140deg,rgba(255,140,50,.32),rgba(220,90,20,.24))' : 'linear-gradient(140deg,rgba(255,180,80,.35),rgba(230,110,30,.24))';
     var streakBdr = isDark ? 'rgba(255,170,80,.75)' : 'rgba(230,130,40,.75)';
     var streakTxt = isDark ? 'rgba(255,230,180,.98)' : 'rgba(120,50,0,.94)';
-    streakBadge = '<span class="mcc-streak" style="position:absolute;top:8px;right:10px;z-index:2;display:inline-flex;align-items:center;gap:3px;background:'+streakBg+';border:1.5px solid '+streakBdr+';border-radius:100px;padding:3px 9px 3px 7px;font-size:11.5px;font-weight:800;color:'+streakTxt+';font-family:Jost,sans-serif;box-shadow:'+streakGlow+';animation:mccStreakPulse 2.4s ease-in-out infinite;line-height:1;white-space:nowrap"><span class="velo-flicker-fire" style="font-size:13px;line-height:1;display:inline-block">🔥</span>'+streak+'</span>';
+    streakBadge = '<span class="mcc-streak" style="position:absolute;top:8px;right:10px;z-index:2;display:inline-flex;align-items:center;gap:3px;background:'+streakBg+';border:1.5px solid '+streakBdr+';border-radius:100px;padding:3px 9px 3px 7px;font-size:11.5px;font-weight:800;color:'+streakTxt+';font-family:Jost,sans-serif;box-shadow:'+streakGlow+';line-height:1;white-space:nowrap"><span class="velo-flicker-fire" style="font-size:13px;line-height:1;display:inline-block">🔥</span>'+streak+'</span>';
     // Inyectar keyframes si aún no están
     if(!document.getElementById('_mccStreakKf')){
       var _kf = document.createElement('style'); _kf.id='_mccStreakKf';
@@ -36700,7 +36700,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1495;
+    var _BUILT_V = 1496;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
