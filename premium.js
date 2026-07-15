@@ -36393,7 +36393,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1482;
+    var _BUILT_V = 1483;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -36683,4 +36683,77 @@ window.addEventListener('error', function(e){
       }
     }
   }, {passive:false});
+})();
+
+// ── ANDROID PWA INSTALL (v1483) ──────────────────────────────────────
+// Chrome/Edge/Samsung Internet en Android disparan `beforeinstallprompt`
+// cuando la app es instalable. Lo capturamos y ofrecemos un banner propio
+// "Instalar Velo" — un toque y queda como app con ícono en el launcher.
+(function(){
+  var _a2hsPrompt = null;
+
+  function _isStandalone(){
+    try{
+      return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+    }catch(e){ return false; }
+  }
+
+  function _showInstallBanner(){
+    if(_isStandalone()) return;
+    if(document.getElementById('veloA2hsBanner')) return;
+    // No insistir: si lo cerró hace menos de 7 días, no volver a mostrar
+    var dis = parseInt(safeLS('get','velo_a2hs_dismissed')||'0',10);
+    if(dis && (Date.now()-dis) < 7*86400000) return;
+    var bar = document.createElement('div');
+    bar.id = 'veloA2hsBanner';
+    bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:9990;display:flex;align-items:center;gap:12px;padding:13px 14px;background:linear-gradient(150deg,rgba(18,44,30,.97),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.4);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.45);font-family:Jost,sans-serif;animation:veloFadeUp .35s ease';
+    bar.innerHTML = '<img src="/assets/icon-192-maskable.png" alt="" style="width:44px;height:44px;border-radius:12px;flex-shrink:0">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:14.5px;font-weight:800;color:#eafff2;line-height:1.2">Instalá Velo en tu teléfono</div>'
+      + '<div style="font-size:12px;color:rgba(220,240,228,.65);margin-top:2px;line-height:1.35">Un toque y la tenés como app, con notificaciones 🌿</div>'
+      + '</div>'
+      + '<button id="veloA2hsGo" style="flex-shrink:0;padding:10px 16px;background:linear-gradient(135deg,#74c69d,#4d9e74);border:none;border-radius:12px;color:#081a10;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Instalar</button>'
+      + '<button id="veloA2hsClose" style="flex-shrink:0;background:none;border:none;color:rgba(255,255,255,.45);font-size:19px;cursor:pointer;padding:2px 4px;line-height:1">✕</button>';
+    document.body.appendChild(bar);
+    document.getElementById('veloA2hsClose').onclick = function(){
+      safeLS('set','velo_a2hs_dismissed', String(Date.now()));
+      bar.remove();
+    };
+    document.getElementById('veloA2hsGo').onclick = function(){
+      if(!_a2hsPrompt){ bar.remove(); return; }
+      _a2hsPrompt.prompt();
+      _a2hsPrompt.userChoice.then(function(res){
+        if(res && res.outcome === 'accepted'){ try{ pToast('🎉','¡Velo instalada! Buscala en tu pantalla de inicio'); }catch(e){} }
+        else safeLS('set','velo_a2hs_dismissed', String(Date.now()));
+        _a2hsPrompt = null;
+        bar.remove();
+      }).catch(function(){ bar.remove(); });
+    };
+  }
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();          // guardamos el prompt para dispararlo nosotros
+    _a2hsPrompt = e;
+    // Mostrar el banner recién cuando la persona ya está DENTRO de la app
+    // (no en el landing) y con un pequeño delay para no interrumpir el boot.
+    setTimeout(function(){
+      try{
+        var logged = !!safeLS('get','velo_user_id');
+        if(logged && typeof _curPage !== 'undefined' && _curPage !== 'landing') _showInstallBanner();
+      }catch(_){}
+    }, 6000);
+  });
+
+  window.addEventListener('appinstalled', function(){
+    _a2hsPrompt = null;
+    var b = document.getElementById('veloA2hsBanner'); if(b) b.remove();
+    try{ pToast('💚','¡Velo instalada como app!'); }catch(e){}
+  });
+
+  // Función pública por si queremos un botón "Instalar app" en el menú
+  window.pInstallVeloApp = function(){
+    if(_a2hsPrompt){ _showInstallBanner(); var go=document.getElementById('veloA2hsGo'); if(go) go.click(); }
+    else pToast('ℹ️','Abrí Velo en Chrome (Android) y usá "Instalar app" del menú ⋮, o en iPhone: Compartir → Agregar a pantalla de inicio');
+  };
 })();
