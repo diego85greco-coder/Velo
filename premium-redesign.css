@@ -15698,3 +15698,29 @@ body.r-dark .home-vibes-widget__cta {
   display: inline !important;
   text-shadow: 0 1px 2px rgba(80,55,5,.35) !important;
 }
+
+/* ── v1500: botón COMPARTIR de la Reflexión — dorado Velo con letras blancas,
+   visible e invitador. Selectores con body para ganarle a las reglas de tema. */
+body.r-dark #homeDailyShareBtn,
+body:not(.r-dark) #homeDailyShareBtn {
+  background: linear-gradient(135deg, rgba(196,152,52,.92), rgba(158,116,26,.95)) !important;
+  border: 1px solid rgba(222,182,85,.50) !important;
+  border-radius: 100px !important;
+  padding: 8px 16px !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: .4px !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(180,135,35,.30) !important;
+  text-shadow: 0 1px 2px rgba(80,55,5,.35) !important;
+}
+body.r-dark #homeDailyShareBtn span,
+body:not(.r-dark) #homeDailyShareBtn span {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(80,55,5,.35) !important;
+}
+body.r-dark #homeDailyShareBtn svg,
+body:not(.r-dark) #homeDailyShareBtn svg {
+  stroke: #ffffff !important;
+  filter: none !important;
+}
