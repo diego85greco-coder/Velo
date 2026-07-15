@@ -12577,9 +12577,10 @@ function _renderNewsList(el, items){
         +'<div style="padding:8px 18px 6px;text-align:center">'
         +'<div style="font-size:56px;line-height:1;margin-bottom:10px">'+_escHtml(item.emoji||'📰')+'</div>'
         +'<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">'+_escHtml(item.titulo)+'</h3>'
-        +'<p style="font-size:15px;color:var(--ink2);line-height:1.7;margin-bottom:14px">'+_escHtml(item.cuerpo)+'</p>'
+        +'<p style="font-size:15px;color:var(--ink2);line-height:1.7;margin-bottom:6px">'+_escHtml(item.cuerpo)+'</p>'
+        +'<div style="display:flex;justify-content:center">'+_newsRxRowHtml(0)+'</div>'
         +'</div>'
-        +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(116,198,157,.12)">'
+        +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(116,198,157,.12);margin-top:8px">'
         +_sourceTag(item)
         +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(20,110,70,.78);border:1px solid rgba(116,198,157,.5);border-radius:100px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
         +'</div>'
@@ -12591,6 +12592,7 @@ function _renderNewsList(el, items){
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:var(--ink);margin-bottom:5px;font-weight:700;line-height:1.3">'+_escHtml(item.titulo)+'</div>'
         +'<div style="font-size:14px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+        +_newsRxRowHtml(i)
         +'<div style="margin-top:9px;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
         +_sourceTag(item)
         +'</div>'
@@ -12600,7 +12602,109 @@ function _renderNewsList(el, items){
     }
   });
 
-  el.innerHTML = _newsReadingBadgeHtml() + heroHtml + (items.length > 1 ? '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;margin-top:4px">MÁS NOTICIAS</div>' : '') + restHtml;
+  el.innerHTML = _newsReadingBadgeHtml() + '<div id="newsTopOfDay"></div>' + heroHtml + (items.length > 1 ? '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;margin-top:4px">MÁS NOTICIAS</div>' : '') + restHtml;
+  // v1501: reacciones comunitarias — cargar contadores y top del día (no bloquea)
+  try{ setTimeout(function(){ _loadNewsReactions(); }, 250); }catch(_){}
+}
+
+// ── v1501: REACCIONES A BUENAS NOTICIAS ─────────────────────────────
+// 🌞 me alegró · 💛 me encantó · 🌱 me dio esperanza — contadores en vivo
+// + "La que más alegró hoy" (tabla news_reactions; si falta, se oculta sola).
+var _NEWS_RX = [
+  { k:'alegro',    e:'🌞', lbl:'Me alegró' },
+  { k:'amor',      e:'💛', lbl:'Me encantó' },
+  { k:'esperanza', e:'🌱', lbl:'Esperanza' }
+];
+function _newsKey(titulo){
+  return (titulo||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
+}
+var _newsRxData = {}; // news_key → { counts:{alegro,amor,esperanza}, mine:{} }
+function _newsRxRowHtml(i){
+  var item = _newsListCache[i]; if(!item) return '';
+  var key = _newsKey(item.titulo);
+  var d = _newsRxData[key] || { counts:{}, mine:{} };
+  var lt = !document.body.classList.contains('r-dark');
+  return '<div class="news-rx-row" data-nkey="'+_escHtml(key)+'" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'
+    + _NEWS_RX.map(function(rx){
+        var on = !!d.mine[rx.k];
+        var n = d.counts[rx.k]||0;
+        var css = on
+          ? (lt ? 'background:rgba(190,145,35,.20);border:1.5px solid rgba(190,145,35,.65);color:rgba(110,80,10,.95)' : 'background:rgba(255,215,110,.22);border:1.5px solid rgba(255,215,110,.6);color:rgba(255,235,170,.98)')
+          : (lt ? 'background:rgba(0,0,0,.045);border:1px solid rgba(60,110,80,.28);color:rgba(45,85,60,.85)' : 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.72)');
+        return '<button onclick="event.stopPropagation();pReactNews('+i+',\''+rx.k+'\')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;cursor:pointer;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;-webkit-tap-highlight-color:transparent;'+css+'">'+rx.e+' '+rx.lbl+(n>0?' · '+n:'')+'</button>';
+      }).join('')
+    + '</div>';
+}
+function _paintNewsRxRows(){
+  document.querySelectorAll('.news-rx-row').forEach(function(row){
+    var key = row.getAttribute('data-nkey');
+    var idx = -1;
+    _newsListCache.forEach(function(it,i){ if(_newsKey(it.titulo)===key) idx = i; });
+    if(idx >= 0){ var tmp = document.createElement('div'); tmp.innerHTML = _newsRxRowHtml(idx); row.replaceWith(tmp.firstChild); }
+  });
+}
+async function _loadNewsReactions(){
+  _initSupabase(); if(!sbClient || !_newsListCache.length) return;
+  var uid = safeLS('get','velo_user_id')||'';
+  var keys = _newsListCache.map(function(it){ return _newsKey(it.titulo); }).filter(Boolean);
+  try{
+    var r = await sbClient.from('news_reactions').select('news_key,reaction,user_id').in('news_key', keys);
+    if(r.error) return; // tabla aún no creada → sin reacciones
+    _newsRxData = {};
+    (r.data||[]).forEach(function(x){
+      var d = _newsRxData[x.news_key] = _newsRxData[x.news_key] || { counts:{}, mine:{} };
+      d.counts[x.reaction] = (d.counts[x.reaction]||0)+1;
+      if(uid && x.user_id === uid) d.mine[x.reaction] = true;
+    });
+    _paintNewsRxRows();
+    // ── Top del día: la noticia con más reacciones HOY (mínimo 2) ──
+    var today = new Date().toISOString().slice(0,10);
+    var t = await sbClient.from('news_reactions').select('news_key,titulo,emoji_news').eq('date_key', today);
+    var box = document.getElementById('newsTopOfDay');
+    if(!t.error && t.data && t.data.length && box){
+      var agg = {};
+      t.data.forEach(function(x){
+        var a = agg[x.news_key] = agg[x.news_key] || { n:0, titulo:x.titulo, emoji:x.emoji_news };
+        a.n++;
+        if(!a.titulo && x.titulo) a.titulo = x.titulo;
+      });
+      var top = Object.keys(agg).map(function(k){ return agg[k]; }).sort(function(a,b){ return b.n-a.n; })[0];
+      if(top && top.n >= 2 && top.titulo){
+        var lt2 = !document.body.classList.contains('r-dark');
+        box.innerHTML = '<div style="margin-bottom:14px;padding:12px 15px;border-radius:16px;background:linear-gradient(140deg,rgba(196,152,52,'+(lt2?'.14':'.16')+'),rgba(196,152,52,.06));border:1.5px solid rgba(196,152,52,'+(lt2?'.45':'.38')+')">'
+          + '<div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:'+(lt2?'rgba(140,100,20,.9)':'rgba(240,200,90,.9)')+';font-family:Jost,sans-serif;margin-bottom:5px">🌞 La que más alegró hoy</div>'
+          + '<div style="display:flex;align-items:center;gap:9px">'
+          + '<span style="font-size:24px;flex-shrink:0">'+_escHtml(top.emoji||'📰')+'</span>'
+          + '<span style="flex:1;min-width:0;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-weight:700;line-height:1.35;color:'+(lt2?'rgba(55,40,10,.94)':'rgba(255,245,215,.95)')+'">'+_escHtml(top.titulo)+'</span>'
+          + '<span style="flex-shrink:0;font-size:11px;font-weight:800;color:'+(lt2?'rgba(140,100,20,.85)':'rgba(240,200,90,.85)')+';font-family:Jost,sans-serif">'+top.n+' 💛</span>'
+          + '</div></div>';
+      }
+    }
+  }catch(e){}
+}
+async function pReactNews(i, rxKey){
+  var item = _newsListCache[i]; if(!item) return;
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id')||'';
+  if(!sbClient || !uid){ pToast('🌿','Iniciá sesión para reaccionar'); return; }
+  var key = _newsKey(item.titulo);
+  var d = _newsRxData[key] = _newsRxData[key] || { counts:{}, mine:{} };
+  var today = new Date().toISOString().slice(0,10);
+  if(d.mine[rxKey]){
+    d.mine[rxKey] = false; d.counts[rxKey] = Math.max(0,(d.counts[rxKey]||1)-1);
+    _paintNewsRxRows();
+    try{ await sbClient.from('news_reactions').delete().eq('news_key',key).eq('user_id',uid).eq('reaction',rxKey); }catch(e){}
+  } else {
+    d.mine[rxKey] = true; d.counts[rxKey] = (d.counts[rxKey]||0)+1;
+    _paintNewsRxRows();
+    try{
+      var r = await sbClient.from('news_reactions').insert({ news_key:key, titulo:(item.titulo||'').slice(0,200), emoji_news:item.emoji||'', reaction:rxKey, user_id:uid, date_key:today });
+      if(r && r.error && String(r.error.code) !== '23505'){
+        d.mine[rxKey] = false; d.counts[rxKey] = Math.max(0,(d.counts[rxKey]||1)-1);
+        _paintNewsRxRows();
+      }
+    }catch(e){}
+  }
 }
 
 var _newsListCache = [];
@@ -36700,7 +36804,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1500;
+    var _BUILT_V = 1501;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
