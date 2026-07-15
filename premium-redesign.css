@@ -15662,3 +15662,13 @@ body:not(.r-dark) #homeReflexionDia > div.rfx-poster .dq-label { color: rgba(255
 body:not(.r-dark) #homeReflexionDia > div.rfx-poster .dq-text { color: rgba(255,252,235,.94) !important; }
 body:not(.r-dark) #homeReflexionDia > div.rfx-poster #homeDailyQuoteText { color: rgba(255,246,214,.96) !important; }
 body:not(.r-dark) #homeReflexionDia > div.rfx-poster #homeDailyQuoteDay { color: rgba(255,255,255,.55) !important; }
+
+/* ── v1488: card "¿Sabías que…?" — modo claro ─────────────────────── */
+body:not(.r-dark) #homeDailyTip { background: linear-gradient(140deg,rgba(90,115,205,.12),rgba(90,115,205,.06)) !important; border-color: rgba(90,115,205,.35) !important; }
+body:not(.r-dark) #homeDailyTip .tip-kicker { color: rgba(60,85,180,.85) !important; }
+body:not(.r-dark) #homeDailyTip .tip-title  { color: rgba(20,30,70,.92) !important; }
+body:not(.r-dark) #homeDailyTip .tip-sub    { color: rgba(30,45,90,.62) !important; }
+body:not(.r-dark) #homeDailyTip .tip-cta    { background: rgba(90,115,205,.14) !important; color: rgba(50,75,170,.95) !important; border-color: rgba(90,115,205,.42) !important; }
+body:not(.r-dark) #homeDailyTip .tip-x      { color: rgba(0,0,0,.35) !important; }
+/* v1488: título "Explorá Velo" en modo claro */
+body:not(.r-dark) #homeNavTopStrip > div:first-child { color: rgba(130,95,15,.80) !important; }

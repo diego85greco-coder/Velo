@@ -5474,6 +5474,46 @@ async function _initHomeQuickCtaStrip(){
   _ctaStripBuilding = false;
 }
 
+// v1488: tips diarios de descubrimiento — uno por día, rotan por fecha.
+var _VELO_DAILY_TIPS = [
+  { i:'✨', t:'Podés guardar tus vibes favoritas', s:'Tocá el corazón en cualquier vibe y quedan en "Mis momentos guardados" de tu perfil.', cta:"pGoTo('vibes')", lbl:'Ver Vibes' },
+  { i:'🛡️', t:'Podés ser Guardián de alguien', s:'Activá tu disponibilidad y acompañá a quien lo necesite. Ganás insignias por cada conversación.', cta:"pGoTo('guardians')", lbl:'Ir a Guardianes' },
+  { i:'🌸', t:'Cada mes tenés tu Wrapped', s:'Un resumen visual de tu mes emocional, como el de Spotify. Está en el menú ☰.', cta:'pOpenMonthlyWrapped()', lbl:'Ver mi Wrapped' },
+  { i:'🤝', t:'Existe el Compañero de bienestar', s:'Velo te empareja 30 días con alguien de la comunidad para acompañarse mutuamente.', cta:'pOpenBuddyModal()', lbl:'Conocer más' },
+  { i:'📖', t:'En Bitácora podés escribir anónimo', s:'Compartí tu historia sin mostrar tu nombre — la comunidad te deja apoyo igual.', cta:"pGoTo('bitacora')", lbl:'Abrir Bitácora' },
+  { i:'💌', t:'Invitá amigos y ganá Plus', s:'Con 5 invitaciones válidas te regalamos 30 días de Velo Plus.', cta:'pOpenInviteFriends()', lbl:'Invitar' },
+  { i:'🎙️', t:'Podés mandar notas de voz', s:'En cualquier chat privado, tocá el micrófono y grabá tu mensaje.', cta:"pGoTo('contacts')", lbl:'Ir a chats' },
+  { i:'☮️', t:'Hay Círculos de Paz por tema', s:'Grupos de chat sobre ansiedad, duelo, relaciones y más. Entrá al que te haga bien.', cta:"pGoTo('circles')", lbl:'Ver Círculos' },
+  { i:'🌬️', t:'Respiración guiada 4·7·8', s:'Dos minutos para bajar la ansiedad. La encontrás en el menú ☰ o en Respira.', cta:'veloOpenBreathingModal()', lbl:'Respirar ahora' },
+  { i:'🏆', t:'Tenés logros por descubrir', s:'Cada cosa que hacés en Velo desbloquea insignias. Mirá cuáles te faltan.', cta:'pOpenAchievementsModal()', lbl:'Mis logros' },
+  { i:'🤖', t:'Velo IA te escucha 24/7', s:'Un asistente empático para cuando necesitás hablar y no hay nadie cerca.', cta:"pGoTo('calm-ai')", lbl:'Probar Velo IA' },
+  { i:'📈', t:'Tu trayectoria emocional', s:'Mirá cómo evolucionó tu ánimo desde que llegaste a Velo — está en el menú ☰.', cta:'pOpenEmotionalTrajectory()', lbl:'Ver gráfico' },
+  { i:'🔍', t:'Podés buscar personas', s:'Encontrá a alguien de la comunidad por nombre o @usuario desde el menú ☰.', cta:'pOpenGlobalSearch()', lbl:'Buscar' },
+  { i:'📦', t:'Tus datos son tuyos', s:'Descargá todo lo que escribiste en Velo cuando quieras, desde el menú ☰.', cta:'pBackupMyData()', lbl:'Descargar' }
+];
+function _initHomeDailyTip(heroLeft){
+  try{
+    if(document.getElementById('homeDailyTip')) return;
+    var _d = new Date();
+    var _dayKey = _d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+    if(safeLS('get','velo_tip_dismissed_'+_dayKey)) return; // descartada hoy
+    var _dayIdx = Math.floor((Date.now() - _d.getTimezoneOffset()*60000) / 86400000);
+    var tip = _VELO_DAILY_TIPS[_dayIdx % _VELO_DAILY_TIPS.length];
+    var el = document.createElement('div');
+    el.id = 'homeDailyTip';
+    el.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 14px;padding:12px 14px;background:linear-gradient(140deg,rgba(116,150,220,.13),rgba(90,120,200,.07));border:1.5px solid rgba(130,160,230,.30);border-radius:16px;display:flex;align-items:center;gap:11px';
+    el.innerHTML = '<div style="font-size:24px;flex-shrink:0">'+tip.i+'</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div class="tip-kicker" style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(160,185,245,.80);font-family:Jost,sans-serif;margin-bottom:2px">💡 ¿Sabías que…?</div>'
+      + '<div class="tip-title" style="font-size:13px;font-weight:700;color:rgba(235,240,255,.95);font-family:Jost,sans-serif;line-height:1.25">'+tip.t+'</div>'
+      + '<div class="tip-sub" style="font-size:11.5px;color:rgba(210,220,245,.60);font-family:Jost,sans-serif;line-height:1.45;margin-top:2px">'+tip.s+'</div>'
+      + '<button class="tip-cta" onclick="'+tip.cta+'" style="margin-top:7px;padding:6px 14px;background:rgba(130,160,230,.22);border:1px solid rgba(130,160,230,.45);border-radius:20px;color:rgba(200,215,255,.95);font-size:11px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">'+tip.lbl+' →</button>'
+      + '</div>'
+      + '<button class="tip-x" onclick="safeLS(\'set\',\'velo_tip_dismissed_'+_dayKey+'\',\'1\');document.getElementById(\'homeDailyTip\').remove()" style="flex-shrink:0;align-self:flex-start;background:none;border:none;color:rgba(255,255,255,.35);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1">✕</button>';
+    heroLeft.appendChild(el);
+  }catch(e){}
+}
+
 function _initHomeNavTiles(){
   if(document.getElementById('homeNavTopStrip')) return;
   var heroLeft = document.querySelector('.r-hero-left');
@@ -5499,8 +5539,11 @@ function _initHomeNavTiles(){
   }).join('');
   var stripEl = document.createElement('div');
   stripEl.id = 'homeNavTopStrip';
-  stripEl.style.cssText = 'display:flex;gap:8px;width:100%;box-sizing:border-box;margin:0 0 14px;';
-  stripEl.innerHTML = stripHtml;
+  stripEl.style.cssText = 'display:block;width:100%;box-sizing:border-box;margin:0 0 14px;';
+  // v1488: título de sección — la grilla de accesos es el MAPA de la app,
+  // dárselo a entender con un nombre claro mejora el descubrimiento.
+  stripEl.innerHTML = '<div style="font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.70);margin-bottom:9px;font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:8px"><span style="height:1px;flex:1;background:rgba(200,158,56,.16)"></span><span>🧭 Explorá Velo</span><span style="height:1px;flex:1;background:rgba(200,158,56,.16)"></span></div>'
+    + '<div style="display:flex;gap:8px">'+stripHtml+'</div>';
   heroLeft.insertAdjacentElement('afterbegin', stripEl);
 
   // ── SECOND ROW 3: compact strip ABOVE frase del día (order 25) ──
@@ -5524,6 +5567,11 @@ function _initHomeNavTiles(){
   strip2El.style.cssText = 'display:flex;gap:8px;width:100%;box-sizing:border-box;margin:0 0 14px;';
   strip2El.innerHTML = stripHtml2;
   heroLeft.insertAdjacentElement('beforeend', strip2El);
+
+  // ── v1488: "💡 ¿Sabías que…?" — píldora diaria de descubrimiento ────
+  // Cada día enseña UNA función distinta de la app. En ~2 semanas de uso el
+  // usuario conoció todo Velo sin sentirse bombardeado. Descartable por día.
+  _initHomeDailyTip(heroLeft);
 
   // ── REMAINING 6: 2-column grid below frase del día (order 4) ──
   // v1453: Profesionales y Velo Vela por Ti ocultos por ahora (no se usan).
@@ -36622,7 +36670,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1487;
+    var _BUILT_V = 1488;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
