@@ -5946,7 +5946,7 @@ var _dailyQuoteFallbacks = [
 // 🌱 me tocó · 💭 me hizo pensar · 💪 me dio fuerza — contadores en vivo
 // (tabla quote_reactions; si aún no existe, la fila se oculta sola).
 var _RFX_REACTS = [
-  { e:'🌱', k:'toco',   lbl:'Me llegó' },
+  { e:'🌱', k:'toco',   lbl:'Me identifico' },
   { e:'💭', k:'pensar', lbl:'Me hizo pensar' },
   { e:'💪', k:'fuerza', lbl:'Me dio fuerza' }
 ];
@@ -36859,7 +36859,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1504;
+    var _BUILT_V = 1505;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
