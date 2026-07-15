@@ -20520,6 +20520,21 @@ var _vibesOpenChain = [];   // v1444: orden de grupos con contenido para encaden
 // Entrada al Vibes desde el home
 function pOpenVibes(){ pGoTo('vibes'); }
 // Renderiza la card de entrada arriba del home (llamada tras cargar el home)
+// v1484: hidrata data-URLs de imágenes a blob URLs (iOS) — usado por el render
+// fresco y por el render instantáneo desde caché.
+function _hydrateVibeImgs(wrap){
+  wrap.querySelectorAll('img[data-vibe-src]').forEach(function(img){
+    var src = img.getAttribute('data-vibe-src'); if(!src) return;
+    try{
+      if(src.indexOf('data:') === 0){
+        var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+        var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+        for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+        img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+      } else { img.src = src; }
+    }catch(e){ img.src = src; }
+  });
+}
 async function _renderHomeVibesCard(){
   // v1352 — vuelve al estilo de portadas REALES (fotos de los últimos momentos).
   // Rail horizontal con las últimas 5 fotos + botón "Ver todos". Publicá abajo.
@@ -20527,21 +20542,41 @@ async function _renderHomeVibesCard(){
   if(!wrap) return;
   var oldWrap = document.getElementById('homeVibesCard');
   if(oldWrap && oldWrap !== wrap) oldWrap.style.display = 'none';
+  // v1484: render INSTANTÁNEO desde caché al abrir la app (stale-while-revalidate).
+  // Muestra la última versión conocida al toque y la refresca por detrás con datos
+  // frescos — el widget ya no queda invisible esperando la red en arranque frío.
+  var _hvCacheKey = 'velo_home_vibes_html_' + (safeLS('get','velo_user_id')||'anon');
+  var _hvHadCache = false;
+  if(!wrap.innerHTML || !wrap.innerHTML.trim()){
+    try{
+      var _hvC = JSON.parse(safeLS('get',_hvCacheKey)||'null');
+      if(_hvC && _hvC.html && (Date.now()-(_hvC.ts||0)) < 12*3600000){ // vibes viven 24h; caché útil 12h
+        wrap.style.display = 'block';
+        wrap.innerHTML = _hvC.html;
+        _hydrateVibeImgs(wrap);
+        try{ if(_hvC.chain) _vibesOpenChain = _hvC.chain; }catch(_){}
+        _hvHadCache = true;
+      }
+    }catch(_){}
+  } else { _hvHadCache = true; } // ya hay algo en pantalla — no ocultar ante errores
   _initSupabase();
-  if(!sbClient){ wrap.style.display = 'none'; return; }
-  try{ await _vibesSeenSyncFromCloud(); }catch(_){}
+  if(!sbClient){ if(!_hvHadCache) wrap.style.display = 'none'; return; }
   try{
     var myId = safeLS('get','velo_user_id')||'';
     var TARGET = 6; // total de tiles antes del "Ver todos"
-    // 1) Cargar todos los grupos visibles (oficiales + públicos + privados donde soy miembro)
-    var gRes = await sbClient.from('vibe_groups').select('id,kind,slug,emoji,title,owner_id,member_ids').order('created_at',{ascending:false}).limit(80);
+    // v1484: las 3 consultas en PARALELO (antes eran en serie — 3 round-trips encadenados)
+    var _hvAll = await Promise.all([
+      _vibesSeenSyncFromCloud().catch(function(){}),
+      sbClient.from('vibe_groups').select('id,kind,slug,emoji,title,owner_id,member_ids').order('created_at',{ascending:false}).limit(80),
+      sbClient.from('vibes').select('id,media_url,group_id,instant_scope,created_at,user_name').gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(300)
+    ]);
+    var gRes = _hvAll[1];
     var allGroups = ((gRes && gRes.data)||[]).filter(function(g){
       if(g.kind === 'official' || g.kind === 'public') return true;
       if(g.kind === 'private' && (g.owner_id === myId || (g.member_ids||[]).indexOf(myId) >= 0)) return true;
       return false;
     });
-    // 2) Cargar todos los vibes activos (para agrupar y tomar el más reciente por grupo)
-    var vRes = await sbClient.from('vibes').select('id,media_url,group_id,instant_scope,created_at,user_name').gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(300);
+    var vRes = _hvAll[2];
     var allVibes = (vRes && vRes.data)||[];
     // El más reciente por groupId + lista de instantáneos aparte
     var latestByGroup = {};   // groupId → vibe más reciente (con media_url)
@@ -20662,18 +20697,16 @@ async function _renderHomeVibesCard(){
       + '</button>'
     + '</div>';
     // Hidratar data URLs a blob URLs (iOS)
-    wrap.querySelectorAll('img[data-vibe-src]').forEach(function(img){
-      var src = img.getAttribute('data-vibe-src'); if(!src) return;
-      try{
-        if(src.indexOf('data:') === 0){
-          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
-          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
-          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
-          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-        } else { img.src = src; }
-      }catch(e){ img.src = src; }
-    });
-  }catch(e){ console.warn('[home-vibes-card]', e); wrap.style.display = 'none'; }
+    _hydrateVibeImgs(wrap);
+    // v1484: guardar el HTML fresco para el próximo arranque frío (render instantáneo).
+    // Solo si no es gigante (portadas base64 legacy podrían inflar localStorage).
+    try{
+      var _hvHtml = wrap.innerHTML;
+      if(_hvHtml && _hvHtml.length < 200000){
+        safeLS('set',_hvCacheKey, JSON.stringify({ html:_hvHtml, chain:_vibesOpenChain||[], ts:Date.now() }));
+      }
+    }catch(_){}
+  }catch(e){ console.warn('[home-vibes-card]', e); if(!_hvHadCache) wrap.style.display = 'none'; }
 }
 // Render de la home de Vibes con las 3 secciones
 async function pRenderVibesHome(){
@@ -36393,7 +36426,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1483;
+    var _BUILT_V = 1484;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
