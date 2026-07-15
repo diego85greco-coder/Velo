@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1490">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1490">
+  <link rel="stylesheet" href="premium.css?v=20260626-1491">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1491">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -116,12 +116,12 @@
     /* v1489: jerarquía tipo historias — Vibes primero (order 0 + DOM), registrar
        ánimo, saludo, Reflexión+Pregunta (identidad), Explorá Velo, tip del día.
        Lo secundario (chips Wrapped/Invitar, clima, sonidos) baja a "Para vos". */
-    #homeQuickCtaStrip     { order: 2 !important; }  /* Wrapped/Invitar/Compañer@ arriba de la Reflexión */
-    #homeReflexionDia      { order: 3 !important; }
-    #homeNavTopStrip       { order: 4 !important; }
-    #homeNavTopStrip2      { order: 5 !important; }
-    #homeDailyTip          { order: 6 !important; }
-    #homeTimeIcon          { order: 99 !important; }
+    #homeTimeIcon          { order: 2 !important; }  /* clima debajo del saludo */
+    #homeQuickCtaStrip     { order: 3 !important; }  /* Wrapped/Invitar/Compañer@ arriba de la Reflexión */
+    #homeReflexionDia      { order: 4 !important; }
+    #homeNavTopStrip       { order: 5 !important; }
+    #homeNavTopStrip2      { order: 6 !important; }
+    #homeDailyTip          { order: 7 !important; }
     #homeAmbientPanel      { order: 105 !important; }
     #homeNavTiles          { order: 40 !important; }
     #homeRegisterOuter     { order: 50 !important; }
@@ -245,7 +245,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1490</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1491</div>
 </div>
 
 <!-- APP SHELL -->
@@ -373,12 +373,12 @@
     <!-- TOPBAR (mobile) -->
     <header class="p-topbar" id="pTopbar" style="display:none">
       <img src="assets/icon-topbar.png?v=879" alt="Velo" class="p-topbar-logo-img" onclick="pLogoClick()" style="cursor:pointer">
-      <button id="topbarEstiloBtn" onclick="rToggleDarkMode()" title="Cambiar estilo" style="display:none !important;flex-shrink:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-left:6px">
+      <button id="topbarEstiloBtn" onclick="rToggleDarkMode()" title="Cambiar estilo" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-left:6px">
         <span id="topbarEstiloIcon" style="font-size:17px;line-height:1">🌛</span>
         <span id="topbarEstiloLbl" style="font-size:9px;font-weight:700;color:rgba(200,230,210,.80);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Estilo</span>
       </button>
       <div style="flex:1;display:flex;justify-content:center;align-items:center;gap:4px">
-        <button id="topbarDonateBtn" onclick="pGoTo('donate-cta')" title="Apoyá a Velo" style="display:none !important;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">💛</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Apoyar</span></button>
+        <button id="topbarDonateBtn" onclick="pGoTo('donate-cta')" title="Apoyá a Velo" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">💛</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Apoyar</span></button>
         <button id="topbarPlusBtn" onclick="pShowPlusModal()" title="Plus" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">🕊️</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Plus</span></button>
         <button onclick="pOpenGuide()" title="Guía de Velo" style="display:none !important;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">📖</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Guía</span></button>
       </div>
@@ -4472,8 +4472,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1490"></script>
-<script src="premium-redesign.js?v=20260626-1490"></script>
+<script src="premium.js?v=20260626-1491"></script>
+<script src="premium-redesign.js?v=20260626-1491"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
