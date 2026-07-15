@@ -1,5 +1,5 @@
 /* Velo Service Worker v16 — always-fresh HTML + smart notifs + pre-cache + DM mute si el chat está abierto */
-var CACHE = 'velo-v82';
+var CACHE = 'velo-v83';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
@@ -190,9 +190,29 @@ self.addEventListener('push', function(event){
       actionMeta: actionMeta,
     }
   };
+  // v83: dedup PERSISTENTE vía Cache API — el mapa en memoria se pierde si el
+  // navegador reinicia el SW entre dos pushes duplicados (p.ej. dos triggers en
+  // la DB disparando el mismo aviso). Esto sobrevive reinicios: si un push con
+  // la misma clave se mostró hace <20s, se descarta.
+  function _veloCacheDedup(key){
+    var url = '/velo-push-dedup/' + encodeURIComponent(key);
+    return caches.open('velo-push-dedup').then(function(c){
+      return c.match(url).then(function(hit){
+        var now = Date.now();
+        if(hit){
+          var ts = parseInt(hit.headers.get('x-velo-ts')||'0', 10);
+          if(now - ts < 20000) return true; // duplicado reciente → no mostrar
+        }
+        return c.put(url, new Response('1', { headers: { 'x-velo-ts': String(now) } }))
+          .then(function(){ return false; });
+      });
+    }).catch(function(){ return false; });
+  }
+
   // v81: si es una notificación de DM y el usuario YA está con ese chat abierto
   // y visible, no mostrarla (le preguntamos a la ventana antes de notificar).
-  event.waitUntil((function(){
+  event.waitUntil(_veloCacheDedup(_dupKey).then(function(_isDupPersist){
+    if(_isDupPersist) return;
     var isDm = (data.tag||'').indexOf('velo-dm-') === 0;
     if(!isDm) return self.registration.showNotification(title, options);
     var peer = (data.tag||'').slice('velo-dm-'.length);
@@ -211,7 +231,7 @@ self.addEventListener('push', function(event){
         return self.registration.showNotification(title, options);
       });
     }).catch(function(){ return self.registration.showNotification(title, options); });
-  })());
+  }));
 });
 
 self.addEventListener('notificationclick', function(event){
