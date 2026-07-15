@@ -2763,7 +2763,9 @@ var VELO_ACHIEVEMENTS = [
   {k:'moods_100',     n:'100 registros',             d:'Cien veces que te miraste',     e:'💚', c:function(s){return s.moodCount>=100;}},
   {k:'moods_365',     n:'Un año registrando',        d:'365 registros de ánimo',        e:'🎊', c:function(s){return s.moodCount>=365;}},
   {k:'first_bt',      n:'Primer post en Bitácora',   d:'Compartiste tu primera historia', e:'📖', c:function(s){return s.btPosts>=1;}},
-  {k:'first_bottle',  n:'Primer mensaje al mar',     d:'Lanzaste una botella al océano',  e:'🌊', c:function(s){return s.bottles>=1;}},
+  {k:'first_vibe',    n:'Primera Vibe',              d:'Compartiste tu primera vibe de hoy', e:'✨', c:function(s){return s.vibes>=1;}},
+  {k:'first_dq',      n:'Pregunta del Día',          d:'Respondiste tu primera Pregunta del Día', e:'🌤️', c:function(s){return s.dqAnswered>=1;}},
+  {k:'first_momento', n:'Primer Momento',            d:'Compartiste un momento con la comunidad', e:'🌸', c:function(s){return s.momentos>=1;}},
   {k:'first_help',    n:'Primer acompañamiento',     d:'Ayudaste a alguien de la comunidad', e:'🤝', c:function(s){return s.helped>=1;}},
   {k:'helper_10',     n:'Acompañaste a 10 personas', d:'10 personas contuvieron el corazón por vos', e:'✨', c:function(s){return s.helped>=10;}},
   {k:'six_months',    n:'6 meses en Velo',           d:'Medio año caminando con nosotros', e:'🌸', c:function(s){return s.daysInVelo>=180;}},
@@ -2804,7 +2806,7 @@ async function _syncAchievementsFromCloud(){
   }catch(e){ console.warn('[achievements sync]', e && e.message); }
 }
 async function _computeAchievementStats(uid){
-  var stats = { moodCount:0, maxStreak:0, btPosts:0, bottles:0, helped:0, daysInVelo:0, hasBuddy:false, referralsAccepted:0 };
+  var stats = { moodCount:0, maxStreak:0, btPosts:0, vibes:0, dqAnswered:0, momentos:0, helped:0, daysInVelo:0, hasBuddy:false, referralsAccepted:0 };
   // Moods (desde LS)
   Object.keys(localStorage).forEach(function(k){
     if(k.indexOf('velo_mood_') === 0 && /^\d{4}-\d{2}-\d{2}$/.test(k.slice(10))) stats.moodCount++;
@@ -2829,7 +2831,9 @@ async function _computeAchievementStats(uid){
         if(p.data.helped_count) stats.helped = parseInt(p.data.helped_count,10)||0;
       }
       try{ var _bt = await sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',uid); if(!_bt.error) stats.btPosts = _bt.count||0; }catch(_){}
-      try{ var _bo = await sbClient.from('bottles').select('id',{count:'exact',head:true}).eq('user_id',uid); if(!_bo.error) stats.bottles = _bo.count||0; }catch(_){}
+      try{ var _vb = await sbClient.from('vibes').select('id',{count:'exact',head:true}).eq('user_id',uid); if(!_vb.error) stats.vibes = _vb.count||0; }catch(_){}
+      try{ var _dq = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid); if(!_dq.error) stats.dqAnswered = _dq.count||0; }catch(_){}
+      try{ var _mo = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid); if(!_mo.error) stats.momentos = _mo.count||0; }catch(_){}
       try{ var _rf = await sbClient.from('referrals').select('id',{count:'exact',head:true}).eq('referrer_id',uid); if(!_rf.error) stats.referralsAccepted = _rf.count||0; }catch(_){}
     }catch(e){}
   }
@@ -6339,6 +6343,19 @@ if('serviceWorker' in navigator && 'PushManager' in window){
         _savePushSubscriptionToSupabase(newSub).catch(function(){});
         console.log('[push] subscription rotated by browser — saved new endpoint');
       }catch(_me){}
+      return;
+    }
+    // 2b) El SW pregunta si el chat con ese peer está abierto y visible
+    //     (v1482: si ya estás dentro del chat, la push de DM no se muestra)
+    if(e.data.type === 'VELO_DM_OPEN_QUERY'){
+      var _dmOpen = false;
+      try{
+        _dmOpen = document.visibilityState === 'visible'
+          && typeof _curPage !== 'undefined' && _curPage === 'dm-chat'
+          && typeof _dmPeer !== 'undefined' && _dmPeer
+          && String(_dmPeer.id) === String(e.data.peer || '');
+      }catch(_dq){}
+      try{ if(e.ports && e.ports[0]) e.ports[0].postMessage({ open: _dmOpen }); }catch(_dp){}
       return;
     }
     // 2) Usuario tapeó una acción de una push notification
@@ -19292,11 +19309,18 @@ function pLoadProfile(){
   _setEl('profileDays', _moodDayCount);
   var _lbl = document.getElementById('profileDaysLbl');
   if(_lbl) _lbl.innerHTML = 'ÁNIMOS<br>' + _monthLabel.toUpperCase();
-  var _locHelped = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
-  var _locRecv   = parseInt(safeLS('get','velo_help_received')||'0', 10);
+  // v1482: TODAS las estadísticas muestran el MES EN CURSO (se reinician cada mes).
+  var _statsTitle = document.getElementById('profileStatsTitle');
+  if(_statsTitle) _statsTitle.textContent = 'Mis estadísticas · ' + _monthLabel;
+  var _mKey = _curYear+'-'+String(_curMonth+1).padStart(2,'0');
+  var _mCache = {}; try{ _mCache = JSON.parse(safeLS('get','velo_stats_month')||'{}'); }catch(e){}
+  var _locHelped = (_mCache.k===_mKey) ? (_mCache.h||0) : 0;
+  var _locRecv   = (_mCache.k===_mKey) ? (_mCache.r||0) : 0;
   _setEl('profileChats',    _locHelped + _locRecv);
   _setEl('profileHelped',   _locHelped);
   _setEl('profileReceived', _locRecv);
+  var _btMonthCache = (_mCache.k===_mKey) ? (_mCache.b||0) : 0;
+  (function(){ var el=document.getElementById('profileBitacoraCount'); if(el) el.textContent=_btMonthCache; })();
   // Count real conversations — three sources: localStorage, guardian_requests table, profiles table
   _initSupabase();
   if(sbClient){
@@ -19315,29 +19339,47 @@ function pLoadProfile(){
           _setEl('profileDays', sbMoodDays);
         }).catch(function(){});
 
-      // Bitácora public post count
-      sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',_pUid).eq('is_anon',false)
-        .then(function(r){ var el=document.getElementById('profileBitacoraCount'); if(el) el.textContent=(r&&r.count!=null)?r.count:0; })
+      // v1482: estadísticas del MES EN CURSO para la vista. Las históricas se
+      // siguen calculando aparte (alimentan la insignia de Guardián y los
+      // contadores del perfil), pero lo que se MUESTRA es el mes actual.
+      var _monthStartISO = new Date(_curYear, _curMonth, 1).toISOString();
+
+      // Bitácora — posts públicos del mes
+      sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',_pUid).eq('is_anon',false).gte('created_at', _monthStartISO)
+        .then(function(r){
+          var _btM = (r&&r.count!=null)?r.count:0;
+          var el=document.getElementById('profileBitacoraCount'); if(el) el.textContent=_btM;
+          try{ var mc=JSON.parse(safeLS('get','velo_stats_month')||'{}'); if(mc.k!==_mKey) mc={k:_mKey}; mc.b=_btM; safeLS('set','velo_stats_month', JSON.stringify(mc)); }catch(e){}
+        })
         .catch(function(){});
 
       Promise.all([
+        // Mes en curso (para mostrar)
+        sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended').gte('created_at', _monthStartISO),
+        sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended').gte('created_at', _monthStartISO),
+        // Históricos (para insignia de Guardián + contadores del perfil)
         sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended'),
         sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended'),
         sbClient.from('profiles').select('helped_count,received_count').eq('id', _pUid).maybeSingle()
       ]).then(function(results){
-        var realH  = (results[0] && results[0].count  != null) ? results[0].count  : 0;
-        var realR  = (results[1] && results[1].count  != null) ? results[1].count  : 0;
-        var profH  = (results[2] && results[2].data   && results[2].data.helped_count)   ? parseInt(results[2].data.helped_count,  10) : 0;
-        var profR  = (results[2] && results[2].data   && results[2].data.received_count) ? parseInt(results[2].data.received_count,10) : 0;
+        var mH     = (results[0] && results[0].count  != null) ? results[0].count  : 0;
+        var mR     = (results[1] && results[1].count  != null) ? results[1].count  : 0;
+        var realH  = (results[2] && results[2].count  != null) ? results[2].count  : 0;
+        var realR  = (results[3] && results[3].count  != null) ? results[3].count  : 0;
+        var profH  = (results[4] && results[4].data   && results[4].data.helped_count)   ? parseInt(results[4].data.helped_count,  10) : 0;
+        var profR  = (results[4] && results[4].data   && results[4].data.received_count) ? parseInt(results[4].data.received_count,10) : 0;
         var finalH = Math.max(realH, profH);
         var finalR = Math.max(realR, profR);
+        // Caches históricos (insignia de Guardián usa velo_guardian_convs)
         safeLS('set','velo_guardian_convs', String(finalH));
         safeLS('set','velo_help_received',  String(finalR));
         if(finalH > profH) _bumpProfileCounter('helped_count',   finalH);
         if(finalR > profR) _bumpProfileCounter('received_count', finalR);
-        _setEl('profileChats',    finalH + finalR);
-        _setEl('profileHelped',   finalH);
-        _setEl('profileReceived', finalR);
+        // Vista: SOLO el mes en curso + caché mensual para el próximo render
+        _setEl('profileChats',    mH + mR);
+        _setEl('profileHelped',   mH);
+        _setEl('profileReceived', mR);
+        try{ var mc2=JSON.parse(safeLS('get','velo_stats_month')||'{}'); if(mc2.k!==_mKey) mc2={k:_mKey}; mc2.h=mH; mc2.r=mR; safeLS('set','velo_stats_month', JSON.stringify(mc2)); }catch(e){}
       }).catch(function(){});
     }).catch(function(){});
   }
@@ -19694,6 +19736,38 @@ function _calcBadges(){
   return b;
 }
 
+// v1482: conteos reales por usuario desde Supabase para los logros del perfil.
+// Cachea en velo_badge_counts (y en memoria) y re-renderiza la grilla si cambió.
+var _badgeCloudCounts = null;
+var _badgeCloudFetching = false;
+async function _fetchBadgeCloudCounts(){
+  if(_badgeCloudFetching) return;
+  if(_badgeCloudCounts && _badgeCloudCounts.ts && (Date.now()-_badgeCloudCounts.ts) < 60000) return; // fresco hace <1min
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(!sbClient || !uid) return;
+  _badgeCloudFetching = true;
+  try{
+    var _cnt = async function(tbl){
+      try{
+        var r = await sbClient.from(tbl).select('id',{count:'exact',head:true}).eq('user_id', uid);
+        return (!r.error && r.count!=null) ? r.count : 0;
+      }catch(e){ return 0; }
+    };
+    var res = await Promise.all([
+      _cnt('diary_entries'), _cnt('vibes'), _cnt('momentos'),
+      _cnt('daily_responses'), _cnt('bitacora_posts'), _cnt('circle_members')
+    ]);
+    var prev = _badgeCloudCounts || {};
+    var next = { diary:res[0], vibes:res[1], momentos:res[2], dq:res[3], bitacora:res[4], circles:res[5], ts:Date.now() };
+    var changed = ['diary','vibes','momentos','dq','bitacora','circles'].some(function(k){ return (prev[k]||0) !== next[k]; });
+    _badgeCloudCounts = next;
+    try{ safeLS('set','velo_badge_counts', JSON.stringify(next)); }catch(e){}
+    if(changed && document.getElementById('profileBadgesGrid')) _renderBadgesGrid();
+  }catch(e){}
+  finally{ _badgeCloudFetching = false; }
+}
+
 function _renderBadgesGrid(){
   var el = document.getElementById('profileBadgesGrid');
   if(!el) return;
@@ -19769,22 +19843,32 @@ function _renderBadgesGrid(){
       d.setDate(d.getDate()-1);
     }
   }());
+  // v1482: logros alineados a las secciones ACTIVAS de la app. Se quitaron los de
+  // secciones ocultas (Al Mar, Muro Feliz, respiración). Los conteos combinan
+  // localStorage (inmediato) + Supabase (_badgeCloudCounts, exacto y multi-device).
+  if(!_badgeCloudCounts){ try{ _badgeCloudCounts = JSON.parse(safeLS('get','velo_badge_counts')||'null'); }catch(e){} }
+  var _cc = _badgeCloudCounts || {};
+  var _diaryDone = diary.length>0 || (_cc.diary||0)>0;
+  var _totalMsgs = parseInt(safeLS('get','velo_total_msgs')||'0',10);
   var badges = [
     { icon:'🌱', name:'Primer Paso',      desc:'Crear tu cuenta',                              done:true,            prog:100 },
-    { icon:'📔', name:'Escribiendo',       desc:'Primera entrada en el diario',                 done:!!diary.length,  prog:diary.length?100:0 },
+    { icon:'📔', name:'Escribiendo',       desc:'Primera entrada en el diario',                 done:_diaryDone,      prog:_diaryDone?100:0 },
     { icon:'🌈', name:'En Movimiento',     desc:'Registrar tu ánimo 7 días',                   done:moodDaysTotal>=7, prog:Math.min(100,Math.round(moodDaysTotal/7*100)) },
     { icon:'💙', name:'Corazón Abierto',   desc:'Participar en Sala de Ayuda',                 done:!!safeLS('get','velo_helped_once'), prog:safeLS('get','velo_helped_once')?100:0 },
+    { icon:'🤝', name:'Primer Apoyo',      desc:'Acompañar a alguien en Sala de Ayuda',       done:!!safeLS('get','velo_helped_once') && parseInt(safeLS('get','velo_helped_others')||'0',10)>0, prog:null },
+    { icon:'✨', name:'Primera Vibe',      desc:'Compartir tu primera vibe de hoy',            done:(_cc.vibes||0)>0, prog:(_cc.vibes||0)>0?100:0 },
+    { icon:'🌸', name:'Primer Momento',    desc:'Compartir un momento con la comunidad',       done:(_cc.momentos||0)>0, prog:(_cc.momentos||0)>0?100:0 },
+    { icon:'🌤️', name:'Pregunta del Día',  desc:'Responder tu primera Pregunta del Día',       done:(_cc.dq||0)>0,   prog:(_cc.dq||0)>0?100:0 },
+    { icon:'📖', name:'Tu Historia',       desc:'Publicar tu primera historia en Bitácora',    done:(_cc.bitacora||0)>0, prog:(_cc.bitacora||0)>0?100:0 },
+    { icon:'☮️', name:'En Círculo',        desc:'Unirte a un Círculo de Paz',                  done:(_cc.circles||0)>0, prog:(_cc.circles||0)>0?100:0 },
+    { icon:'💬', name:'Conversador/a',     desc:'Enviar 10 mensajes en chats',                 done:_totalMsgs>=10,  prog:Math.min(100,Math.round(_totalMsgs/10*100)) },
+    { icon:'🌟', name:'Velo Plus',         desc:'Suscribirse a Velo Plus',                     done:_isPremium(),    prog:_isPremium()?100:0 },
     { icon:'⭐', name:'Constancia',        desc:'30 días en la comunidad',                     done:daysActive>=30,  prog:Math.min(100,Math.round(daysActive/30*100)) },
     { icon:'🦋', name:'Transformación',    desc:'Completar onboarding',                        done:!!safeLS('get','velo_onboarding_done'), prog:safeLS('get','velo_onboarding_done')?100:0 },
-    { icon:'🌊', name:'Mensaje al Mar',    desc:'Enviar tu primer mensaje al Mar',             done:parseInt(safeLS('get','velo_bottle_count')||safeLS('get','velo_total_bottles')||'0',10)>0 || JSON.parse(safeLS('get','velo_my_bottles')||'[]').length>0, prog:null },
-    { icon:'🤝', name:'Primer Apoyo',      desc:'Acompañar a alguien en Sala de Ayuda',       done:!!safeLS('get','velo_helped_once') && parseInt(safeLS('get','velo_helped_others')||'0',10)>0, prog:null },
-    { icon:'🌻', name:'Muro en Flor',      desc:'Primera publicación en el Muro',              done:happyPosts.length>0, prog:happyPosts.length?100:0 },
-    { icon:'💬', name:'Conversador/a',     desc:'Enviar 10 mensajes en chats',                 done:parseInt(safeLS('get','velo_total_msgs')||'0',10)>=10, prog:Math.min(100,Math.round(parseInt(safeLS('get','velo_total_msgs')||'0',10)/10*100)) },
-    { icon:'🧘', name:'Momento de Calma', desc:'Completar la sesión de respiración',          done:!!safeLS('get','velo_breathed_once'), prog:safeLS('get','velo_breathed_once')?100:0 },
-    { icon:'🌟', name:'Velo Plus',         desc:'Suscribirse a Velo Plus',                     done:safeLS('get','velo_plan')==='plus', prog:safeLS('get','velo_plan')==='plus'?100:0 },
     { icon:'🏡', name:'En Comunidad',      desc:'7 días activo en la app',                     done:daysActive>=7,   prog:Math.min(100,Math.round(daysActive/7*100)) },
     { icon:'🗓️', name:'Semana Completa',   desc:'Abrir la app 7 días distintos',               done:_getVisitDayCount()>=7, prog:Math.min(100,Math.round(_getVisitDayCount()/7*100)) }
   ];
+  _fetchBadgeCloudCounts(); // refresca conteos reales desde Supabase (re-renderiza si cambió algo)
   el.innerHTML = guardianSection + badges.map(function(b){
     var progPct = b.done ? 100 : (b.prog != null ? b.prog : 0);
     return '<div class="p-badge-row" style="opacity:'+(b.done?1:(progPct>0?.75:.45))+'"><div class="p-badge-ic" style="background:'+(b.done?'var(--sage7)':'var(--cream2)')+'">'+b.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--ink)">'+b.name+'</div><div style="font-size:13px;color:var(--ink4)">'+b.desc+'</div><div class="p-badge-prog-track"><div class="p-badge-prog-fill" style="width:'+progPct+'%;background:'+(b.done?'var(--sage2)':'var(--sage4)')+'"></div></div></div>'+(b.done?'<span style="font-size:16px">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')+'</div>';
@@ -36309,7 +36393,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1481;
+    var _BUILT_V = 1482;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

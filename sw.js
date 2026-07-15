@@ -1,5 +1,5 @@
-/* Velo Service Worker v15 — always-fresh HTML + smart notifs + pre-cache */
-var CACHE = 'velo-v80';
+/* Velo Service Worker v16 — always-fresh HTML + smart notifs + pre-cache + DM mute si el chat está abierto */
+var CACHE = 'velo-v81';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
@@ -190,7 +190,28 @@ self.addEventListener('push', function(event){
       actionMeta: actionMeta,
     }
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  // v81: si es una notificación de DM y el usuario YA está con ese chat abierto
+  // y visible, no mostrarla (le preguntamos a la ventana antes de notificar).
+  event.waitUntil((function(){
+    var isDm = (data.tag||'').indexOf('velo-dm-') === 0;
+    if(!isDm) return self.registration.showNotification(title, options);
+    var peer = (data.tag||'').slice('velo-dm-'.length);
+    return self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(wins){
+      var checks = wins.filter(function(w){ return w.visibilityState === 'visible'; }).map(function(w){
+        return new Promise(function(res){
+          var mc = new MessageChannel();
+          var t = setTimeout(function(){ res(false); }, 400);
+          mc.port1.onmessage = function(ev){ clearTimeout(t); res(!!(ev.data && ev.data.open)); };
+          try{ w.postMessage({ type:'VELO_DM_OPEN_QUERY', peer: peer }, [mc.port2]); }
+          catch(e){ clearTimeout(t); res(false); }
+        });
+      });
+      return Promise.all(checks).then(function(answers){
+        if(answers.some(function(a){ return a; })) return; // chat abierto → no molestar
+        return self.registration.showNotification(title, options);
+      });
+    }).catch(function(){ return self.registration.showNotification(title, options); });
+  })());
 });
 
 self.addEventListener('notificationclick', function(event){
