@@ -20896,8 +20896,30 @@ var _vibesOpenChain = [];   // v1444: orden de grupos con contenido para encaden
 // Entrada al Vibes desde el home
 function pOpenVibes(){ pGoTo('vibes'); }
 // Renderiza la card de entrada arriba del home (llamada tras cargar el home)
-// v1484: hidrata data-URLs de imágenes a blob URLs (iOS) — usado por el render
-// fresco y por el render instantáneo desde caché.
+// ── v1502: MINIATURAS CLOUDINARY ────────────────────────────────────
+// Las fotos se subían a Cloudinary pero se mostraban a resolución completa
+// (¡megabytes para un círculo de 64px!). Estas transformaciones piden al CDN
+// la medida justa: 5-10× menos datos y carga instantánea.
+function _cldOpt(url, w){
+  try{
+    if(!url || url.indexOf('res.cloudinary.com') < 0 || url.indexOf('/upload/') < 0) return url;
+    if(url.indexOf('/video/upload/') >= 0) return url;          // videos: ver _cldVideoPoster
+    if(/\/upload\/[^/]*(w_\d|q_auto)/.test(url)) return url;    // ya transformada
+    return url.replace('/upload/', '/upload/w_'+(w||400)+',c_limit,q_auto,f_auto,dpr_2.0/');
+  }catch(e){ return url; }
+}
+// Portada JPG de un video de Cloudinary (frame del segundo 0) — antes se
+// descargaba el VIDEO entero solo para mostrar su primer cuadro en un thumb.
+function _cldVideoPoster(url, w){
+  try{
+    if(!url || url.indexOf('res.cloudinary.com') < 0 || url.indexOf('/video/upload/') < 0) return null;
+    var u = url.split('#')[0].replace('/video/upload/', '/video/upload/so_0,w_'+(w||300)+',c_limit,q_auto/');
+    if(/\.[a-z0-9]{2,4}$/i.test(u)) return u.replace(/\.[a-z0-9]{2,4}$/i, '.jpg');
+    return u + '.jpg';
+  }catch(e){ return null; }
+}
+// v1484→v1502: hidrata data-URLs a blob URLs (iOS) y aplica miniaturas
+// Cloudinary según data-vibe-w. Único punto de entrada para thumbs de Vibes.
 function _hydrateVibeImgs(wrap){
   wrap.querySelectorAll('img[data-vibe-src]').forEach(function(img){
     var src = img.getAttribute('data-vibe-src'); if(!src) return;
@@ -20907,7 +20929,17 @@ function _hydrateVibeImgs(wrap){
         var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
         for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
         img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-      } else { img.src = src; }
+      } else {
+        var w = parseInt(img.getAttribute('data-vibe-w')||'0',10) || 400;
+        var fin = src;
+        if(typeof _vibeIsVideoUrl === 'function' && _vibeIsVideoUrl(src)){
+          var p = _cldVideoPoster(src, w); if(p) fin = p;
+        } else {
+          fin = _cldOpt(src, w);
+        }
+        if(fin !== src){ img.onerror = function(){ this.onerror = null; this.src = src; }; }
+        img.src = fin;
+      }
     }catch(e){ img.src = src; }
   });
 }
@@ -20921,7 +20953,7 @@ async function _renderHomeVibesCard(){
   // v1484: render INSTANTÁNEO desde caché al abrir la app (stale-while-revalidate).
   // Muestra la última versión conocida al toque y la refresca por detrás con datos
   // frescos — el widget ya no queda invisible esperando la red en arranque frío.
-  var _hvCacheKey = 'velo_home_vibes_html2_' + (safeLS('get','velo_user_id')||'anon'); // v1493: _2 invalida el caché del diseño viejo
+  var _hvCacheKey = 'velo_home_vibes_html3_' + (safeLS('get','velo_user_id')||'anon'); // v1493: _2 invalida el caché del diseño viejo
   var _hvHadCache = false;
   if(!wrap.innerHTML || !wrap.innerHTML.trim()){
     try{
@@ -21032,9 +21064,13 @@ async function _renderHomeVibesCard(){
       var onclickAction = t.isInstant ? ('pOpenInstantVibe(\''+_escHtml(t.coverVibeId)+'\')') : ('pOpenVibeGroup(\''+_escHtml(t.id)+'\')');
       var visual;
       if(hasCover && _vibeIsVideoUrl(t.coverUrl)){
-        visual = '<video src="'+_escHtml(t.coverUrl)+'#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none"></video>';
+        // v1502: póster JPG del video (frame 0) — antes se bajaba el video entero
+        var _vp = _cldVideoPoster(t.coverUrl, 200);
+        visual = _vp
+          ? '<img src="'+_escHtml(_vp)+'" style="width:100%;height:100%;object-fit:cover;display:block">'
+          : '<video src="'+_escHtml(t.coverUrl)+'#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none"></video>';
       } else if(hasCover){
-        visual = '<img data-vibe-src="'+_escHtml(t.coverUrl)+'" style="width:100%;height:100%;object-fit:cover;display:block">';
+        visual = '<img data-vibe-src="'+_escHtml(t.coverUrl)+'" data-vibe-w="200" style="width:100%;height:100%;object-fit:cover;display:block">';
       } else {
         var emptyCls = isPrivate ? 'vibes-tile-empty--private' : (t.isInstant ? 'vibes-tile-empty--instant' : 'vibes-tile-empty--group');
         visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:26px">'+_escHtml(t.emoji)+'</div>';
@@ -21177,7 +21213,7 @@ async function pRenderVibesHome(){
         var isSeen = !!_seen[v.id];
         var brd = isSeen ? 'rgba(140,140,140,.55)' : (isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)');
         var opa = isSeen ? '.55' : '1';
-        return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+(isSeen?'grayscale(.85)':'none')+'"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
+        return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+(isSeen?'grayscale(.85)':'none')+'"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="240" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
       }).join('');
       instantHtml = '<div style="margin-bottom:22px">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,220,120,.85);margin-bottom:4px">✨ INSTANTÁNEOS</div>'
@@ -21209,7 +21245,7 @@ async function pRenderVibesHome(){
         if(saved.length){
           var savedThumbs = saved.map(function(v){
             var t = new Date(v.created_at); var tStr = t.toLocaleDateString('es', {day:'numeric',month:'short'});
-            return '<button onclick="_openSavedVibe(\''+v.id+'\')" style="flex-shrink:0;width:110px;padding:0;background:rgba(0,0,0,.35);border:2px solid rgba(200,158,56,.62);border-radius:14px;overflow:hidden;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:130px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:rgba(255,240,180,.98);font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px">'+_escHtml(tStr)+'</div></button>';
+            return '<button onclick="_openSavedVibe(\''+v.id+'\')" style="flex-shrink:0;width:110px;padding:0;background:rgba(0,0,0,.35);border:2px solid rgba(200,158,56,.62);border-radius:14px;overflow:hidden;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="260" style="width:100%;height:130px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:rgba(255,240,180,.98);font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px">'+_escHtml(tStr)+'</div></button>';
           }).join('');
           savedHtml = '<div style="margin-bottom:22px">'
             + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,215,80,.85);margin-bottom:4px">🌟 MIS MOMENTOS GUARDADOS</div>'
@@ -21228,17 +21264,7 @@ async function pRenderVibesHome(){
     }catch(_savedE){ console.warn('[vibes saved]', _savedE); }
 
     // Hidratar imágenes de instantáneos (data URL → blob URL, iOS)
-    body.querySelectorAll('img[data-vibe-src]').forEach(function(img){
-      var src = img.getAttribute('data-vibe-src'); if(!src) return;
-      try{
-        if(src.indexOf('data:') === 0){
-          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
-          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
-          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
-          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-        } else { img.src = src; }
-      }catch(e){ img.src = src; }
-    });
+    _hydrateVibeImgs(body); // v1502: hidratación centralizada con miniaturas
   }catch(e){
     console.warn('[vibes-home]', e);
     body.innerHTML = '<div style="text-align:center;padding:50px 20px;color:rgba(220,120,120,.75);font-family:Jost,sans-serif">Error cargando Vibes</div>';
@@ -22149,17 +22175,7 @@ async function pOpenVibeGroup(groupId){
       if(newest > lastSeen){ safeLS('set', _lsKey, String(newest)); _vibesSeenPushToCloud(); }
     }catch(_){}
     // Convertir data URLs a blob URLs (iOS Safari) — post-render
-    list.querySelectorAll('img[data-vibe-src]').forEach(function(img){
-      var src = img.getAttribute('data-vibe-src'); if(!src) return;
-      try{
-        if(src.indexOf('data:') === 0){
-          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
-          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
-          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
-          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-        } else { img.src = src; }
-      }catch(e){ img.src = src; }
-    });
+    _hydrateVibeImgs(list); // v1502: hidratación centralizada con miniaturas
   }catch(e){
     console.warn('[open-group]', e);
     var l = document.getElementById('vibeGroupList');
@@ -22249,17 +22265,7 @@ async function pOpenInstantVibe(vibeId){
       _vibesSeenPushToCloud();
     }catch(_){}
     // Hidratar imágenes (data URL → blob URL, iOS)
-    list.querySelectorAll('img[data-vibe-src]').forEach(function(img){
-      var src = img.getAttribute('data-vibe-src'); if(!src) return;
-      try{
-        if(src.indexOf('data:') === 0){
-          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
-          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
-          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
-          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-        } else { img.src = src; }
-      }catch(e){ img.src = src; }
-    });
+    _hydrateVibeImgs(list); // v1502: hidratación centralizada con miniaturas
   }catch(e){ console.warn('[open-instant]', e); }
 }
 function _closeVibeInstant(){
@@ -22370,8 +22376,8 @@ function _vibeCardHtml(v){
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
     + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div>'+vibeSaveBtn+vibeMenuBtn+'</div>'
     + (_vibeIsVideoUrl(v.media_url)
-        ? '<video src="'+_escHtml(v.media_url||'')+'" controls playsinline preload="metadata" style="width:100%;max-height:520px;display:block;background:#000"></video>'
-        : '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">')
+        ? '<video src="'+_escHtml((v.media_url||'').replace('/video/upload/','/video/upload/q_auto/'))+'" controls playsinline preload="metadata" style="width:100%;max-height:520px;display:block;background:#000"></video>'
+        : '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="900" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">')
     + (v.caption ? '<div style="padding:12px 16px 14px;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-style:italic;color:rgba(240,250,240,.95);line-height:1.5">"'+_escHtml(v.caption)+'"</div>' : '')
     + summaryChip
     + reactionPicker
@@ -22701,17 +22707,7 @@ async function _openSavedVibe(vibeId){
   if(container){
     container.innerHTML = _vibeCardHtml(v);
     _vibeFillUsernames(container);
-    container.querySelectorAll('img[data-vibe-src]').forEach(function(img){
-      var src = img.getAttribute('data-vibe-src'); if(!src) return;
-      try{
-        if(src.indexOf('data:') === 0){
-          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
-          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
-          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
-          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-        } else { img.src = src; }
-      }catch(e){ img.src = src; }
-    });
+    _hydrateVibeImgs(container); // v1502: hidratación centralizada con miniaturas
   }
 }
 
@@ -22750,17 +22746,7 @@ async function _openSavedVibesCarousel(startId){
   var listEl = document.getElementById('savedVibeCarousel');
   if(listEl){
     _vibeFillUsernames(listEl);
-    listEl.querySelectorAll('img[data-vibe-src]').forEach(function(img){
-      var src = img.getAttribute('data-vibe-src'); if(!src) return;
-      try{
-        if(src.indexOf('data:') === 0){
-          var a2 = src.split(','); var mm = a2[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
-          var bstr = atob(a2[1]||''); var u8 = new Uint8Array(bstr.length);
-          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
-          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-        } else { img.src = src; }
-      }catch(e){ img.src = src; }
-    });
+    _hydrateVibeImgs(listEl); // v1502: hidratación centralizada con miniaturas
     // Arrancar en la miniatura tocada
     var idx = 0;
     if(startId){ for(var k=0;k<arr.length;k++){ if(arr[k].id===startId){ idx=k; break; } } }
@@ -22954,20 +22940,10 @@ async function _renderProfileVibes(){
           var kind = v.group_id ? '' : (v.instant_scope === 'private' ? '🔒' : '🌟');
           var d = new Date(v.created_at);
           var label = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
-          return '<button onclick="_openSavedVibesCarousel(\''+v.id+'\')" style="background:none;border:none;padding:0;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1.5px solid var(--border);display:block"><div style="position:absolute;bottom:4px;left:5px;right:5px;padding:2px 4px;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;font-family:Jost,sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-align:left">'+kind+' '+label+'</div></button>';
+          return '<button onclick="_openSavedVibesCarousel(\''+v.id+'\')" style="background:none;border:none;padding:0;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="320" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1.5px solid var(--border);display:block"><div style="position:absolute;bottom:4px;left:5px;right:5px;padding:2px 4px;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;font-family:Jost,sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-align:left">'+kind+' '+label+'</div></button>';
         }).join('') + '</div>';
         // Hidratar data URL → blob URL
-        histList.querySelectorAll('img[data-vibe-src]').forEach(function(img){
-          var src = img.getAttribute('data-vibe-src'); if(!src) return;
-          try{
-            if(src.indexOf('data:') === 0){
-              var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
-              var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
-              for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
-              img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
-            } else { img.src = src; }
-          }catch(e){ img.src = src; }
-        });
+        _hydrateVibeImgs(histList); // v1502: hidratación centralizada con miniaturas
       } else {
         histCard.style.display = 'none';
       }
@@ -36804,7 +36780,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1501;
+    var _BUILT_V = 1502;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
