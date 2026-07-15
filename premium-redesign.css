@@ -15702,40 +15702,42 @@ body.r-dark .home-vibes-widget {
   background: linear-gradient(165deg, rgba(10,30,19,.96), rgba(7,22,14,.97)) !important;
   border: 1px solid rgba(116,198,157,.26) !important;
 }
-/* CTA: pastilla redondeada, gradiente sobrio, texto blanco en ambos temas */
-.home-vibes-widget__cta,
-.home-vibes-widget__cta span {
-  color: #ffffff !important;
-}
+/* CTA v1495: botón FANTASMA — fino, sobrio, profesional (adiós pastilla chicle) */
 .home-vibes-widget__cta {
   border-radius: 100px !important;
-  padding: 12px 18px !important;
-  font-size: 13px !important;
+  padding: 9px 16px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
-  letter-spacing: .3px !important;
-  border: none !important;
+  letter-spacing: .4px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+body:not(.r-dark) .home-vibes-widget__cta,
+body:not(.r-dark) .home-vibes-widget__cta span {
+  color: #2f7a52 !important;
 }
 body:not(.r-dark) .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #4d9e74, #37795a) !important;
-  box-shadow: 0 4px 16px rgba(60, 140, 100, 0.30) !important;
+  border: 1.2px solid rgba(60, 130, 90, 0.45) !important;
+  background: rgba(74, 160, 110, 0.06) !important;
 }
 body.r-dark .home-vibes-widget__cta,
 body.r-dark .home-vibes-widget__cta span {
-  color: #071409 !important;
+  color: rgba(170, 230, 198, 0.92) !important;
 }
 body.r-dark .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #86d4ab, #5cb287) !important;
-  box-shadow: 0 4px 18px rgba(90, 190, 135, 0.28) !important;
+  border: 1.2px solid rgba(116, 198, 157, 0.38) !important;
+  background: rgba(116, 198, 157, 0.07) !important;
 }
-/* El "+" del CTA en un circulito sutil */
+/* El "+" sin circulito — solo el signo, alineado */
 .home-vibes-widget__cta-plus {
-  background: rgba(255,255,255,.22) !important;
-  border-radius: 50% !important;
-  width: 22px !important; height: 22px !important;
-  display: inline-flex !important; align-items: center !important; justify-content: center !important;
-  font-size: 15px !important; line-height: 1 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  width: auto !important; height: auto !important;
+  display: inline !important;
+  font-size: 14px !important; line-height: 1 !important;
+  font-weight: 800 !important;
 }
-body.r-dark .home-vibes-widget__cta-plus { background: rgba(0,0,0,.14) !important; }
+body.r-dark .home-vibes-widget__cta-plus { background: transparent !important; }
 /* Emoji-tiles vacíos dentro del círculo: fondos suaves por tipo */
 body:not(.r-dark) .vibes-tile-empty--group   { background: linear-gradient(150deg,#e8f2e6,#d9e9d8) !important; }
 body:not(.r-dark) .vibes-tile-empty--instant { background: linear-gradient(150deg,#f7edd2,#efdfb4) !important; }
