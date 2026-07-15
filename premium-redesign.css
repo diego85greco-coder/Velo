@@ -15133,13 +15133,8 @@ body.r-dark .home-vibes-widget__all {
   position: relative; overflow: hidden;
 }
 .home-vibes-widget__cta:active { transform: scale(0.97); }
-/* Brillo diagonal que barre el botón (sutil, en loop lento) — v1388 */
-.home-vibes-widget__cta::before {
-  content: ''; position: absolute; top: 0; left: -60%; width: 45%; height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.32), transparent);
-  transform: skewX(-18deg); pointer-events: none;
-  animation: veloCtaSheen 4.5s ease-in-out infinite;
-}
+/* v1498: sheen animado desactivado — las animaciones que laten molestan */
+.home-vibes-widget__cta::before { content: none; }
 @keyframes veloCtaSheen {
   0%, 62% { left: -60%; }
   86%, 100% { left: 130%; }
@@ -15152,20 +15147,7 @@ body.r-dark .home-vibes-widget__all {
   background: rgba(255,255,255,0.22); flex-shrink: 0;
 }
 body.r-dark .home-vibes-widget__cta-plus { background: rgba(7,20,9,0.18); }
-body:not(.r-dark) .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #4dbb84 0%, #3a9d6a 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(60, 140, 90, 0.30), 0 1px 0 rgba(255,255,255,0.28) inset;
-}
-body.r-dark .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #5fd49a 0%, #43b57e 52%, #34a06e 100%);
-  color: #071409;
-  box-shadow:
-    0 8px 24px rgba(70, 200, 135, 0.42),
-    0 2px 6px rgba(50, 160, 110, 0.32),
-    0 1px 0 rgba(255,255,255,0.22) inset;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.15);
-}
+/* v1498: fondos menta del CTA removidos — el dorado (bloque final) es la única fuente */
 
 /* Header del overlay del grupo Vibes — nombre del grupo debe leerse bien */
 body.r-dark #vibeGroupOv .feed-header .feed-header-info > div:first-child,
@@ -15467,10 +15449,7 @@ body.r-dark .home-vibes-widget .vibes-tile-label {
 .home-vibes-widget__cta span {
   color: #ffffff !important;
 }
-body.r-dark .home-vibes-widget__cta,
-body.r-dark .home-vibes-widget__cta span {
-  color: #071409 !important;
-}
+/* v1498: color oscuro removido — letras blancas sobre dorado */
 .home-vibes-widget__hint {
   text-align: center;
   font-family: 'Jost', sans-serif;
@@ -15728,3 +15707,16 @@ body:not(.r-dark) .vibes-tile-empty--private { background: linear-gradient(150de
 body.r-dark .vibes-tile-empty--group   { background: linear-gradient(150deg,#15382a,#0e2a1c) !important; }
 body.r-dark .vibes-tile-empty--instant { background: linear-gradient(150deg,#3a2f10,#2a2008) !important; }
 body.r-dark .vibes-tile-empty--private { background: linear-gradient(150deg,#2c2148,#201636) !important; }
+
+/* v1498: blindaje — el CTA dorado gana en ambos temas ante cualquier regla vieja */
+body.r-dark .home-vibes-widget__cta,
+body.r-dark .home-vibes-widget__cta span,
+body:not(.r-dark) .home-vibes-widget__cta,
+body:not(.r-dark) .home-vibes-widget__cta span {
+  color: #ffffff !important;
+}
+body.r-dark .home-vibes-widget__cta {
+  background: linear-gradient(135deg, rgba(196,152,52,.88), rgba(158,116,26,.92)) !important;
+  border: 1px solid rgba(222,182,85,.45) !important;
+  box-shadow: 0 3px 14px rgba(180,135,35,.24) !important;
+}
