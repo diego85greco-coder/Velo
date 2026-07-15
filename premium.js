@@ -5721,6 +5721,79 @@ function pSaveQuickMood(){
     var _anchor = document.getElementById('homeMoodChip') || document.querySelector('.r-hero-left');
     if(_anchor) setTimeout(function(){ veloParticleBloom(_anchor, { emojis: [_selectedQuickMoodEmoji, '💚', '🌿', '✨'] }); }, 100);
   }catch(e){}
+  // v1503: sugerencia contextual según el ánimo (1 vez por día)
+  var _qmEmoji = _selectedQuickMoodEmoji;
+  setTimeout(function(){ try{ _showMoodFollowUp(_qmEmoji); }catch(_){} }, 1000);
+}
+
+// ── v1503: SUGERENCIA CONTEXTUAL SEGÚN EL ÁNIMO ─────────────────────
+// El momento en que alguien registra su ánimo es EL momento para ofrecerle
+// lo que necesita: triste → compañía · feliz → compartir · neutro → un
+// momento para sí. Descubrimiento en contexto, máx. 1 vez por día.
+function _showMoodFollowUp(emoji){
+  try{
+    var today = _dateKey();
+    if(safeLS('get','velo_mood_followup_'+today)) return false;
+    safeLS('set','velo_mood_followup_'+today, '1');
+    var score = (typeof _VELO_MOOD_SCORE !== 'undefined' && _VELO_MOOD_SCORE[emoji]) || 3;
+    var kind = score <= 2.4 ? 'low' : (score >= 4 ? 'high' : 'mid');
+    var cfg = {
+      low: {
+        icon:'💙', title:'Gracias por contarlo',
+        sub:'No tenés que atravesarlo en soledad. Esto puede ayudarte ahora:',
+        actions:[
+          { e:'🛡️', t:'Hablar con un Guardián',            s:'Personas reales, listas para escucharte', a:"pGoTo('guardians')" },
+          { e:'💬', t:'Pedir compañía en la Sala de Ayuda', s:'Apoyo de la comunidad en tiempo real',    a:"pGoTo('help')" },
+          { e:'📔', t:'Descargarlo en mi diario',           s:'Privado — solo para vos',                 a:"pGoTo('diary')" }
+        ],
+        close:'Estoy bien así 🌿'
+      },
+      high: {
+        icon:'✨', title:'¡Se nota un buen día!',
+        sub:'Los momentos lindos también merecen compartirse:',
+        actions:[
+          { e:'✨', t:'Publicar una vibe',            s:'Compartí este momento con la comunidad', a:"pStartCreateVibe(null,'public')" },
+          { e:'💭', t:'Responder la Pregunta del día', s:'Tu perspectiva puede ayudar a alguien',  a:'pOpenDailyResponse()' },
+          { e:'🌞', t:'Leer Buenas Noticias',          s:'Sumale más luz al día',                  a:"pGoTo('news')" }
+        ],
+        close:'Seguir 🌿'
+      },
+      mid: {
+        icon:'🌿', title:'Gracias por registrarlo',
+        sub:'Un momento para vos, si querés:',
+        actions:[
+          { e:'📔', t:'Escribir en mi diario',         s:'Ordenar lo que sentís ayuda a verlo claro', a:"pGoTo('diary')" },
+          { e:'💭', t:'La Pregunta del día',           s:'Respondé y mirá qué siente la comunidad',   a:'pOpenDailyResponse()' },
+          { e:'🌬️', t:'Respirar 2 minutos',            s:'Guiado, para aflojar el cuerpo',            a:'veloOpenBreathingModal()' }
+        ],
+        close:'Seguir 🌿'
+      }
+    }[kind];
+    var ex = document.getElementById('moodFollowUpOv'); if(ex) ex.remove();
+    var ov = document.createElement('div');
+    ov.className = 'p-modal-ov show';
+    ov.id = 'moodFollowUpOv';
+    ov.innerHTML = '<div class="p-sheet">'
+      + '<div class="p-sheet-handle"></div>'
+      + '<div style="text-align:center;margin-bottom:16px">'
+      + '<div style="font-size:38px;margin-bottom:8px">'+cfg.icon+'</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:23px;color:var(--ink);margin-bottom:6px">'+cfg.title+'</div>'
+      + '<div style="font-size:14px;color:var(--ink4);line-height:1.55">'+cfg.sub+'</div>'
+      + '</div>'
+      + cfg.actions.map(function(x){
+          return '<button onclick="document.getElementById(\'moodFollowUpOv\').remove();'+x.a+'" style="width:100%;display:flex;align-items:center;gap:12px;padding:13px 14px;margin-bottom:9px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:15px;cursor:pointer;text-align:left;font-family:\'Jost\',sans-serif;-webkit-tap-highlight-color:transparent">'
+            + '<span style="font-size:22px;flex-shrink:0">'+x.e+'</span>'
+            + '<span style="flex:1;min-width:0"><span style="display:block;font-size:14px;font-weight:700;color:var(--ink)">'+x.t+'</span>'
+            + '<span style="display:block;font-size:11.5px;color:var(--ink4);margin-top:1px;line-height:1.35">'+x.s+'</span></span>'
+            + '<span style="flex-shrink:0;font-size:14px;color:var(--ink5);font-weight:800">›</span>'
+            + '</button>';
+        }).join('')
+      + '<button onclick="document.getElementById(\'moodFollowUpOv\').remove()" style="width:100%;padding:12px;margin-top:3px;background:none;border:none;color:var(--ink4);font-size:13.5px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">'+cfg.close+'</button>'
+      + '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+    return true;
+  }catch(e){ return false; }
 }
 
 // ── MI ESTADO VISIBLE ──────────────────────────────────────────
@@ -16635,7 +16708,13 @@ async function pSaveMood(){
   // (es un overlay que funciona desde cualquier página, incluida la de ánimo)
   // — NO navegar al inicio primero, que causaba un parpadeo del home en el
   // medio. Delay corto para que se vea el toast/celebración de racha.
-  setTimeout(function(){ try{ pOpenMoodChipSheet(); }catch(_){} }, 1200);
+  // v1503: la primera vez del día, ofrecer la sugerencia contextual según el
+  // ánimo (triste → compañía · feliz → compartir); si ya se mostró, el resumen.
+  setTimeout(function(){
+    var _fuShown = false;
+    try{ _fuShown = _showMoodFollowUp(_selMood && _selMood.emoji); }catch(_){}
+    if(!_fuShown){ try{ pOpenMoodChipSheet(); }catch(_){} }
+  }, 1200);
   // v1228: mensual NO se auto-envía. Solo desde admin (pAdminSendMonthlyReport).
   // _checkMonthlyMoodReport();
 }
@@ -36780,7 +36859,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1502;
+    var _BUILT_V = 1503;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
