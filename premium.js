@@ -7088,12 +7088,27 @@ async function _fetchDqStreak(showToast){
   }catch(e){}
 }
 function _renderDqStreak(streak, week){
-  ['dqStreakBadge','dqStreakBadgeOpen'].forEach(function(id){
+  ['dqStreakBadge'].forEach(function(id){
     var b = document.getElementById(id);
     if(!b) return;
     if(streak >= 1){ b.style.display = 'inline-block'; b.textContent = '🔥 '+streak+' día'+(streak!==1?'s':''); }
     else b.style.display = 'none';
   });
+  // v1494: en el estado RESPONDIDA la racha es UNA línea compacta: 🔥 N días + mini-puntos
+  var lineO = document.getElementById('dqStreakLineO');
+  if(lineO){
+    if(streak >= 1 && week && week.length){
+      var _dLt = !document.body.classList.contains('r-dark');
+      var dots = week.map(function(c){
+        var col = c.done ? '#e9b949' : (_dLt ? 'rgba(0,0,0,.14)' : 'rgba(255,255,255,.16)');
+        var ring = (c.today && !c.done) ? ';box-shadow:0 0 0 1.5px rgba(233,185,73,.6)' : '';
+        return '<span style="width:7px;height:7px;border-radius:50%;background:'+col+ring+';flex-shrink:0"></span>';
+      }).join('');
+      lineO.style.display = 'flex';
+      lineO.innerHTML = '<span style="font-size:10.5px;font-weight:800;color:'+(_dLt?'rgba(190,105,20,.95)':'rgba(255,175,75,.95)')+';font-family:Jost,sans-serif;letter-spacing:.3px;flex-shrink:0">🔥 '+streak+' día'+(streak!==1?'s':'')+'</span>'
+        + '<span style="display:inline-flex;gap:5px;align-items:center">'+dots+'</span>';
+    } else lineO.style.display = 'none';
+  }
   var _wkLt = !document.body.classList.contains('r-dark'); // v1492: modo claro legible
   var chipsHtml = (week||[]).map(function(c){
     var fill = c.done
@@ -7105,12 +7120,20 @@ function _renderDqStreak(streak, week){
       + '<div style="height:5px;border-radius:3px;'+fill+'"></div>'
       + '</div>';
   }).join('');
-  ['dqWeekChips','dqWeekChipsO'].forEach(function(id){
+  ['dqWeekChips'].forEach(function(id){
     var w = document.getElementById(id);
     if(!w) return;
     if(chipsHtml){ w.style.display = 'flex'; w.innerHTML = chipsHtml; }
     else w.style.display = 'none';
   });
+}
+
+// v1494: burbuja "Tu respuesta" — kicker + texto completo (hasta 110 caracteres)
+function _dqMyRespHtml(emoji, text, extra){
+  var t = (text||'').trim();
+  if(t.length > 110) t = t.slice(0,110)+'…';
+  return '<div style="font-size:8.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;opacity:.62;margin-bottom:3px">Tu respuesta</div>'
+    + '<div>'+(emoji||'💬')+(t?' '+_escHtml(t):'')+(extra||'')+'</div>';
 }
 
 function _loadDailyQ(){
@@ -7173,7 +7196,7 @@ function _applyDailyQAnswered(myResp, q){
   try{
     var _r = JSON.parse(myResp);
     var myBadge = document.getElementById('homeDailyQMyResp');
-    if(myBadge) myBadge.textContent = 'Tu respuesta: '+_r.emoji+(_r.text?' · '+_r.text.slice(0,35)+(_r.text.length>35?'…':''):'');
+    if(myBadge) myBadge.innerHTML = _dqMyRespHtml(_r.emoji, _r.text, '');
   }catch(e){}
   _fetchDailyFeed(q.id);
 }
@@ -7621,15 +7644,12 @@ function _renderDailyFeed(responses){
   // Update "Tu respuesta" badge — pills inline para que sea un solo chip orgánico
   var myBadge2 = document.getElementById('homeDailyQMyResp');
   if(myBadge2 && myResp2){
-    var _bText = (myResp2.mood_emoji||'')+(myResp2.response_text?' · '+myResp2.response_text.slice(0,28)+(myResp2.response_text.length>28?'…':''):'');
     var _rxMapInline = _dqReactMap[myResp2.id] || {};
     var _rxInline = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
       .filter(function(rx){ return _rxMapInline[rx.k]&&_rxMapInline[rx.k].count>0; })
-      .map(function(rx){ return '<span style="margin-left:8px;display:inline-flex;align-items:center;gap:3px;font-size:12px;color:rgba(255,220,90,.95);font-weight:700">'+rx.e+'<span style="font-size:11px">'+_rxMapInline[rx.k].count+'</span></span>'; })
+      .map(function(rx){ return '<span style="margin-left:8px;display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700">'+rx.e+'<span style="font-size:11px">'+_rxMapInline[rx.k].count+'</span></span>'; })
       .join('');
-    myBadge2.innerHTML = '<span style="opacity:.78">Tu respuesta:</span>&nbsp;'+_escHtml(_bText)+_rxInline;
-    myBadge2.style.display = 'flex';
-    myBadge2.style.alignItems = 'center';
+    myBadge2.innerHTML = _dqMyRespHtml(myResp2.mood_emoji, myResp2.response_text, _rxInline);
   }
   // Ocultar la fila separada de pills — ahora viven dentro de "Tu respuesta"
   var _rxPillsEl2 = document.getElementById('homeDailyQMyRxPills');
@@ -7660,10 +7680,11 @@ function _renderDailyFeed(responses){
   if(!others.length){
     if(_pulseRowEl) _pulseRowEl.style.display = 'none';
     if(_dotsEl){ _dotsEl.style.display = 'none'; _dotsEl.innerHTML = ''; }
-    var _fbLt = !document.body.classList.contains('r-dark'); // v1492: modo claro legible
-    feedEl.innerHTML = '<div style="text-align:center;padding:16px 14px;border:1.5px dashed '+(_fbLt?'rgba(160,120,30,.42)':'rgba(200,158,56,.30)')+';border-radius:14px;background:'+(_fbLt?'rgba(190,145,35,.08)':'rgba(200,158,56,.05)')+'">'
-      + '<div style="font-size:13.5px;font-weight:700;color:'+(_fbLt?'rgba(120,88,15,.95)':'rgba(255,235,180,.90)')+';font-family:Jost,sans-serif">Fuiste la primera persona en responder hoy 💛</div>'
-      + '<div style="font-size:11.5px;color:'+(_fbLt?'rgba(80,65,30,.68)':'rgba(255,255,255,.48)')+';font-family:Jost,sans-serif;margin-top:4px;line-height:1.5">Cuando alguien más comparta su respuesta, la vas a ver acá</div>'
+    // v1494: una sola línea serena — sin caja dentro de caja
+    var _fbLt = !document.body.classList.contains('r-dark');
+    feedEl.innerHTML = '<div style="display:flex;align-items:flex-start;gap:8px;padding:2px 2px 0;font-family:Jost,sans-serif">'
+      + '<span style="font-size:14px;flex-shrink:0;line-height:1.4">🌱</span>'
+      + '<span style="font-size:11.5px;font-style:italic;line-height:1.55;color:'+(_fbLt?'rgba(85,70,30,.75)':'rgba(255,255,255,.52)')+'">Fuiste la primera persona en responder hoy — las respuestas de otros van a aparecer acá.</span>'
       + '</div>';
     if(btnEl) btnEl.innerHTML = '';
     return;
@@ -36679,7 +36700,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1493;
+    var _BUILT_V = 1494;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

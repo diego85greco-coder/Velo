@@ -13041,17 +13041,31 @@ body.r-dark #homeDailyQOpen > div > div:first-child > span:last-child {
   font-size: 14px !important;
 }
 
-/* "My response" box in DQ open */
+/* "My response" bubble in DQ open (v1494: burbuja de chat) */
 body.r-dark #homeDailyQMyResp {
-  background: rgba(200,158,56,.14) !important;
-  border: none !important;
-  color: rgba(255,224,90,.97) !important;
+  background: linear-gradient(150deg, rgba(200,158,56,.16), rgba(200,158,56,.07)) !important;
+  border: 1px solid rgba(200,158,56,.26) !important;
+  color: rgba(255,235,170,.95) !important;
   font-size: 13px !important;
-  line-height: 1.55 !important;
-  border-radius: 12px !important;
-  padding: 8px 12px !important;
+  line-height: 1.5 !important;
+  border-radius: 4px 16px 16px 16px !important;
+  padding: 10px 13px !important;
   box-shadow: none !important;
 }
+body:not(.r-dark) #homeDailyQMyResp {
+  background: linear-gradient(150deg, rgba(190,145,35,.13), rgba(190,145,35,.05)) !important;
+  border: 1px solid rgba(160,120,30,.32) !important;
+  color: rgba(90,68,15,.94) !important;
+  border-radius: 4px 16px 16px 16px !important;
+}
+/* Pill "✓ RESPONDIDA" en modo claro */
+body:not(.r-dark) .dq-answered-pill {
+  color: rgba(30,110,65,.92) !important;
+  background: rgba(74,160,110,.12) !important;
+  border-color: rgba(74,160,110,.42) !important;
+}
+/* v1494: contenedores vacíos del carrusel no deben dejar tiras fantasma */
+#dqDots:empty, #dqVerTodosBtn:empty, #homeDailyQSummary:empty { display: none !important; }
 
 /* DQ "Ver todos" button */
 body.r-dark #dqVerTodosBtn button {

@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1493">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1493">
+  <link rel="stylesheet" href="premium.css?v=20260626-1494">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1494">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -246,7 +246,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1493</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1494</div>
 </div>
 
 <!-- APP SHELL -->
@@ -1378,16 +1378,17 @@
                     <!-- Open state -->
                     <div id="homeDailyQOpen" style="display:none;padding:0 18px 18px">
                       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:16px;margin-bottom:10px">
-                        <span style="display:inline-flex;align-items:center;gap:7px;min-width:0"><span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.82);font-family:'Jost',sans-serif">💬 Pregunta del día · respondida</span><span id="dqStreakBadgeOpen" style="display:none;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;background:rgba(255,120,20,.16);border:1px solid rgba(255,140,40,.35);color:rgba(255,175,75,.95);font-family:'Jost',sans-serif;letter-spacing:.3px;flex-shrink:0;white-space:nowrap"></span></span>
-                        <span style="font-size:10px;color:rgba(200,158,56,.50);font-family:'Jost',sans-serif">✓</span>
+                        <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.82);font-family:'Jost',sans-serif">💬 Pregunta del día</span>
+                        <span class="dq-answered-pill" style="font-size:9px;font-weight:800;padding:3px 10px;border-radius:20px;background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.45);color:rgba(150,225,185,.95);font-family:'Jost',sans-serif;letter-spacing:.6px;flex-shrink:0">✓ RESPONDIDA</span>
                       </div>
-                      <!-- v1485: fichas de la semana (racha visual Lu→Do) -->
-                      <div id="dqWeekChipsO" style="display:none;gap:5px;margin-bottom:11px"></div>
                       <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,248,210,.93);line-height:1.38;margin-bottom:12px"></div>
-                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-                        <div id="homeDailyQMyResp" onclick="pOpenMyDqResponseFromHome()" style="font-size:12px;font-weight:700;color:rgba(255,220,90,.95);font-family:'Jost',sans-serif;flex:1;background:radial-gradient(circle at 0% 50%,rgba(200,158,56,.18),rgba(200,158,56,.08));border:1px solid rgba(200,158,56,.22);border-radius:22px;padding:10px 16px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,220,80,.06)"></div>
-                        <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.40);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
+                      <!-- v1494: respuesta como burbuja de chat (texto completo, sin recortar) -->
+                      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:10px">
+                        <div id="homeDailyQMyResp" onclick="pOpenMyDqResponseFromHome()" style="font-size:13px;font-weight:600;color:rgba(255,235,170,.95);font-family:'Jost',sans-serif;flex:1;min-width:0;background:linear-gradient(150deg,rgba(200,158,56,.16),rgba(200,158,56,.07));border:1px solid rgba(200,158,56,.26);border-radius:4px 16px 16px 16px;padding:10px 13px;cursor:pointer;line-height:1.5"></div>
+                        <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.38);font-size:12px;cursor:pointer;padding:3px 2px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
                       </div>
+                      <!-- v1494: racha compacta en una línea (🔥 N días + mini-puntos Lu→Do) -->
+                      <div id="dqStreakLineO" style="display:none;align-items:center;gap:9px;margin-bottom:12px"></div>
                       <div id="homeDailyQMyRxPills" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
                       <div onclick="_showPulseDetail()" class="dq-pulse-row" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 16px;background:radial-gradient(circle at 100% 50%,rgba(200,158,56,.14),rgba(160,118,16,.04));border:1px solid rgba(200,158,56,.18);border-radius:22px;transition:opacity .15s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
                         <span id="homeDailyQOpenPulseEmoji" style="font-size:20px;flex-shrink:0">🌿</span>
@@ -4473,8 +4474,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1493"></script>
-<script src="premium-redesign.js?v=20260626-1493"></script>
+<script src="premium.js?v=20260626-1494"></script>
+<script src="premium-redesign.js?v=20260626-1494"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
