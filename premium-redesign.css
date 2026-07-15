@@ -15255,23 +15255,7 @@ body:not(.r-dark) .vibes-tile-empty {
 
 /* CTA "Publicá tu momento" — LIGHT: esmeralda vivo con profundidad y glow.
    v1388: gradiente más fresco + halo verde para que "llame" sin romper el cream. */
-body:not(.r-dark) .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #46b678 0%, #349a63 52%, #2b8353 100%) !important;
-  color: #ffffff !important;
-  box-shadow:
-    0 8px 22px rgba(52, 154, 99, 0.38),
-    0 2px 6px rgba(43, 131, 83, 0.30),
-    0 1px 0 rgba(255, 255, 255, 0.32) inset !important;
-  border: none !important;
-  text-shadow: 0 1px 3px rgba(20, 70, 45, 0.35);
-}
-body:not(.r-dark) .home-vibes-widget__cta:hover {
-  filter: brightness(1.06);
-  box-shadow:
-    0 10px 28px rgba(52, 154, 99, 0.46),
-    0 2px 6px rgba(43, 131, 83, 0.32),
-    0 1px 0 rgba(255, 255, 255, 0.36) inset !important;
-}
+/* v1499: mint light CTA removido */
 
 /* Botón "Ver todos" del rail en LIGHT mode — más armónico */
 body:not(.r-dark) .home-vibes-widget__see-all {
@@ -15483,49 +15467,8 @@ body.r-dark .home-vibes-widget__hint-top { color: rgba(200, 235, 215, 0.75); }
    overrides de temas). Pill premium: gradiente esmeralda vivo, texto
    blanco bold legible, "+" en chip blanco, glow suave.
    ══════════════════════════════════════════════════════════════════ */
-body .home-vibes-widget .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #58cf93 0%, #37ab72 55%, #2b9260 100%) !important;
-  border: none !important;
-  border-radius: 100px !important;
-  padding: 15px 18px !important;
-  color: #ffffff !important;
-  font-family: 'Jost', sans-serif !important;
-  font-size: 15px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.4px !important;
-  text-shadow: 0 1px 2px rgba(15, 60, 38, 0.45) !important;
-  box-shadow:
-    0 8px 24px rgba(46, 150, 98, 0.42),
-    0 2px 6px rgba(35, 120, 78, 0.30),
-    0 1px 0 rgba(255, 255, 255, 0.35) inset !important;
-}
-body .home-vibes-widget .home-vibes-widget__cta span {
-  color: #ffffff !important;
-}
-body .home-vibes-widget .home-vibes-widget__cta .home-vibes-widget__cta-plus {
-  width: 26px !important;
-  height: 26px !important;
-  border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  color: #1e7a4d !important;
-  font-size: 17px !important;
-  font-weight: 900 !important;
-  text-shadow: none !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  line-height: 1 !important;
-  flex-shrink: 0 !important;
-}
-/* Dark mode: mismo pill, apenas más brillante para el fondo oscuro */
-body.r-dark .home-vibes-widget .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #63dc9e 0%, #3fb87c 55%, #319e6a 100%) !important;
-  color: #ffffff !important;
-  box-shadow:
-    0 8px 26px rgba(70, 200, 135, 0.45),
-    0 2px 6px rgba(50, 160, 110, 0.32),
-    0 1px 0 rgba(255, 255, 255, 0.28) inset !important;
-}
+/* v1499: bloque v1397 removido — el CTA vive en la regla con ID al final */
+
 
 /* ══════════════════════════════════════════════════════════════════
    v1398 — Barra de navegación 100% OPACA en ambos temas.
@@ -15719,4 +15662,39 @@ body.r-dark .home-vibes-widget__cta {
   background: linear-gradient(135deg, rgba(196,152,52,.88), rgba(158,116,26,.92)) !important;
   border: 1px solid rgba(222,182,85,.45) !important;
   box-shadow: 0 3px 14px rgba(180,135,35,.24) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   v1499: CTA "Publicá tu momento" — REGLA CON ID (especificidad 1,x,x):
+   le gana a CUALQUIER regla de clases del archivo, en ambos temas.
+   Dorado sutil + letras blancas (pedido del usuario). ÚNICA fuente. */
+#homeVibesCardTop .home-vibes-widget__cta,
+#homeVibesCard .home-vibes-widget__cta {
+  background: linear-gradient(135deg, rgba(196,152,52,.90), rgba(158,116,26,.94)) !important;
+  border: 1px solid rgba(222,182,85,.45) !important;
+  border-radius: 100px !important;
+  padding: 11px 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: .4px !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(80,55,5,.35) !important;
+  box-shadow: 0 3px 14px rgba(180,135,35,.26) !important;
+}
+#homeVibesCardTop .home-vibes-widget__cta span,
+#homeVibesCard .home-vibes-widget__cta span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+#homeVibesCardTop .home-vibes-widget__cta .home-vibes-widget__cta-plus,
+#homeVibesCard .home-vibes-widget__cta .home-vibes-widget__cta-plus {
+  background: transparent !important;
+  width: auto !important; height: auto !important;
+  border-radius: 0 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: 15px !important; font-weight: 800 !important;
+  display: inline !important;
+  text-shadow: 0 1px 2px rgba(80,55,5,.35) !important;
 }
