@@ -16837,10 +16837,10 @@ async function _checkMonthlyMoodReport(){
   var happyLine = '';
   if(happyStats.posts || happyStats.reactionsReceived || happyStats.commentsReceived){
     var parts = [];
-    if(happyStats.posts) parts.push((happyStats.posts===1?'1 momento de alegría':happyStats.posts+' momentos de alegría')+' en el Muro 🌻');
+    if(happyStats.posts) parts.push((happyStats.posts===1?'1 momento de alegría compartido':happyStats.posts+' momentos de alegría compartidos')+' 🌻');
     if(happyStats.reactionsReceived) parts.push(happyStats.reactionsReceived+(happyStats.reactionsReceived===1?' reacción':' reacciones')+' recibidas 💛');
     if(happyStats.commentsReceived) parts.push(happyStats.commentsReceived+(happyStats.commentsReceived===1?' comentario':' comentarios')+' en tus publicaciones 💬');
-    if(parts.length) happyLine = '\n\nEn el Muro de la Felicidad: '+parts.join(', ')+'.';
+    if(parts.length) happyLine = '\n\nEn la comunidad: '+parts.join(', ')+'.';
   }
 
   // Community activity stats
@@ -16874,10 +16874,17 @@ async function _checkMonthlyMoodReport(){
 
   // Detect unused sections for invitation
   var happyArr = []; try{ happyArr = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
+  // v1487: sugerir solo secciones ACTIVAS (Muro Feliz y Al Mar están ocultas).
+  // Usa los conteos reales de velo_badge_counts (Supabase) cuando existen.
   var unusedSections = [];
-  if(!diaryArr.length) unusedSections.push('el Diario Emocional 📔');
-  if(!happyArr.length) unusedSections.push('el Muro de la Felicidad 🌻');
-  if(!myBottles.length) unusedSections.push('Mensajes al Mar 🌊');
+  var _bcCounts = null; try{ _bcCounts = JSON.parse(safeLS('get','velo_badge_counts')||'null'); }catch(e){}
+  if(!diaryArr.length) unusedSections.push('el Diario Íntimo 📔');
+  if(_bcCounts){
+    if(!(_bcCounts.vibes>0))    unusedSections.push('las Vibes de hoy ✨');
+    if(!(_bcCounts.bitacora>0)) unusedSections.push('la Bitácora 📖');
+    if(!(_bcCounts.dq>0))       unusedSections.push('la Pregunta del Día 💭');
+  }
+  unusedSections = unusedSections.slice(0,2); // máx 2 sugerencias, sin abrumar
 
   var MIN_DAYS_FOR_ANALYSIS = 5;
   var analysis;
@@ -16889,11 +16896,11 @@ async function _checkMonthlyMoodReport(){
     if(helpedOthers > 0) communityLines.push('acompañaste a '+helpedOthers+' persona'+(helpedOthers>1?'s':'')+' como guardián/a 💙');
     if(helpReceived > 0) communityLines.push('recibiste apoyo '+helpReceived+' vez'+(helpReceived>1?'es':'')+' 🌿');
     if(bottleCount > 0) communityLines.push('lanzaste '+bottleCount+' mensaje'+(bottleCount>1?'s':'')+' al Mar 🌊');
-    if(happyStats.posts > 0) communityLines.push('compartiste '+happyStats.posts+' momento'+(happyStats.posts>1?'s':'')+' en el Muro 🌻');
+    if(happyStats.posts > 0) communityLines.push('compartiste '+happyStats.posts+' momento'+(happyStats.posts>1?'s':'')+' con la comunidad 🌻');
     if(diaryCount > 0) communityLines.push('escribiste '+diaryCount+' entrada'+(diaryCount>1?'s':'')+' en tu diario 📔');
     var communityText = communityLines.length
       ? ' Eso sí, este mes '+communityLines.join(', ')+'. ¡Eso también cuenta!'
-      : ' Animate a explorar más espacios de Velo: el Muro de la Felicidad, el Diario o los Mensajes al Mar te esperan. 🌿';
+      : ' Animate a explorar más espacios de Velo: la Bitácora, el Diario o las Vibes de hoy te esperan. 🌿';
     analysis = 'En '+monthName+' registraste solo '+totalDays+' día'+(totalDays>1?'s':'')+' de ánimo — necesitamos al menos '+MIN_DAYS_FOR_ANALYSIS+' para hacer un análisis emocional personalizado. No alcanzó esta vez, pero ¡ya sabés cómo funciona! Registrá a diario este mes y el 1° de '+monthNames[today.getMonth()+1 > 12 ? 1 : today.getMonth()+1]+' vas a recibir tu análisis completo. 📊'+communityText;
   } else {
     var moodList = Object.entries(moodCounts).map(function(e){ return e[0]+' ('+e[1]+' días)'; }).join(', ');
@@ -16909,8 +16916,8 @@ async function _checkMonthlyMoodReport(){
       +'- Segunda quincena predominó: '+topSecond+'\n'
       +'- Días con ánimo positivo: '+pct+'%\n'
       +(diaryCount?'- Entradas en el Diario: '+diaryCount+'\n':'')
-      +(happyStats.posts?'- Momentos en el Muro de la Felicidad: '+happyStats.posts+'\n':'')
-      +(happyStats.reactionsReceived?'- Reacciones recibidas en el Muro: '+happyStats.reactionsReceived+'\n':'')
+      +(happyStats.posts?'- Momentos compartidos con la comunidad: '+happyStats.posts+'\n':'')
+      +(happyStats.reactionsReceived?'- Reacciones recibidas en sus momentos: '+happyStats.reactionsReceived+'\n':'')
       +(helpedOthers?'- Conversaciones como guardián/acompañante: '+helpedOthers+'\n':'')
       +(helpReceived?'- Veces que recibió apoyo/acompañamiento: '+helpReceived+'\n':'')
       +(bottleCount?'- Mensajes enviados al Mar: '+bottleCount+'\n':'')
@@ -16936,7 +16943,7 @@ async function _checkMonthlyMoodReport(){
   if(bottleCount > 0) extraLines += '\n\n🌊 Lanzaste '+bottleCount+' mensaje'+(bottleCount>1?'s':'')+' al Mar. Esas palabras llegaron a alguien que las necesitaba.';
   if(reviewsReceived > 0) extraLines += '\n\n⭐ Recibiste '+reviewsReceived+' reseña'+(reviewsReceived>1?'s':'')+' este mes con un promedio de '+reviewStars+' estrellas. ¡La comunidad te valora!';
   if(diaryCount > 0) extraLines += '\n\n📔 Escribiste '+diaryCount+' entrada'+(diaryCount>1?'s':'')+' en tu diario. Cada página es un paso hacia conocerte mejor.';
-  if(unusedSections.length > 0 && unusedSections.length <= 2) extraLines += '\n\n✨ ¿Todavía no exploraste '+unusedSections.join(' ni ')+'? Este mes es un buen momento para descubrirlos.';
+  if(unusedSections.length > 0) extraLines += '\n\n✨ ¿Todavía no exploraste '+unusedSections.join(' ni ')+'? Este mes es un buen momento para descubrirlos.';
   extraLines += '\n\n🌻 Si Velo te está siendo útil, considerá apoyar con una donación. Cada aporte ayuda a mantener este espacio gratuito para más personas.';
 
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
@@ -18274,7 +18281,7 @@ async function pSubmitReviewReply(reviewId, reviewerUserId){
       _loadUserReviews(myProfileId).then(function(revs){
         rvEl.innerHTML = revs.length
           ? _renderReviewsList(revs, myProfileId, myProfileId)
-          : '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div></div>';
+          : '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Cuando acompañes a alguien como Guardián, sus reseñas van a aparecer acá 🌿</div></div>';
       });
     }
   }catch(e){ pToast('⚠️','Error al enviar'); console.error('[reviewReply catch]',e); }
@@ -22001,7 +22008,7 @@ async function pOpenInstantVibe(vibeId){
     var list = document.getElementById('vibeInstantList');
     var vibes = (res && res.data) || [];
     if(!list || !vibes.length){
-      if(list) list.innerHTML = '<div style="flex:1;text-align:center;padding:60px 20px;color:rgba(200,230,215,.65);font-family:Jost,sans-serif">No hay instantáneos activos</div>';
+      if(list) list.innerHTML = '<div style="flex:1;text-align:center;padding:60px 20px;font-family:Jost,sans-serif"><div style="font-size:38px;margin-bottom:10px">✨</div><div style="font-size:15px;font-weight:700;color:rgba(220,245,232,.9);margin-bottom:4px">Todavía no hay instantáneos hoy</div><div style="font-size:12.5px;color:rgba(200,230,215,.55);line-height:1.5">Los momentos duran 24 horas — ¡publicá el primero del día!</div></div>';
       return;
     }
     // Cargar reacciones de todos de una
@@ -23192,7 +23199,7 @@ function pRenderInbox(){
   }
 
   if(!all.length){
-    el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">💌</span><div class="p-empty-title">Sin mensajes</div><div class="p-empty-sub">Tus notificaciones aparecerán aquí.</div></div>';
+    el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">💌</span><div class="p-empty-title">Tu buzón está vacío</div><div class="p-empty-sub">Acá llegan tu resumen semanal de cada domingo, el análisis mensual y los avisos del equipo de Velo 🌿</div></div>';
     return;
   }
   var contactBanner = '<div onclick="pGoTo(\'contact\')" style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.18);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer">'
@@ -24254,7 +24261,7 @@ async function pRenderContacts(){
   // ── Online content ──
   var onlineHtml = '<div id="contacts-online" style="display:none">'
     +(!onlineList.length
-      ? '<div class="p-empty"><span class="p-empty-emoji">💤</span><div class="p-empty-title">Nadie conectado ahora</div><div class="p-empty-sub">Aquí verás a tus favoritos y fans cuando estén online.</div></div>'
+      ? '<div class="p-empty"><span class="p-empty-emoji">💤</span><div class="p-empty-title">Nadie conectado ahora</div><div class="p-empty-sub">Cuando tus contactos estén en línea, los vas a ver acá.</div></div>'
       : onlineList.map(function(u){
           var uname=u.uname?'@'+u.uname:'';
           return _contactCard(u.id,u.name,u.av,uname,u.pInfo,u.unread,{showMail:true,showAddFav:!u.isFav,showBlock:u.isFav,showRemove:u.isFav});
@@ -24264,7 +24271,7 @@ async function pRenderContacts(){
   // ── Fans content ──
   var fansHtml = '<div id="contacts-fans" style="display:none">'
     +(!favMeRows.length
-      ? '<div class="p-empty"><span class="p-empty-emoji">♥</span><div class="p-empty-title">Nadie te agregó aún</div></div>'
+      ? '<div class="p-empty"><span class="p-empty-emoji">♥</span><div class="p-empty-title">Nadie te agregó todavía</div><div class="p-empty-sub">Cuando alguien te sume a sus favoritos, va a aparecer acá. Participá en la comunidad para que te conozcan 🌿</div></div>'
       : favMeRows.map(function(r){
           var pi=_presenceInfo(r.user_id);
           var uname=usernameMap[r.user_id]?'@'+usernameMap[r.user_id]:'';
@@ -36615,7 +36622,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1486;
+    var _BUILT_V = 1487;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
