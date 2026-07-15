@@ -436,6 +436,28 @@ var _NO_RESTORE = ['landing','login','register','register-type','onboarding','pr
   'pro-onboarding','admin-login','admin','pro-pending','verify-email','pick-username',
   'change-password','guardian-chat','help-chat','session-room','post-chat','donate-cta'];
 
+// ── v1506: ANALYTICS DE USO (mínimo y respetuoso) ────────────────────
+// Solo registra QUÉ sección se abre (nada de contenido). Dedup de 30s por
+// sección para no inflar; ignora landing/login/admin. Si la tabla no existe,
+// falla en silencio y no afecta nada.
+var _trackLast = {};
+function _trackEvent(event, meta){
+  try{
+    if(!meta) return;
+    if(['landing','login','register','admin','admin-login','pick-username'].indexOf(meta) >= 0) return;
+    var uid = safeLS('get','velo_user_id');
+    if(!uid) return;
+    var k = event+'|'+meta;
+    var now = Date.now();
+    if(_trackLast[k] && (now - _trackLast[k]) < 30000) return;
+    _trackLast[k] = now;
+    _initSupabase();
+    if(!sbClient) return;
+    sbClient.from('usage_events').insert({ user_id: uid, event: event, meta: String(meta).slice(0,60) })
+      .then(function(){}).catch(function(){});
+  }catch(e){}
+}
+
 function pGoTo(id){
   if(!id) return;
   var inPage = document.getElementById('pg-'+id);
@@ -461,6 +483,7 @@ function pGoTo(id){
   _curPage = id;
   _navToken++;
   document.body.classList.toggle('is-landing', id === 'landing');
+  try{ _trackEvent('page', id); }catch(_){} // v1506: analytics de uso (fire-and-forget)
 
   // Remember where the user is so a browser refresh restores this screen
   if(_authenticated && _NO_RESTORE.indexOf(id) < 0){
@@ -11124,6 +11147,12 @@ async function pRenderHelp(){
   // Filter out expired posts (older than 24h) — don't show "expirado" cards
   var _now24 = Date.now();
   posts = posts.filter(function(h){ return h.time + 24*3600*1000 > _now24; });
+  // v1506: los pedidos URGENTES van primero (triaje) — dentro de cada nivel, por fecha
+  posts.sort(function(a,b){
+    var w = { urgente:2, media:1 };
+    var d = (w[b.urgencia]||0) - (w[a.urgencia]||0);
+    return d !== 0 ? d : ((b.time||0) - (a.time||0));
+  });
   // Separate own posts from others' (own posts stay visible to author for deletion, even if anonymous)
   _helpPosts = posts.filter(function(h){ return (h.userId||'') !== myHelpId; });
   var myOwnPosts = myHelpId ? posts.filter(function(h){ return (h.userId||'') === myHelpId; }) : [];
@@ -12005,6 +12034,16 @@ function pReportHelpChat(){
 
 function pOpenHelpForm(){ openModal('helpFormOv'); }
 
+// v1506: detección LOCAL e inmediata de señales de riesgo — no depende de la
+// red ni de la IA (que tarda segundos y puede fallar). Complementa a
+// _geminiCrisisCheck, que detecta señales sutiles en segundo plano.
+function _localCrisisCheck(msg){
+  try{
+    var t = ' '+(msg||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')+' ';
+    return /suicid|matarme|quitarme la vida|quiero morir|me quiero morir|no quiero vivir|no quiero seguir|hacerme dano|autolesion|cortarme|lastimarme|acabar con todo|desaparecer para siempre|ya no aguanto mas|terminar con mi vida/.test(t);
+  }catch(e){ return false; }
+}
+
 async function pSendHelp(){
   var ta = document.getElementById('helpMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
@@ -12015,6 +12054,7 @@ async function pSendHelp(){
   }
   _incDailyLimit('help');
   var msg = ta.value.trim();
+  var _risky = _localCrisisCheck(msg); // v1506: triaje instantáneo
   _geminiModerateContent(msg, 'sala-de-ayuda');
   var showProfile = document.getElementById('helpShowProfile') && document.getElementById('helpShowProfile').checked;
   var isAnon = !showProfile;
@@ -12026,6 +12066,7 @@ async function pSendHelp(){
   var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var ts = Date.now();
   posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, av:userAv, time:ts, preview:msg, taken:false,
+    urgencia:(_risky?'urgente':'normal'),
     userId: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'' });
   safeLS('set','velo_help_posts', JSON.stringify(posts.slice(0,50)));
   safeLS('set','velo_helped_once','1');
@@ -12035,7 +12076,7 @@ async function pSendHelp(){
     try{
       await sbClient.from('help_posts').insert({ id:'hu'+ts,
         user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
-        emoji: isAnon ? '💙' : (userAv || '🧑'), preview:msg, urgencia:'normal', anon:isAnon, taken:false
+        emoji: isAnon ? '💙' : (userAv || '🧑'), preview:msg, urgencia:(_risky?'urgente':'normal'), anon:isAnon, taken:false
       });
     }catch(e){ console.error('[pSendHelp insert]', e); }
   }
@@ -12047,9 +12088,16 @@ async function pSendHelp(){
   _subscribeSeekerToGuardianRequest('hu'+ts);
   pRenderHelp();
 
+  // v1506: ante señales de riesgo, ofrecer las líneas de crisis AL INSTANTE
+  if(_risky){
+    setTimeout(function(){
+      try{ pOpenSOS(); }catch(_){}
+      pToast('💙','No estás solo/a. Si podés, contactá una línea de tu país — tu pedido ya está publicado y alguien va a acompañarte');
+    }, 700);
+  }
   // Gemini crisis detection and urgency classification — run silently in background
   _geminiCrisisCheck(msg);
-  _geminiClassifyUrgency(msg);
+  _geminiClassifyUrgency(msg, 'hu'+ts, _risky);
 }
 
 async function _geminiCrisisCheck(msg){
@@ -12101,7 +12149,7 @@ async function _geminiCrisisCheck(msg){
 }
 
 
-async function _geminiClassifyUrgency(msg){
+async function _geminiClassifyUrgency(msg, postId, riskyLocal){
   var prompt = 'Sos el sistema de clasificación de urgencia de Velo, una app de bienestar emocional.\n'
     +'Clasificá la urgencia de este mensaje:\n'
     +'- urgente: crisis inmediata, riesgo de autolesión o suicidio, emergencia\n'
@@ -12116,6 +12164,15 @@ async function _geminiClassifyUrgency(msg){
     if(!match) return;
     var data = JSON.parse(match[0]);
     var urgencia = data.urgencia || 'baja';
+    if(riskyLocal && urgencia !== 'urgente') urgencia = 'urgente'; // nunca degradar el triaje local
+    // v1506: persistir en Supabase — antes quedaba solo local y los guardianes
+    // nunca veían la urgencia de los pedidos de otros
+    if(postId && urgencia !== 'baja'){
+      _initSupabase();
+      if(sbClient){
+        try{ sbClient.from('help_posts').update({ urgencia: urgencia }).eq('id', postId).then(function(){}).catch(function(){}); }catch(e){}
+      }
+    }
     var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
     if(posts.length){
       posts[0].urgencia = urgencia;
@@ -29777,9 +29834,45 @@ function _renderGDPRHistory(){
   }).join('');
 }
 
+// ── v1506: USO DE SECCIONES (7 días) — para decidir con datos ────────
+async function _adminLoadUsage(){
+  var el = document.getElementById('adminUsageBlock');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
+  try{
+    var since = new Date(Date.now() - 7*86400000).toISOString();
+    var r = await sbClient.from('usage_events').select('meta,user_id').eq('event','page').gte('created_at', since).limit(8000);
+    if(r.error){ el.innerHTML = '<p style="font-size:12px;color:rgba(255,180,80,.7)">Falta la tabla usage_events (corré la migración)</p>'; return; }
+    var rows = r.data||[];
+    if(!rows.length){ el.innerHTML = '<p style="font-size:12.5px;color:rgba(255,255,255,.35);font-style:italic">Todavía sin datos — se llena solo a medida que la gente navega.</p>'; return; }
+    var _lbl = { home:'🏠 Inicio', vibes:'✨ Vibes', guardians:'🛡️ Guardianes', help:'💬 Sala de Ayuda', bitacora:'📖 Bitácora', news:'🌞 Buenas Noticias', diary:'📔 Diario', circles:'☮️ Círculos', contacts:'⭐ Contactos', 'calm-ai':'🤖 Velo IA', profile:'👤 Perfil', inbox:'💌 Buzón', momento:'🌸 Momentos', 'dm-chat':'💬 Chats 1a1', mood:'💚 Registro de ánimo', respira:'🌬️ Respira', 'donate-cta':'💛 Apoyá a Velo' };
+    var agg = {}, users = {};
+    rows.forEach(function(x){
+      if(!x.meta) return;
+      var a = agg[x.meta] = agg[x.meta] || { n:0, u:{} };
+      a.n++; if(x.user_id) a.u[x.user_id] = 1;
+      if(x.user_id) users[x.user_id] = 1;
+    });
+    var list = Object.keys(agg).map(function(k){ return { k:k, n:agg[k].n, u:Object.keys(agg[k].u).length }; })
+      .sort(function(a,b){ return b.n - a.n; }).slice(0, 12);
+    var max = list[0] ? list[0].n : 1;
+    el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:10px">'+rows.length+' aperturas · '+Object.keys(users).length+' usuario'+(Object.keys(users).length!==1?'s':'')+' activos en 7 días</div>'
+      + list.map(function(x){
+          var pct = Math.max(4, Math.round(x.n/max*100));
+          return '<div style="margin-bottom:7px">'
+            + '<div style="display:flex;justify-content:space-between;font-size:12.5px;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;margin-bottom:3px"><span>'+(_lbl[x.k]||('· '+_escHtml(x.k)))+'</span><span style="color:rgba(116,198,157,.85);font-weight:700">'+x.n+' <span style="color:rgba(255,255,255,.35);font-weight:400">('+x.u+' 👤)</span></span></div>'
+            + '<div style="height:5px;border-radius:3px;background:rgba(255,255,255,.07)"><div style="height:100%;width:'+pct+'%;border-radius:3px;background:linear-gradient(90deg,rgba(116,198,157,.85),rgba(116,198,157,.45))"></div></div>'
+            + '</div>';
+        }).join('');
+  }catch(e){ el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3)">Error cargando uso</p>'; }
+}
+
 // ── TAB: GESTIÓN ─────────────────────────────────────────────────────
 function _adminTabGestion(panel){
-  panel.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
+  panel.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.85);margin-bottom:10px">📊 USO DE SECCIONES · ÚLTIMOS 7 DÍAS</div>'
+    +'<div id="adminUsageBlock" style="background:rgba(116,198,157,.05);border:1px solid rgba(116,198,157,.16);border-radius:12px;padding:14px;margin-bottom:18px"><p style="font-size:12.5px;color:rgba(255,255,255,.35)">Cargando…</p></div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
     +'<div id="adminAITasks"><div style="font-size:14px;color:rgba(255,255,255,.3);padding:10px 0">Velo IA está revisando las tareas…</div></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,200,.8);margin-bottom:10px">⚕️ SUSCRIPCIÓN PROFESIONAL</div>'
     +'<div style="background:rgba(116,198,200,.06);border:1px solid rgba(116,198,200,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
@@ -29850,6 +29943,7 @@ function _adminTabGestion(panel){
     +'</div>';
   pAdminRenderNewsList();
   _renderAdminAITasks();
+  _adminLoadUsage(); // v1506: uso de secciones (7 días)
   _adminLoadDiamanteRewards();
   _adminLoadSolidarityRequests();
   _adminLoadDailyActiveUsers();
@@ -36859,7 +36953,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1505;
+    var _BUILT_V = 1506;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
