@@ -5995,6 +5995,7 @@ function _renderQuoteReactRow(counts, mine){
   var row = document.getElementById('rfxReactRow');
   if(!row) return;
   row.style.display = 'flex';
+  row.style.flexWrap = 'nowrap'; // v1507: siempre las 3 en UNA fila
   row._counts = counts; row._mine = mine;
   var _lt = !document.body.classList.contains('r-dark'); // v1492: en claro la card es crema
   var _onCss  = _lt ? 'background:rgba(190,145,35,.18);border:1.5px solid rgba(190,145,35,.65);color:rgba(110,80,10,.95)'
@@ -6004,7 +6005,7 @@ function _renderQuoteReactRow(counts, mine){
   row.innerHTML = _RFX_REACTS.map(function(rx){
     var on = !!mine[rx.k];
     var n = counts[rx.k]||0;
-    return '<button onclick="pReactQuote(\''+rx.k+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:20px;cursor:pointer;font-family:Jost,sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;-webkit-tap-highlight-color:transparent;transition:transform .12s;'
+    return '<button onclick="pReactQuote(\''+rx.k+'\')" style="flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:6px 4px;border-radius:20px;cursor:pointer;font-family:Jost,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1px;white-space:nowrap;overflow:hidden;-webkit-tap-highlight-color:transparent;transition:transform .12s;'
       + (on ? _onCss : _offCss)
       + '">'+rx.e+' '+rx.lbl+(n>0 ? ' · '+n : '')+'</button>';
   }).join('');
@@ -36953,7 +36954,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1506;
+    var _BUILT_V = 1507;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
