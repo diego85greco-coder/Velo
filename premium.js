@@ -342,11 +342,18 @@ function safeLS(action, key, val){
 }
 
 // ── DAILY LIMITS ────────────────────────────────────────────
-function _dailyKey(type){ return 'velo_daily_'+type+'_'+new Date().toISOString().slice(0,10); }
+// v1510: la clave usa la fecha LOCAL (antes UTC → en Argentina el cupo se
+// renovaba a las 21:00, dando usos extra). Y el bypass de plan usa _isPremium()
+// (antes solo velo_plan → un usuario Plus legítimo por subscribers/user_type
+// quedaba limitado incorrectamente).
+function _dailyKey(type){
+  var d = new Date();
+  var f = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return 'velo_daily_'+type+'_'+f;
+}
 function _checkDailyLimit(type){
   var limits = { bottle:4, help:4, guardian:4, calmai:25 };
-  var plan = safeLS('get','velo_plan') || 'free';
-  if(plan === 'plus') return true;
+  if(_isPremium()) return true;
   var used = parseInt(safeLS('get',_dailyKey(type))||'0',10);
   return used < (limits[type]||99);
 }
@@ -1190,6 +1197,11 @@ async function pSignUp(){
       else if(/password/i.test(errMsg))        errMsg = 'La contraseña debe tener al menos 6 caracteres.';
       pToast('⚠️', errMsg);
     } else {
+      // v1510 (SEGURIDAD): registro nuevo en este navegador — si había datos de
+      // OTRA cuenta (teléfono compartido), limpiarlos ANTES para que la cuenta
+      // nueva no herede diario/ánimos/inbox/user_id ajenos.
+      var _prevEmail = (safeLS('get','velo_user_email')||'').toLowerCase();
+      if(_prevEmail && _prevEmail !== email.toLowerCase()){ _clearSession(); }
       safeLS('set','velo_user_email', email);
       safeLS('set','velo_user_name', name);
       safeLS('set','velo_user_type','user');
@@ -1357,6 +1369,23 @@ function _clearSession(){
   if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
   if(_dqReactRtCh){ _sbUnsub(_dqReactRtCh); _dqReactRtCh = null; }
   _stopDqReactPoll();
+}
+
+// v1510 (SEGURIDAD): al confirmar por email (signup/recovery/email_change) la
+// sesión que llega puede pertenecer a OTRO usuario que el que dejó datos en
+// este navegador (teléfono compartido). Si el uid no coincide con el guardado,
+// limpiar TODO antes de hidratar — así B no hereda diario/ánimos/inbox de A.
+// Y SIEMPRE fijar velo_user_id desde la sesión, para no quedar operando con el
+// user_id/username del usuario anterior (impersonación + contaminación).
+function _guardIncomingSession(session){
+  try{
+    if(!session || !session.user) return;
+    var newUid = session.user.id || '';
+    var oldUid = safeLS('get','velo_user_id') || '';
+    if(oldUid && newUid && oldUid !== newUid){ _clearSession(); }
+    if(newUid){ safeLS('set','velo_user_id', newUid); }
+    if(session.user.email){ safeLS('set','velo_user_email', session.user.email); }
+  }catch(e){}
 }
 
 async function pSignOut(){
@@ -10073,14 +10102,15 @@ function pOpenGuardian(id){
   if(!_curGuardian) return;
   var g = _curGuardian;
   var isAnon = g.status === 'incognito' || (g.status && g.status.startsWith('incognito_'));
-  _setEl('gdName', g.name);
-  _setEl('gdNameBig', g.name);
+  // v1510: escapar nombre/bio de usuario — _setEl usa innerHTML (XSS almacenado)
+  _setEl('gdName', _escHtml(g.name||''));
+  _setEl('gdNameBig', _escHtml(g.name||''));
   var _gdUnEl = document.getElementById('gdUsername');
   // Never show real username for anonymous guardians — it breaks their anonymity
   if(_gdUnEl){ if(g.username && !isAnon){ _gdUnEl.textContent = '@'+g.username; _gdUnEl.style.display = ''; } else { _gdUnEl.style.display = 'none'; } }
-  _setEl('gdAv', g.av);
-  _setEl('gdBio', '"'+g.bio+'"');
-  _setEl('gdDesc', g.bio);
+  _setEl('gdAv', _escHtml(g.av||''));
+  _setEl('gdBio', g.bio ? '"'+_escHtml(g.bio)+'"' : '');
+  _setEl('gdDesc', _escHtml(g.bio||''));
   _setEl('gdRecommend', g.recommend);
   _setEl('gdConvs', g.convs);
   _setEl('gdRating', g.rating);
@@ -11076,7 +11106,7 @@ function pOpenProSession(id){
   _curPro = _proData.find(function(p){ return p.id === id; });
   if(!_curPro) return;
   var p = _curPro;
-  _setEl('pSessionTitle', 'Sesión con '+p.name);
+  _setEl('pSessionTitle', 'Sesión con '+_escHtml(p.name||''));
   var content = document.getElementById('pSessionContent');
   if(content){
     content.innerHTML =
@@ -11651,7 +11681,7 @@ function _checkPendingSupportMessages(){
 
 function _openHelpChat(post){
   _helpChatSessionStart = Date.now();
-  _setEl('helpChatTitle', post.name + ' · ' + post.emoji);
+  _setEl('helpChatTitle', _escHtml(post.name||'') + ' · ' + _escHtml(post.emoji||''));
   var msgEl = document.getElementById('helpChatMessages');
   if(msgEl){
     var t = new Date();
@@ -18007,7 +18037,7 @@ function pOpenCircle(id, circleData){
 
   // Save join timestamp — messages from before this moment won't be shown on render
   safeLS('set', 'velo_circle_joined_'+id, new Date().toISOString());
-  _setEl('feedCircleName',  _curCircle ? _curCircle.name  : 'Círculo');
+  _setEl('feedCircleName',  _curCircle ? _escHtml(_curCircle.name||'')  : 'Círculo');
   _setEl('feedCircleEmoji', _curCircle ? _curCircle.emoji : '⭕');
   _setEl('feedCircleMembers', _curCircle ? _curCircle.members+' personas' : '');
   // Show rename button only for the creator
@@ -19759,7 +19789,7 @@ function pLoadProfile(){
       avWrap.appendChild(vb);
     }
   }
-  _setEl('profileMotto', motto);
+  _setEl('profileMotto', _escHtml(motto||''));
   // Show @username or prompt to set one
   var unameEl = document.getElementById('profileUsername');
   if(unameEl){
@@ -22083,6 +22113,21 @@ async function pSaveVibe(){
   var archiveEl = document.getElementById('vibeArchiveCheck');
   var caption = captionEl ? captionEl.value.trim().slice(0, 500) : '';
   var archive = archiveEl ? !!archiveEl.checked : false;
+  // v1510: el tope de 5 momentos guardados (plan gratuito) también aplica al
+  // subir con la casilla marcada — antes solo se chequeaba al archivar después.
+  if(archive && !_isPremium()){
+    try{
+      _initSupabase();
+      var _mid = safeLS('get','velo_user_id');
+      if(sbClient && _mid){
+        var _ac = await sbClient.from('vibes').select('id',{count:'exact',head:true}).eq('user_id',_mid).eq('archived',true);
+        if(!_ac.error && (_ac.count||0) >= VIBE_FREE_SAVE_LIMIT){
+          archive = false;
+          pToast('🔒','Guardado sin archivar: llegaste al máximo de '+VIBE_FREE_SAVE_LIMIT+' momentos guardados del plan gratuito');
+        }
+      }
+    }catch(_al){}
+  }
   var myName = safeLS('get','velo_user_name') || 'Usuario';
   var myAv = safeLS('get','velo_user_av') || '🧑';
   var ov = document.getElementById('vibeCreateOv');
@@ -32136,7 +32181,7 @@ function pInitSessionRoom(){
     pro = _proData.find(function(p){ return p.id === pending.proId; });
   }
   // Header
-  _setEl('srProName',   pro ? pro.name : 'Tu profesional');
+  _setEl('srProName',   pro ? _escHtml(pro.name||'') : 'Tu profesional');
   _setEl('srProSpec',   pro ? pro.spec : '');
   _setEl('srProAv',     pro ? pro.av   : '🩺');
   _setEl('srProRating', pro ? '⭐ '+pro.rating : '');
@@ -36939,7 +36984,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1509;
+    var _BUILT_V = 1510;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -37003,6 +37048,7 @@ window.addEventListener('load', function(){
     if(sbClient){
       sbClient.auth.onAuthStateChange(function(event, session){
         if(event === 'SIGNED_IN' && session){
+          _guardIncomingSession(session); // v1510: no heredar datos de otra cuenta
           safeLS('set','velo_user_email', session.user.email||'');
           safeLS('set','velo_user_name', safeLS('get','velo_user_name') || (session.user.email||'').split('@')[0]);
           safeLS('set','velo_session','1');
@@ -37034,6 +37080,7 @@ window.addEventListener('load', function(){
         // Handle both PASSWORD_RECOVERY and SIGNED_IN (Supabase may emit either)
         if(event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN'){
           if(session && session.user){
+            _guardIncomingSession(session); // v1510: no heredar datos de otra cuenta
             safeLS('set','velo_user_email', session.user.email||'');
             safeLS('set','velo_session','1');
             _authenticated = true;
@@ -37060,6 +37107,9 @@ window.addEventListener('load', function(){
     if(sbClient){
       sbClient.auth.onAuthStateChange(function(event, session){
         if((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session && session.user){
+          // email_change: normalmente el MISMO usuario, pero si el enlace se abre
+          // en un navegador con datos de otra cuenta, no los heredes.
+          _guardIncomingSession(session); // v1510
           safeLS('set','velo_user_email', session.user.email||'');
           safeLS('set','velo_session','1');
           safeLS('set','velo_user_type','user');
