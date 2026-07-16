@@ -13140,17 +13140,38 @@ function _calmAILimitNotice(){
   _calmAIAddMsg('Por hoy llegamos al límite de mensajes gratuitos conmigo 🌿 Podemos seguir mañana. Si necesitás hablar con alguien ahora mismo, la Sala de Ayuda y el botón SOS están siempre disponibles 💚 Con Velo Plus podés charlar conmigo sin límite.', false);
   try{ setTimeout(function(){ if(typeof pShowPlusModal === 'function') pShowPlusModal(); }, 1200); }catch(_){}
 }
+// v1514: registra un uso de Velo IA en el servidor (tabla ia_usage) y devuelve
+// false SOLO si el server lo rechaza por RLS (llegó al tope y no es Plus). Si la
+// tabla no existe o hay otro error, no bloquea (degrada al chequeo local).
+async function _recordIaUsageServer(){
+  if(_isPremium()) return true;
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(!sbClient || !uid) return true; // sin sesión → gobierna el chequeo local
+  try{
+    var r = await sbClient.from('ia_usage').insert({ user_id: uid });
+    if(r && r.error && /row-level security|violates|policy/i.test(r.error.message||'')) return false;
+    return true;
+  }catch(e){ return true; }
+}
 async function pSendCalmAIMsg(){
   var ta = document.getElementById('calmAIInput');
   if(!ta || !ta.value.trim()) return;
-  // v1465: límite diario de mensajes al Acompañante IA en el plan gratuito
-  // (Velo Plus = sin límite). El aviso es cálido y deja a la persona con
-  // recursos humanos disponibles (Sala de Ayuda + SOS), no la corta en seco.
-  if(!_checkDailyLimit('calmai')){
-    _calmAILimitNotice();
-    return;
+  // v1465/v1514: límite diario de mensajes al Acompañante IA en el plan gratuito
+  // (Velo Plus = sin límite). Aviso cálido con recursos humanos (Sala + SOS).
+  // Doble capa: chequeo local (UX instantánea) + backstop server-side autoritativo
+  // (tabla ia_usage + RLS) — no se puede saltear editando la consola.
+  if(!_isPremium()){
+    if(!_checkDailyLimit('calmai')){ _calmAILimitNotice(); return; }
+    var _iaOk = await _recordIaUsageServer();
+    if(!_iaOk){
+      // el server dice que ya llegó al tope real → sincronizar el contador local
+      try{ safeLS('set', _dailyKey('calmai'), '25'); }catch(_s){}
+      _calmAILimitNotice();
+      return;
+    }
+    _incDailyLimit('calmai');
   }
-  _incDailyLimit('calmai');
   var text = ta.value.trim();
   ta.value = '';
   ta.style.height = '';
@@ -37031,7 +37052,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1513;
+    var _BUILT_V = 1514;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
