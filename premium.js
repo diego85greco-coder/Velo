@@ -12141,10 +12141,19 @@ async function pSendHelp(){
   _initSupabase();
   if(sbClient){
     try{
-      await sbClient.from('help_posts').insert({ id:'hu'+ts,
+      var _hpIns = await sbClient.from('help_posts').insert({ id:'hu'+ts,
         user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
         emoji: isAnon ? '💙' : (userAv || '🧑'), preview:msg, urgencia:(_risky?'urgente':'normal'), anon:isAnon, taken:false
       });
+      // v1513: si el servidor rechaza por límite diario (RLS backstop), revertir
+      // el post optimista y ofrecer Plus — así el tope no se puede saltear.
+      if(_hpIns && _hpIns.error && /row-level security|violates|policy/i.test(_hpIns.error.message||'')){
+        var _pp = []; try{ _pp = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(_e){}
+        safeLS('set','velo_help_posts', JSON.stringify(_pp.filter(function(x){ return x.id !== 'hu'+ts; })));
+        try{ pShowDailyLimitModal('help'); }catch(_m){ pToast('🔒','Llegaste al límite diario de la Sala de Ayuda'); }
+        pRenderHelp();
+        return;
+      }
     }catch(e){ console.error('[pSendHelp insert]', e); }
   }
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
@@ -37022,7 +37031,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1512;
+    var _BUILT_V = 1513;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
