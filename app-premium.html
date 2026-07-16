@@ -29,10 +29,15 @@
   <meta name="apple-mobile-web-app-title" content="🌱HeyVelo🌱">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- v1508: preconnect a los orígenes críticos — ahorra el handshake TLS
+       (~100-300ms en móvil) en la primera consulta de datos y de imágenes -->
+  <link rel="preconnect" href="https://yuravtnjvvztsxdtggod.supabase.co">
+  <link rel="preconnect" href="https://res.cloudinary.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1507">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1507">
+  <link rel="stylesheet" href="premium.css?v=20260626-1508">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1508">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -246,7 +251,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1507</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1508</div>
 </div>
 
 <!-- APP SHELL -->
@@ -4081,7 +4086,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
 
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://js.stripe.com/v3/"></script>
+<!-- v1508: SDK de Stripe removido — el flujo de pago usa redirect a Checkout
+     (fetch a la Edge Function + location.href); el SDK nunca se invocaba y
+     cargaba ~70KB + una conexión externa en CADA arranque. -->
 <!-- PROFILE MODALS (global — moved out of pg-profile so position:fixed works on desktop) -->
 <div class="p-modal-ov" id="editProfileOv">
   <div class="p-sheet">
@@ -4474,8 +4481,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1507"></script>
-<script src="premium-redesign.js?v=20260626-1507"></script>
+<script src="premium.js?v=20260626-1508"></script>
+<script src="premium-redesign.js?v=20260626-1508"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
