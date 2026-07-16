@@ -906,19 +906,44 @@ async function _sbSyncProfileInner(userId){
       }
     }
   }
-  if(p.role === 'plus'){
-    sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
-      .then(function(r2){
-        if(r2.data && r2.data[0] && r2.data[0].plus_expires_at &&
-           new Date(r2.data[0].plus_expires_at).getTime() < Date.now()){
-          safeLS('del','velo_plan');
-          safeLS('set','velo_user_type','user');
-          sbClient.from('profiles').update({ role:'user' }).eq('id',userId).then(function(){}).catch(function(){});
-        } else {
-          safeLS('set','velo_plan','plus');
-        }
-      }).catch(function(){ safeLS('set','velo_plan','plus'); });
-  }
+  // v1512 (SERVER-SIDE PLUS): profiles.role + plus_expires_at (que setean los
+  // webhooks de pago) son la ÚNICA verdad. Reconciliamos SIEMPRE los flags
+  // locales — así, editar velo_plan/velo_user_type/velo_subscribers a mano en la
+  // consola se REVIERTE en la próxima carga (antes un free que seteaba
+  // velo_plan='plus' quedaba Plus para siempre). El insert de grupos privados /
+  // círculos además queda protegido server-side por RLS (velo_is_premium()).
+  (function(){
+    function _applyPlan(isPlus){
+      if(isPlus){ safeLS('set','velo_plan','plus'); return; }
+      // Gracia: no bajar un Plus recién activado por pago (el webhook puede
+      // tardar unos segundos en reflejar role='plus' en el server).
+      var _g = parseInt(safeLS('get','velo_plan_grace')||'0',10);
+      if(_g && (Date.now()-_g) < 180000) return;
+      if(safeLS('get','velo_plan') === 'plus') safeLS('del','velo_plan');
+      if(safeLS('get','velo_user_type') === 'plus') safeLS('set','velo_user_type','user');
+      try{
+        var _em = safeLS('get','velo_user_email')||'';
+        var _s = JSON.parse(safeLS('get','velo_subscribers')||'[]');
+        var _fs = _s.filter(function(x){ return x.email !== _em; });
+        if(_fs.length !== _s.length) safeLS('set','velo_subscribers', JSON.stringify(_fs));
+      }catch(_e){}
+    }
+    if(p.role === 'plus'){
+      sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
+        .then(function(r2){
+          var _exp = r2.data && r2.data[0] && r2.data[0].plus_expires_at;
+          if(_exp && new Date(_exp).getTime() < Date.now()){
+            _applyPlan(false);
+            sbClient.from('profiles').update({ role:'user' }).eq('id',userId).then(function(){}).catch(function(){});
+          } else {
+            _applyPlan(true);
+          }
+        }).catch(function(){ /* red caída: no tocar el plan por un error transitorio */ });
+    } else {
+      // El server dice que NO es Plus → limpiar cualquier flag de Plus local.
+      _applyPlan(false);
+    }
+  })();
   // Sync pro trial and subscription dates
   if(p.role === 'pro'){
     if(p.pro_trial_expires_at)        safeLS('set','velo_pro_trial_expires_at',        p.pro_trial_expires_at);
@@ -34643,6 +34668,7 @@ function _checkStripeReturn(){
 // bienvenida. Lo usan tanto el retorno de Stripe como el de PayPal.
 function _activatePlusLocal(source){
   safeLS('set','velo_plan','plus');
+  safeLS('set','velo_plan_grace', String(Date.now())); // v1512: 3 min de gracia hasta que el webhook refleje role=plus en el server
   var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
   var email = safeLS('get','velo_user_email');
   if(email && !subs.find(function(s){ return s.email===email; })){
@@ -36996,7 +37022,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1511;
+    var _BUILT_V = 1512;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
