@@ -1394,6 +1394,10 @@ function _clearSession(){
   if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
   if(_dqReactRtCh){ _sbUnsub(_dqReactRtCh); _dqReactRtCh = null; }
   _stopDqReactPoll();
+  // v1515: timers que faltaban — seguían corriendo tras cerrar sesión
+  if(_dqTimerInterval){ clearInterval(_dqTimerInterval); _dqTimerInterval = null; }
+  if(typeof _dmPresenceTmr !== 'undefined' && _dmPresenceTmr){ clearInterval(_dmPresenceTmr); _dmPresenceTmr = null; }
+  if(_inAppPollTimer){ clearInterval(_inAppPollTimer); _inAppPollTimer = null; }
 }
 
 // v1510 (SEGURIDAD): al confirmar por email (signup/recovery/email_change) la
@@ -26080,7 +26084,7 @@ async function pSendDM(){
   var hasImage = !!_dmPendingImage;
   if(!text && !hasAudio && !hasImage) return;
   if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
-  ta.value = '';
+  if(ta){ ta.value = ''; } // v1515: guard (arriba ya se contempla ta null)
   var dmQuote = _getReplyQuote('dmReplyBar');
   pClearReplyBar('dmReplyBar');
   var myId   = safeLS('get','velo_user_id')||'';
@@ -34749,7 +34753,16 @@ function _checkPayPalReturn(){
     return;
   }
   var pending = null; try{ pending = JSON.parse(safeLS('get','velo_pp_pending')||'null'); }catch(e){}
-  var effectiveType = (pending && pending.type) || ppParam || 'donation';
+  // v1515 (SEGURIDAD): el tipo se toma SOLO de un pago pendiente REAL guardado
+  // antes de ir a pagar. Antes se usaba el parámetro de la URL como respaldo, así
+  // que navegar a ?pp=plus activaba Plus sin haber pagado. Sin pending → no hacemos
+  // nada sensible (a lo sumo un gracias genérico de donación).
+  var effectiveType = (pending && pending.type) || '';
+  if(!effectiveType){
+    // Sin pago pendiente real: limpiar el param y salir sin activar nada.
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
   if(effectiveType === 'plus'){
     safeLS('del','velo_pp_pending');
     _activatePlusLocal('paypal');
@@ -35245,6 +35258,18 @@ function _onPageEnter(id){
   if(id !== 'home'){
     _stopHomeRefresh(); // stop live refresh when leaving home
     if(_homeVibesRtCh){ _sbUnsub(_homeVibesRtCh); _homeVibesRtCh = null; }
+    // v1515: la Pregunta del Día vive en el home — al salir, frenar sus polls
+    // (feed 15s, reacciones 20s) y el tick del countdown (60s). Antes seguían
+    // consultando la base desde cualquier sección (batería/datos).
+    try{ _stopDqReactPoll(); }catch(_){}
+    if(_dqTimerInterval){ clearInterval(_dqTimerInterval); _dqTimerInterval = null; }
+  }
+  if(id !== 'dm-chat'){
+    // v1515: al salir de un DM por la barra de nav (sin "Salir"), frenar los
+    // polls (reacciones 8s, presencia 30s) que quedaban zombies. Se conserva
+    // _dmPeer y el canal realtime para re-entrar sin perder el hilo.
+    if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
+    try{ _stopDMPresenceRefresh(); }catch(_){}
   }
   if(id !== 'meditacion') pCloseMeditation(); // stop audio/timers when leaving meditation
   if(id !== 'guardians' && _guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
@@ -36977,6 +37002,11 @@ function _btSubmitCompose(){
       if(document.getElementById('pg-bitacora')&&document.getElementById('pg-bitacora').classList.contains('active')){
         _btSwitchTab(type);
       }
+    }).catch(function(){
+      // v1515: sin catch, un rechazo real (offline/red caída) dejaba el botón
+      // "Publicando…" trabado para siempre y el overlay abierto.
+      if(btn){ btn.disabled=false; btn.textContent='✦ Publicar'; }
+      pToast('⚠️','Error de conexión — probá de nuevo');
     });
   }
   _doInsert(true,true);
@@ -37052,7 +37082,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1514;
+    var _BUILT_V = 1515;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
