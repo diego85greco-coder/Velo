@@ -35,6 +35,10 @@ create policy "guardian_requests_daily_limit"
   to authenticated
   with check (
     public.velo_is_premium(auth.uid()::text)
+    -- Si la fila NO es un pedido MÍO (soy el guardián que OFRECE ayuda,
+    -- seeker_id es de otra persona) → no aplica el límite (ofrecer es ilimitado).
+    or seeker_id is distinct from auth.uid()::text
+    -- Es mi propio pedido → limitar a 4 en 24 h.
     or (
       select count(*) from public.guardian_requests g
       where g.seeker_id = auth.uid()::text
