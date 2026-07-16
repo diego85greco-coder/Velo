@@ -10656,6 +10656,17 @@ var _gcLastMsgId   = null;   // last rendered message DB id (prevents flicker on
 var _gcReactHash   = '';     // hash of all guardian chat message reactions — detects UPDATE-only changes
 var _gcSessionStart = 0;     // epoch ms when current guardian chat session began
 
+// v1511 (ANONIMATO): identidad del usuario actual dentro del chat de guardián.
+// - Guardián en modo incógnito → 'Guardián Anónimo'
+// - Si soy el SEEKER y pedí ayuda EN ANÓNIMO → 'Usuario Anónimo' (antes mis
+//   mensajes revelaban mi nombre real al guardián, rompiendo el anonimato).
+function _gcMyIdentity(){
+  var gAnon = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_guardian_status')||'').startsWith('incognito');
+  if(gAnon) return { name:'Guardián Anónimo', av:'🌿' };
+  if(_gcRole === 'seeker' && safeLS('get','velo_my_help_anon')==='1') return { name:'Usuario Anónimo', av:'🕊️' };
+  return { name: safeLS('get','velo_user_name')||'Usuario', av: safeLS('get','velo_user_av')||'🌿' };
+}
+
 function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
   _prevChatStatus = _presenceStatus();
   _inActiveChat = true;
@@ -10955,9 +10966,9 @@ async function pSendGuardianMsg(){
   if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
   // Insert helper reutilizable (para adjuntos y texto)
   var _gcMyId = _myUserId();
-  var _gcSendIsAnon2 = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_guardian_status')||'').startsWith('incognito');
-  var _gcMyName = _gcSendIsAnon2 ? 'Guardián Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
-  var _gcMyAv = _gcSendIsAnon2 ? '🌿' : (safeLS('get','velo_user_av')||'🌿');
+  var _gcIdent = _gcMyIdentity(); // v1511: respeta anonimato del seeker
+  var _gcMyName = _gcIdent.name;
+  var _gcMyAv = _gcIdent.av;
   async function _gcInsertOne(bodyText){
     var el2 = document.getElementById('gcMessages');
     var lastB = null;
@@ -10989,9 +11000,9 @@ async function pSendGuardianMsg(){
   pClearReplyBar('gcReplyBar');
   var fullText = quote ? '↩ "'+quote.slice(0,60)+(quote.length>60?'…':'')+'"  \n'+text : text;
   var myId   = _myUserId();
-  var _gcSendIsAnon = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_guardian_status')||'').startsWith('incognito');
-  var myName = _gcSendIsAnon ? 'Guardián Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
-  var myAv   = _gcSendIsAnon ? '🌿' : (safeLS('get','velo_user_av')||'🌿');
+  var _gcIdent2 = _gcMyIdentity(); // v1511: respeta anonimato del seeker
+  var myName = _gcIdent2.name;
+  var myAv   = _gcIdent2.av;
   // Optimistic render
   var el = document.getElementById('gcMessages');
   var _gcLastBubble = null;
@@ -12116,6 +12127,7 @@ async function pSendHelp(){
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
   // Store seeker's own post id so we can receive guardian notifications
   safeLS('set','velo_my_help_post_id','hu'+ts);
+  safeLS('set','velo_my_help_anon', isAnon?'1':'0'); // v1511: preservar anonimato en el chat de guardián
   _subscribeSeekerToGuardianRequest('hu'+ts);
   pRenderHelp();
 
@@ -36984,7 +36996,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1510;
+    var _BUILT_V = 1511;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
