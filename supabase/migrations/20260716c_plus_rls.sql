@@ -7,7 +7,9 @@
 
 -- 1) Función de verdad — generosa para no cortar Plus legítimo:
 --    Plus vigente (expiry futuro o nulo = grant/admin/legacy).
-create or replace function public.velo_is_premium(uid uuid)
+--    OJO: profiles.id es de tipo TEXT en este proyecto, por eso el parámetro es
+--    text y en la política se castea auth.uid()::text.
+create or replace function public.velo_is_premium(uid text)
 returns boolean
 language sql
 stable
@@ -30,4 +32,4 @@ create policy "vibe_groups_private_needs_plus"
   as restrictive
   for insert
   to authenticated
-  with check ( kind <> 'private' or public.velo_is_premium(auth.uid()) );
+  with check ( kind <> 'private' or public.velo_is_premium(auth.uid()::text) );
