@@ -32033,23 +32033,8 @@ async function pAdminGrantProSubscription(){
   }catch(e){ if(resultEl) resultEl.textContent = '⚠️ Error al activar'; pToast('⚠️','Error al activar suscripción'); }
 }
 
-async function pAdminGrantPlus(){
-  var el = document.getElementById('adminGrantPlusEmail');
-  if(!el || !el.value.trim()){ pToast('⚠️','Ingresá el correo del usuario'); return; }
-  var email = el.value.trim().toLowerCase();
-  _initSupabase();
-  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
-  var expires = new Date(Date.now()+30*24*3600*1000).toISOString();
-  try{
-    var profRes = await sbClient.from('profiles').select('id').eq('email',email).limit(1);
-    if(profRes.data && profRes.data[0]){
-      await sbClient.from('profiles').update({ role:'plus', plus_expires_at:expires }).eq('id',profRes.data[0].id);
-    }
-    await sbClient.from('plus_grants').insert({ email:email, expires_at:expires });
-    pToast('⭐','Velo Plus activado 30 días para '+email);
-    el.value = '';
-  }catch(e){ pToast('⚠️','Error al activar Plus'); }
-}
+// v1509: duplicado viejo de pAdminGrantPlus eliminado — pisaba a la versión
+// nueva (selector de días + ilike + refresco de lista) por hoisting.
 
 async function pAdminDeleteUser(id, email){
   if(!window.confirm('¿Eliminar al usuario '+(email||id)+'?\nEsta acción no se puede deshacer.')) return;
@@ -36954,7 +36939,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1508;
+    var _BUILT_V = 1509;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
