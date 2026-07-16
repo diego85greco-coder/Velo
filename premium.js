@@ -7414,7 +7414,7 @@ async function _fetchDailyFeed(qId){
   if(!sbClient){ _renderDailyFeed([]); return; }
   var today = _dateKey();
   try{
-    var res = await sbClient.from('daily_responses').select('*').eq('question_date',today).order('created_at',{ascending:false}).limit(40);
+    var res = await sbClient.from('daily_responses_feed').select('*').eq('question_date',today).order('created_at',{ascending:false}).limit(40);
     var responses = res.data || [];
     await _loadDqReactions(responses.map(function(r){ return r.id; }));
     _renderDailyFeed(responses);
@@ -8060,7 +8060,7 @@ async function pOpenDqResponseSheet(responseId){
     _initSupabase();
     if(sbClient){
       try{
-        var _fr = await sbClient.from('daily_responses')
+        var _fr = await sbClient.from('daily_responses_feed')
           .select('id,user_id,user_name,user_avatar,response_text,mood_emoji,created_at')
           .eq('id', String(responseId)).single();
         if(!_fr.error && _fr.data) r = _fr.data;
@@ -37082,7 +37082,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1515;
+    var _BUILT_V = 1516;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
