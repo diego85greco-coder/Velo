@@ -7742,7 +7742,7 @@ function _updateMoodChip(){
       +   '<div style="flex:1;min-width:0"><div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+mainCol+';opacity:.72;font-family:Jost,sans-serif;margin-bottom:3px">Hoy te sentiste</div><div style="font-size:16px;font-weight:800;color:'+mainCol+';font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(label||'Registrado')+'</div></div>'
       +   '<button onclick="event.stopPropagation();_homeMoodForcePick=true;_updateMoodChip()" style="background:'+iconBg+';border:1.5px solid '+iconBdr+';color:'+mainCol+';border-radius:12px;padding:8px 12px;font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">✎ Cambiar</button>'
       + '</div>'
-      + '<button onclick="event.stopPropagation();try{pGoTo(\'mood\')}catch(_){}" style="width:100%;margin-top:11px;padding:9px;background:none;border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';opacity:.9;font-family:Jost,sans-serif;font-size:11.5px;font-weight:800;cursor:pointer">Ver más → estado · lema · evolución</button>'
+      + '<button onclick="event.stopPropagation();try{pOpenMoodChipSheet()}catch(_){}" style="width:100%;margin-top:11px;padding:9px;background:none;border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';opacity:.9;font-family:Jost,sans-serif;font-size:11.5px;font-weight:800;cursor:pointer">Ver más → estado · lema · evolución</button>'
       + '</div>';
   }
 }
@@ -37808,7 +37808,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1545;
+    var _BUILT_V = 1546;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
