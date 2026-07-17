@@ -22607,8 +22607,53 @@ function _storyMessage(toId, toName, toAv){
   if(!toId){ pToast('🌱','No se puede mensajear a este momento'); return; }
   var myId = safeLS('get','velo_user_id')||'';
   if(toId === myId){ pToast('🌿','Es tu propia historia'); return; }
+  // v1537 (Nivel 1): si NO hay relación de chat (no lo tengo de favorito ni
+  // aceptamos chat antes) → mensaje al BUZÓN (DM de texto plano). Si ya hay chat
+  // habilitado o lo tengo de favorito → el flujo de chat de siempre (pOpenDM).
+  var accepted = safeLS('get','velo_dm_accepted_'+toId) === '1';
+  var iFav = false; try{ iFav = pIsFav(toId); }catch(_){}
   _closeStoryPlayer();
-  try{ pOpenDM(toId, toName||'Usuario', toAv||'🧑'); }catch(_){}
+  if(accepted || iFav){
+    try{ pOpenDM(toId, toName||'Usuario', toAv||'🧑'); }catch(_){}
+  } else {
+    _openDMBuzonCompose(toId, toName||'Usuario', toAv||'🧑');
+  }
+}
+// Nivel 1 — compositor de mensaje al BUZÓN (para no-favoritos sin chat previo).
+// El mensaje viaja como DM de texto plano: el receptor lo ve como no-leído en sus
+// contactos/campana y responde si quiere. No abre chat ni pide aceptación.
+function _openDMBuzonCompose(toId, toName, toAv){
+  var ex = document.getElementById('dmBuzonOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'dmBuzonOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10035;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.35);border-radius:22px 22px 0 0;display:flex;flex-direction:column">'
+    + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
+    + '<div style="display:flex;align-items:center;gap:10px;padding:4px 0 12px"><span style="flex-shrink:0">'+_avInline(toAv||'🧑',32)+'</span><div style="min-width:0"><div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:#fff;font-style:italic">Mensaje a '+_escHtml(toName||'Usuario')+'</div><div style="font-size:11px;color:rgba(180,220,195,.72);font-family:Jost,sans-serif;margin-top:1px">Le llega a su buzón — responde si quiere.</div></div></div>'
+    + '<textarea id="dmBuzonInput" placeholder="Escribí tu mensaje…" rows="3" maxlength="500" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.28);border-radius:12px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.45;margin-bottom:10px"></textarea>'
+    + '<div style="display:flex;gap:8px">'
+      + '<button onclick="document.getElementById(\'dmBuzonOv\').remove()" style="flex:1;padding:12px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.2);border-radius:12px;color:rgba(200,230,215,.7);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Cancelar</button>'
+      + '<button onclick="_sendDMBuzon('+_jsAttr(toId)+','+_jsAttr(toName||'Usuario')+','+_jsAttr(toAv||'🧑')+')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer">✉️ Enviar al buzón</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var i=document.getElementById('dmBuzonInput'); if(i) i.focus(); }, 120);
+}
+async function _sendDMBuzon(toId, toName, toAv){
+  var inp = document.getElementById('dmBuzonInput');
+  var text = inp ? (inp.value||'').trim() : '';
+  if(!text){ pToast('🌱','Escribí un mensaje'); return; }
+  _initSupabase();
+  var myId = safeLS('get','velo_user_id')||'';
+  var myName = safeLS('get','velo_user_name')||'Usuario';
+  var myAv = safeLS('get','velo_user_av')||'🧑';
+  if(!sbClient || !myId){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    var r = await sbClient.from('direct_messages').insert({ from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:text });
+    if(r && r.error){ pToast('⚠️','No se pudo enviar — probá de nuevo'); return; }
+    var ov = document.getElementById('dmBuzonOv'); if(ov) ov.remove();
+    pToast('✉️','Tu mensaje quedó en el buzón de '+(toName||'la persona'));
+  }catch(e){ pToast('⚠️','No se pudo enviar — probá de nuevo'); }
 }
 
 function _storyStartTimer(){
@@ -37664,7 +37709,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1536;
+    var _BUILT_V = 1537;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
