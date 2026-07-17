@@ -16193,7 +16193,7 @@ async function pBackupMyData(){
   if(sbClient && uid){
     payload.supabase = {};
     try{
-      var pr = await sbClient.from('profiles').select('*').eq('id', uid).maybeSingle();
+      var pr = await sbClient.from('profiles_full').select('*').eq('id', uid).maybeSingle();
       if(pr && pr.data) payload.supabase.profile = pr.data;
     }catch(e){}
     try{
@@ -24004,7 +24004,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     _initSupabase();
     if(sbClient){
       try{
-        var pr = await sbClient.from('profiles').select('*').eq('id', uid).limit(1);
+        var pr = await sbClient.from('profiles').select('id,nombre,avatar,motto,username,role,created_at,status_music,status_book,status_phrase,status_film,helped_count,received_count,visit_day_count,guardian_specialties,plus_expires_at').eq('id', uid).limit(1);
         if(pr.data && pr.data.length) prof = pr.data[0];
       }catch(e){}
       // Seed from profiles columns (always available, may be slightly stale)
@@ -27870,7 +27870,7 @@ async function _renderAdmin(){
   if(sbClient){
     // Profiles: real registration count
     try{
-      var profRes = await sbClient.from('profiles').select('id,role,created_at,nombre,email,terms_accepted_at').order('created_at',{ascending:false}).limit(500);
+      var profRes = await sbClient.from('profiles_full').select('id,role,created_at,nombre,email,terms_accepted_at').order('created_at',{ascending:false}).limit(500);
       if(!profRes.error && profRes.data){
         var profiles = profRes.data;
         totalPros  = profiles.filter(function(p){ return p.role==='pro'; }).length;
@@ -29050,7 +29050,7 @@ async function _adminTabUsuarios(panel){
   _initSupabase();
   var allProfiles = [], deletedCount = 0;
   if(sbClient){
-    try{ var pRes=await sbClient.from('profiles').select('id,role,created_at,nombre,email,username,terms_accepted_at').order('created_at',{ascending:false}).limit(500); if(!pRes.error&&pRes.data) allProfiles=pRes.data; }catch(e){}
+    try{ var pRes=await sbClient.from('profiles_full').select('id,role,created_at,nombre,email,username,terms_accepted_at').order('created_at',{ascending:false}).limit(500); if(!pRes.error&&pRes.data) allProfiles=pRes.data; }catch(e){}
     try{ var dRes=await sbClient.from('deleted_accounts').select('id',{count:'exact',head:true}); if(!dRes.error) deletedCount=dRes.count||0; }catch(e){}
   }
   var users = allProfiles.filter(function(p){ return p.role!=='pro'; });
@@ -29228,7 +29228,7 @@ async function _renderAdminPlusSubs(){
   _initSupabase();
   if(!sbClient){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
   try{
-    var res = await sbClient.from('profiles').select('id,nombre,email,role,plus_expires_at').eq('role','plus').order('plus_expires_at',{ascending:false,nullsFirst:false}).limit(300);
+    var res = await sbClient.from('profiles_full').select('id,nombre,email,role,plus_expires_at').eq('role','plus').order('plus_expires_at',{ascending:false,nullsFirst:false}).limit(300);
     var data = res.data || [];
     if(!data.length){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3);font-style:italic">Todavía no hay suscriptores Plus activos.</p>'; return; }
     var now = Date.now();
@@ -29356,7 +29356,7 @@ async function pAdminExportCsv(kind){
       if(moodRes.error) throw moodRes.error;
       rows = moodRes.data || [];
     } else if(kind === 'profiles'){
-      var profRes = await sbClient.from('profiles').select('id,nombre,username,email,created_at,plus_expires_at,buddy_id,buddy_name,buddy_started_at,buddy_available_at').order('created_at', {ascending:false}).limit(5000);
+      var profRes = await sbClient.from('profiles_full').select('id,nombre,username,email,created_at,plus_expires_at,buddy_id,buddy_name,buddy_started_at,buddy_available_at').order('created_at', {ascending:false}).limit(5000);
       if(profRes.error) throw profRes.error;
       rows = profRes.data || [];
     }
@@ -29424,7 +29424,7 @@ async function _adminLoadReferralStats(){
     var nameMap = {};
     if(refrIds.length){
       try{
-        var pd = await sbClient.from('profiles').select('id,nombre,username,email').in('id', refrIds);
+        var pd = await sbClient.from('profiles_full').select('id,nombre,username,email').in('id', refrIds);
         (pd.data||[]).forEach(function(p){ nameMap[p.id] = p.nombre || (p.username?'@'+p.username:'') || (p.email||'').split('@')[0] || 'Sin nombre'; });
       }catch(e){}
     }
@@ -29882,7 +29882,7 @@ async function pAdminPrepareGDPR(){
   _initSupabase();
   var userData={email:email,perfil:null,diarioCount:0,estadosCount:0};
   if(sbClient){
-    try{ var pRes=await sbClient.from('profiles').select('*').eq('email',email).limit(1); if(pRes.data&&pRes.data[0]) userData.perfil=pRes.data[0]; }catch(e){}
+    try{ var pRes=await sbClient.from('profiles_full').select('*').eq('email',email).limit(1); if(pRes.data&&pRes.data[0]) userData.perfil=pRes.data[0]; }catch(e){}
     if(userData.perfil){
       var uid=userData.perfil.id;
       try{ var dRes=await sbClient.from('diary_entries').select('id',{count:'exact',head:true}).eq('user_id',uid); userData.diarioCount=dRes.count||0; }catch(e){}
@@ -37082,7 +37082,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1516;
+    var _BUILT_V = 1517;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
