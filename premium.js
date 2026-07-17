@@ -22265,9 +22265,11 @@ async function pOpenVibeGroup(groupId){
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
+    // v1522: barras de progreso segmentadas arriba (estilo historias de Instagram)
+    + '<div id="vibeGroupProgress" style="display:flex;gap:4px;padding:9px 14px 3px;flex-shrink:0;background:rgba(4,10,7,.98)"></div>'
     + '<div id="vibeGroupFixed" style="padding:14px 16px 0;flex-shrink:0"></div>'
     + '<div id="vibeGroupList" style="flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 0 6px">Cargando…</div>'
-    + '<div id="vibeGroupDots" style="display:flex;gap:6px;justify-content:center;padding:6px 12px calc(14px + env(safe-area-inset-bottom,0px));flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(5,15,8,.98))"></div>';
+    + '<div id="vibeGroupDots" style="display:none;gap:6px;justify-content:center;padding:6px 12px calc(14px + env(safe-area-inset-bottom,0px));flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(5,15,8,.98))"></div>';
   document.body.appendChild(ov);
   try{
     var res = await sbClient.from('vibes').select('*').eq('group_id', groupId).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(80);
@@ -22291,6 +22293,8 @@ async function pOpenVibeGroup(groupId){
       list.style.display = 'none';
       var dotsEmpty = document.getElementById('vibeGroupDots');
       if(dotsEmpty) dotsEmpty.style.display = 'none';
+      var progEmpty = document.getElementById('vibeGroupProgress');
+      if(progEmpty) progEmpty.style.display = 'none';
       return;
     }
     // Cargar reacciones de todas las vibes de una — bulk
@@ -22363,6 +22367,17 @@ async function pOpenVibeGroup(groupId){
         return '<span class="vibe-dot" data-idx="'+i+'" style="width:'+(i===carouselData.length-1?'20px':'7px')+';height:7px;border-radius:100px;background:'+(i===carouselData.length-1?'rgba(116,198,157,.92)':'rgba(180,220,195,.30)')+';transition:all .3s"></span>';
       }).join('');
     }
+    // v1522: barras de progreso segmentadas arriba (estilo IG). Se llenan hasta la
+    // historia actual; al abrir estás en la última (más nueva), así que van llenas.
+    var progEl = document.getElementById('vibeGroupProgress');
+    if(progEl){
+      if(carouselData.length > 1){
+        var _curIdx0 = carouselData.length - 1;
+        progEl.innerHTML = carouselData.map(function(v,i){
+          return '<span class="vibe-prog" data-idx="'+i+'" style="flex:1;height:3px;border-radius:100px;background:'+(i<=_curIdx0?'rgba(116,198,157,.95)':'rgba(255,255,255,.20)')+';transition:background .3s"></span>';
+        }).join('');
+      } else { progEl.style.display = 'none'; }
+    }
     // Scrollear a la última HISTORIA REAL (la más reciente / última vista), NO al
     // slide de transición que quedó al final. Antes usábamos scrollWidth y con la
     // transición agregada caía en la portada del siguiente grupo. v1445
@@ -22383,6 +22398,11 @@ async function pOpenVibeGroup(groupId){
         var active = di === idx;
         d.style.width = active ? '20px' : '7px';
         d.style.background = active ? 'rgba(116,198,157,.92)' : 'rgba(180,220,195,.30)';
+      });
+      // v1522: actualizar barras de progreso de arriba — llenas hasta la actual
+      var progs = list.parentElement.querySelectorAll('#vibeGroupProgress .vibe-prog');
+      progs.forEach(function(p, pi){
+        p.style.background = pi <= idx ? 'rgba(116,198,157,.95)' : 'rgba(255,255,255,.20)';
       });
     });
     // Guardar timestamp del más nuevo como "último visto" al ABRIR el grupo
@@ -22415,8 +22435,9 @@ async function pOpenInstantVibe(vibeId){
   ov.style.cssText = 'position:fixed;inset:0;z-index:10014;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
   var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeInstant()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:24px;flex-shrink:0">✨</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4)">Instantáneos</span></div></div></div>';
   ov.innerHTML = header
+    + '<div id="vibeInstantProgress" style="display:flex;gap:4px;padding:9px 14px 3px;flex-shrink:0;background:rgba(4,10,7,.98)"></div>'
     + '<div id="vibeInstantList" style="flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 0 6px">Cargando…</div>'
-    + '<div id="vibeInstantDots" style="display:flex;gap:6px;justify-content:center;padding:6px 12px calc(14px + env(safe-area-inset-bottom,0px));flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(5,15,8,.98))"></div>';
+    + '<div id="vibeInstantDots" style="display:none;gap:6px;justify-content:center;padding:6px 12px calc(14px + env(safe-area-inset-bottom,0px));flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(5,15,8,.98))"></div>';
   document.body.appendChild(ov);
   try{
     var res = await sbClient.from('vibes').select('*').is('group_id', null).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(80);
@@ -22424,6 +22445,8 @@ async function pOpenInstantVibe(vibeId){
     var vibes = (res && res.data) || [];
     if(!list || !vibes.length){
       if(list) list.innerHTML = '<div style="flex:1;text-align:center;padding:60px 20px;font-family:Jost,sans-serif"><div style="font-size:38px;margin-bottom:10px">✨</div><div style="font-size:15px;font-weight:700;color:rgba(220,245,232,.9);margin-bottom:4px">Todavía no hay instantáneos hoy</div><div style="font-size:12.5px;color:rgba(200,230,215,.55);line-height:1.5">Los momentos duran 24 horas — ¡publicá el primero del día!</div></div>';
+      var progEmptyI = document.getElementById('vibeInstantProgress');
+      if(progEmptyI) progEmptyI.style.display = 'none';
       return;
     }
     // Cargar reacciones de todos de una
@@ -22449,6 +22472,15 @@ async function pOpenInstantVibe(vibeId){
         return '<span class="vibe-dot" data-idx="'+i+'" style="width:7px;height:7px;border-radius:100px;background:rgba(180,220,195,.30);transition:all .3s"></span>';
       }).join('');
     }
+    // v1522: barras de progreso segmentadas arriba (estilo IG)
+    var progElI = document.getElementById('vibeInstantProgress');
+    if(progElI){
+      if(ordered.length > 1){
+        progElI.innerHTML = ordered.map(function(v,i){
+          return '<span class="vibe-prog" data-idx="'+i+'" style="flex:1;height:3px;border-radius:100px;background:rgba(255,255,255,.20);transition:background .3s"></span>';
+        }).join('');
+      } else { progElI.style.display = 'none'; }
+    }
     // Scrollear al vibe tocado
     var tappedIdx = ordered.findIndex(function(v){ return v.id === vibeId; });
     if(tappedIdx < 0) tappedIdx = ordered.length - 1;
@@ -22460,6 +22492,8 @@ async function pOpenInstantVibe(vibeId){
         d.style.width = active ? '20px' : '7px';
         d.style.background = active ? 'rgba(116,198,157,.92)' : 'rgba(180,220,195,.30)';
       });
+      var progsI = progElI ? progElI.querySelectorAll('.vibe-prog') : [];
+      progsI.forEach(function(p, pi){ p.style.background = pi <= tappedIdx ? 'rgba(116,198,157,.95)' : 'rgba(255,255,255,.20)'; });
     }, 30);
     list.addEventListener('scroll', function(){
       var w = list.clientWidth; if(!w) return;
@@ -22471,6 +22505,8 @@ async function pOpenInstantVibe(vibeId){
         d.style.width = active ? '20px' : '7px';
         d.style.background = active ? 'rgba(116,198,157,.92)' : 'rgba(180,220,195,.30)';
       });
+      var progsI2 = progElI ? progElI.querySelectorAll('.vibe-prog') : [];
+      progsI2.forEach(function(p, pi){ p.style.background = pi <= idx ? 'rgba(116,198,157,.95)' : 'rgba(255,255,255,.20)'; });
     });
     // Marcar como vistos TODOS los que aparecen en el carrusel (Instagram Stories style)
     try{
@@ -37046,7 +37082,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1521;
+    var _BUILT_V = 1522;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
