@@ -22273,13 +22273,13 @@ function _openStoryPlayer(slides, startIdx, chainNext){
   document.body.appendChild(ov);
   _storyState = { slides:slides, idx:Math.max(0,Math.min(slides.length-1, startIdx||0)),
     rafId:null, paused:false, held:false, elapsed:0, startTs:0, dur:_STORY_IMG_MS,
-    isVid:false, chainNext:chainNext||null };
+    isVid:false, chainNext:chainNext||null, coverNext:null };
   var prog = document.getElementById('storyProgress');
   prog.innerHTML = slides.map(function(s,i){
     return '<span class="sp-seg" data-i="'+i+'" style="flex:1;height:2.5px;border-radius:100px;background:rgba(255,255,255,.30);overflow:hidden"><i style="display:block;height:100%;width:0;background:#fff;border-radius:100px"></i></span>';
   }).join('');
-  document.getElementById('storyTapPrev').addEventListener('click', function(){ if(_storyState&&_storyState.held){ _storyState.held=false; return; } _storyPrev(); });
-  document.getElementById('storyTapNext').addEventListener('click', function(){ if(_storyState&&_storyState.held){ _storyState.held=false; return; } _storyNext(); });
+  document.getElementById('storyTapPrev').addEventListener('click', function(){ if(_storyState&&_storyState.held){ _storyState.held=false; return; } if(_storyState&&_storyState.coverNext){ _storyExitCover(); return; } _storyPrev(); });
+  document.getElementById('storyTapNext').addEventListener('click', function(){ if(_storyState&&_storyState.held){ _storyState.held=false; return; } if(_storyState&&_storyState.coverNext){ _storyGoNextGroup(); return; } _storyNext(); });
   // Mantener presionado = pausa; soltar = reanuda. Un tap corto no pausa.
   var _holdT = null;
   ov.addEventListener('pointerdown', function(){ _holdT = setTimeout(function(){ if(_storyState){ _storyState.held=true; _storyPause(); } }, 240); });
@@ -22291,6 +22291,7 @@ function _openStoryPlayer(slides, startIdx, chainNext){
 
 function _storyShow(){
   if(!_storyState) return;
+  _storyState.coverNext = null; // por si venimos de una portada
   var s = _storyState.slides[_storyState.idx];
   if(!s){ _closeStoryPlayer(); return; }
   // marcar como visto
@@ -22384,9 +22385,10 @@ function _storyTick(){
   var now = Date.now();
   _storyState.elapsed = now - _storyState.startTs;
   var pct = Math.min(1, _storyState.elapsed / _storyState.dur);
-  var f = document.querySelector('#storyProgress .sp-seg[data-i="'+_storyState.idx+'"] i');
+  var _segI = _storyState.coverNext ? 0 : _storyState.idx;
+  var f = document.querySelector('#storyProgress .sp-seg[data-i="'+_segI+'"] i');
   if(f) f.style.width = (pct*100)+'%';
-  if(pct >= 1){ _storyNext(); return; }
+  if(pct >= 1){ if(_storyState.coverNext) _storyGoNextGroup(); else _storyNext(); return; }
   _storyState.rafId = requestAnimationFrame(_storyTick);
 }
 
@@ -22409,9 +22411,8 @@ function _storyNext(){
     _storyState.idx++;
     _storyShow();
   } else if(_storyState.chainNext && _storyState.chainNext.id){
-    var nid = _storyState.chainNext.id;
-    _closeStoryPlayer();
-    try{ pPlayVibeGroup(nid); }catch(_){}
+    // Antes de pasar al próximo grupo, mostrar una PORTADA de transición.
+    _storyShowCover(_storyState.chainNext);
   } else {
     _closeStoryPlayer();
   }
@@ -22420,6 +22421,49 @@ function _storyPrev(){
   if(!_storyState) return;
   if(_storyState.idx > 0){ _storyState.idx--; }
   _storyShow(); // si ya estás en la primera, reinicia la actual
+}
+
+// Portada de transición entre grupos: "Siguiente · [emoji] [título]".
+// Avanza sola tras ~2.6s (o al tocar) hacia las historias del próximo grupo.
+function _storyShowCover(nextGroup){
+  if(!_storyState) return;
+  _storyState.coverNext = nextGroup;
+  _storyState.isVid = false;
+  _storyState.elapsed = 0;
+  _storyState.dur = 2600;
+  var prog = document.getElementById('storyProgress');
+  if(prog) prog.innerHTML = '<span class="sp-seg" data-i="0" style="flex:1;height:2.5px;border-radius:100px;background:rgba(255,255,255,.30);overflow:hidden"><i style="display:block;height:100%;width:0;background:#fff;border-radius:100px"></i></span>';
+  var hdr = document.getElementById('storyHeader');
+  if(hdr) hdr.innerHTML = '<div style="flex:1"></div><button onclick="_closeStoryPlayer()" aria-label="Cerrar" style="background:none;border:none;color:#fff;font-size:26px;cursor:pointer;padding:4px 8px;line-height:1;text-shadow:0 1px 5px rgba(0,0,0,.7)">✕</button>';
+  var mediaEl = document.getElementById('storyMedia');
+  if(mediaEl) mediaEl.innerHTML =
+      '<div style="position:absolute;inset:0;background:linear-gradient(165deg,#123322,#07130c)"></div>'
+    + '<div style="position:relative;z-index:1;text-align:center;padding:30px 26px;max-width:340px">'
+    +   '<div style="font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(160,220,185,.85);font-family:Jost,sans-serif;margin-bottom:20px">Siguiente</div>'
+    +   '<div style="font-size:82px;line-height:1;margin-bottom:18px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.5))">'+_escHtml(nextGroup.emoji||'🌊')+'</div>'
+    +   '<div style="font-family:\'Cormorant Garamond\',serif;font-size:30px;font-style:italic;font-weight:600;color:#fff;line-height:1.25;margin-bottom:26px;text-shadow:0 2px 12px rgba(0,0,0,.6)">'+_escHtml(nextGroup.title||'Grupo')+'</div>'
+    +   '<div style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.42);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;backdrop-filter:blur(4px)">Tocá para continuar →</div>'
+    + '</div>';
+  var footer = document.getElementById('storyFooter');
+  if(footer) footer.innerHTML = '';
+  _storyStartTimer();
+}
+function _storyGoNextGroup(){
+  if(!_storyState || !_storyState.coverNext) return;
+  var nid = _storyState.coverNext.id;
+  _closeStoryPlayer();
+  try{ pPlayVibeGroup(nid); }catch(_){}
+}
+// Volver desde la portada a la última historia del grupo actual (tap izquierda).
+function _storyExitCover(){
+  if(!_storyState) return;
+  _storyState.coverNext = null;
+  var prog = document.getElementById('storyProgress');
+  if(prog) prog.innerHTML = _storyState.slides.map(function(s,i){
+    return '<span class="sp-seg" data-i="'+i+'" style="flex:1;height:2.5px;border-radius:100px;background:rgba(255,255,255,.30);overflow:hidden"><i style="display:block;height:100%;width:0;background:#fff;border-radius:100px"></i></span>';
+  }).join('');
+  _storyState.idx = _storyState.slides.length - 1;
+  _storyShow();
 }
 
 // Cargar vibes de un grupo + reacciones y abrir el reproductor a pantalla completa.
@@ -37323,7 +37367,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1523;
+    var _BUILT_V = 1524;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
