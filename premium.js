@@ -22536,11 +22536,13 @@ function _storyReact(vibeId, key){
 }
 
 // Actividad de MI historia: quién la vio y con qué reacción (solo el dueño).
-function _storyActivityRow(av, name, rxEmoji, ts){
+function _storyActivityRow(av, name, rxEmoji, ts, soft){
   var when = ts ? ((typeof _timeAgoDM==='function') ? _timeAgoDM(new Date(ts).getTime()) : '') : '';
-  return '<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(180,220,195,.08);font-family:Jost,sans-serif">'
+  var op = soft ? '.62' : '1';
+  var nameCol = soft ? 'rgba(210,230,220,.6)' : 'rgba(230,245,235,.95)';
+  return '<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(180,220,195,.08);font-family:Jost,sans-serif;opacity:'+op+'">'
     + '<span style="flex-shrink:0">'+_avInline(av||'🧑',30)+'</span>'
-    + '<span style="flex:1;min-width:0;font-size:13.5px;font-weight:700;color:rgba(230,245,235,.95);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name||'Alguien')+'</span>'
+    + '<span style="flex:1;min-width:0;font-size:13.5px;font-weight:'+(soft?'600':'700')+';color:'+nameCol+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name||'Alguien')+'</span>'
     + (when ? '<span style="font-size:10.5px;color:rgba(180,220,195,.5)">'+when+'</span>' : '')
     + (rxEmoji ? '<span style="font-size:18px;flex-shrink:0">'+rxEmoji+'</span>' : '')
     + '</div>';
@@ -22556,7 +22558,7 @@ async function _storyOpenActivity(vibeId){
   ov.onclick = function(e){ if(e.target===ov) _close(); };
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.35);border-radius:22px 22px 0 0;max-height:82vh;display:flex;flex-direction:column">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
-    + '<div style="text-align:center;padding:4px 0 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">👁️ Actividad</div></div>'
+    + '<div style="text-align:center;padding:4px 0 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">💚 Quién te acompañó</div><div style="font-size:11.5px;color:rgba(180,220,195,.7);font-family:Jost,sans-serif;margin-top:2px">Las personas que pasaron por tu momento.</div></div>'
     + '<div id="storyActivityList" style="flex:1;overflow-y:auto;min-height:80px">Cargando…</div>'
     + '<button id="storyActivityClose" style="margin-top:12px;padding:11px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.2);border-radius:12px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Cerrar</button>'
     + '</div>';
@@ -22576,13 +22578,25 @@ async function _storyOpenActivity(vibeId){
     var nameMap = {};
     if(missing.length){ try{ var pr = await sbClient.from('profiles').select('id,nombre,username,avatar').in('id', missing); (pr.data||[]).forEach(function(p){ nameMap[p.id]={n:p.nombre||p.username||'Alguien', a:(p.avatar&&!String(p.avatar).startsWith('data:'))?p.avatar:''}; }); }catch(_){} }
     var listEl = document.getElementById('storyActivityList'); if(!listEl) return;
-    var head = '<div style="display:flex;gap:8px;margin-bottom:12px;font-family:Jost,sans-serif">'
-      + '<div style="flex:1;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(180,220,195,.16);border-radius:12px;padding:9px"><div style="font-size:18px;font-weight:800;color:#fff">'+views.length+'</div><div style="font-size:10.5px;color:rgba(200,230,215,.6)">'+(views.length===1?'vista':'vistas')+'</div></div>'
-      + '<div style="flex:1;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(180,220,195,.16);border-radius:12px;padding:9px"><div style="font-size:18px;font-weight:800;color:#fff">'+reacts.length+'</div><div style="font-size:10.5px;color:rgba(200,230,215,.6)">'+(reacts.length===1?'reacción':'reacciones')+'</div></div>'
-      + '</div>';
-    var rows = views.map(function(v){ return _storyActivityRow(v.viewer_av, v.viewer_name, rxEmoji[rxByUser[v.viewer_id]]||'', v.created_at); });
-    missing.forEach(function(id){ var nm = nameMap[id]||{n:'Alguien',a:''}; rows.push(_storyActivityRow(nm.a||'🧑', nm.n, rxEmoji[rxByUser[id]]||'', null)); });
-    listEl.innerHTML = rows.length ? (head + rows.join('')) : '<div style="text-align:center;padding:24px;color:rgba(200,230,215,.5);font-family:Jost,sans-serif;font-size:13px;font-style:italic">Todavía nadie vio esta historia 🌱</div>';
+    // Separar: los que TE ACOMPAÑARON (reaccionaron) van primero y con cariño;
+    // los que solo pasaron a verla, después y suave (sin ansiedad de "visto").
+    var reactedSet = {}; reacts.forEach(function(r){ reactedSet[r.user_id]=1; });
+    var _nameOf = function(uid){
+      var v = views.filter(function(x){ return x.viewer_id===uid; })[0];
+      if(v) return { a:v.viewer_av||'🧑', n:v.viewer_name||'Alguien', ts:v.created_at };
+      var nm = nameMap[uid]||{n:'Alguien',a:''};
+      return { a:nm.a||'🧑', n:nm.n, ts:null };
+    };
+    var accompanied = reacts.map(function(r){ var nm=_nameOf(r.user_id); return _storyActivityRow(nm.a, nm.n, rxEmoji[r.reaction]||'💚', nm.ts, false); });
+    var justViewed = views.filter(function(v){ return !reactedSet[v.viewer_id]; }).map(function(v){ return _storyActivityRow(v.viewer_av, v.viewer_name, '', v.created_at, true); });
+    var out = '';
+    if(accompanied.length){
+      out += '<div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(150,230,185,.9);margin:2px 0 8px">💚 Te acompañaron · '+accompanied.length+'</div>' + accompanied.join('');
+    }
+    if(justViewed.length){
+      out += '<div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(180,220,195,.5);margin:'+(accompanied.length?'16px':'2px')+' 0 8px">👀 Pasaron a verla · '+justViewed.length+'</div>' + justViewed.join('');
+    }
+    listEl.innerHTML = out || '<div style="text-align:center;padding:24px;color:rgba(200,230,215,.5);font-family:Jost,sans-serif;font-size:13px;font-style:italic">Todavía nadie pasó por tu momento 🌱</div>';
   }catch(e){ var le=document.getElementById('storyActivityList'); if(le) le.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(220,120,120,.7);font-family:Jost,sans-serif">No se pudo cargar la actividad</div>'; }
 }
 
@@ -37732,7 +37746,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1538;
+    var _BUILT_V = 1539;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
