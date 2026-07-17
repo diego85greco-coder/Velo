@@ -35560,6 +35560,14 @@ function _todayStatusKey(){
   return 'velo_daily_status_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+// v1541 — navegación clara dentro de "Estado de Ánimo": revelar Mi estado / Mi
+// lema y saltar a Mi evolución (el calendario del mes).
+function _moodScrollTo(id){ var e=document.getElementById(id); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }
+function _moodRevealEstado(focusLema){
+  var c=document.getElementById('dailyStatusCard');
+  if(c){ c.style.display='block'; setTimeout(function(){ _moodScrollTo('dailyStatusCard'); }, 30); }
+  if(focusLema){ setTimeout(function(){ var p=document.getElementById('statusPhrase'); if(p){ p.focus(); } }, 340); }
+}
 function pInitDailyStatus(){
   var key = _todayStatusKey();
   var saved = {}; try{ saved = JSON.parse(safeLS('get', key)||'{}'); }catch(e){}
@@ -37783,7 +37791,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1540;
+    var _BUILT_V = 1541;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

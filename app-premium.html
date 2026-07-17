@@ -36,8 +36,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1540">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1540">
+  <link rel="stylesheet" href="premium.css?v=20260626-1541">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1541">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -251,7 +251,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1540</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1541</div>
 </div>
 
 <!-- APP SHELL -->
@@ -2518,9 +2518,15 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
               <div style="height:12px"></div>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSaveMood()">Registrar ánimo</button>
             </div>
+            <!-- v1541: navegación clara de lo que se puede hacer dentro -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+              <button onclick="_moodRevealEstado(false)" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.34);border-radius:14px;cursor:pointer;font-family:'Jost',sans-serif;color:var(--ink)"><span style="font-size:20px;line-height:1">✨</span><span style="font-size:11.5px;font-weight:700">Mi estado</span></button>
+              <button onclick="_moodRevealEstado(true)" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;background:rgba(155,120,220,.10);border:1.5px solid rgba(155,120,220,.36);border-radius:14px;cursor:pointer;font-family:'Jost',sans-serif;color:var(--ink)"><span style="font-size:20px;line-height:1">💬</span><span style="font-size:11.5px;font-weight:700">Mi lema</span></button>
+              <button onclick="_moodScrollTo('moodEvolucionCard')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.36);border-radius:14px;cursor:pointer;font-family:'Jost',sans-serif;color:var(--ink)"><span style="font-size:20px;line-height:1">🗓️</span><span style="font-size:11.5px;font-weight:700">Ver mi mes</span></button>
+            </div>
             <div class="p-card" style="padding:20px;margin-bottom:16px;display:none" id="dailyStatusCard">
-              <div class="p-label p-label-sage" style="margin-bottom:4px">Mi estado · visible en tu perfil ✨</div>
-              <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5;font-style:italic">Lo que guardás aparece en tu perfil público y cuando la comunidad te ve.</p>
+              <div class="p-label p-label-sage" style="margin-bottom:4px">✨ Mi estado · visible en tu perfil</div>
+              <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5;font-style:italic">Lo que guardás acá aparece en tu perfil público y cuando la comunidad te ve.</p>
               <div class="p-field">
                 <label class="p-field-label">🎵 Música que escucho</label>
                 <input class="p-input" type="text" id="statusMusic" placeholder="Ej: Thalia — Arransando" maxlength="80">
@@ -2534,14 +2540,14 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                 <input class="p-input" type="text" id="statusMovie" placeholder="Ej: The Bear, Oppenheimer…" maxlength="80">
               </div>
               <div class="p-field">
-                <label class="p-field-label">✨ Frase que me acompaña</label>
-                <input class="p-input" type="text" id="statusPhrase" placeholder="Una frase motivadora…" maxlength="120">
+                <label class="p-field-label">💬 Mi lema · una frase que te representa</label>
+                <input class="p-input" type="text" id="statusPhrase" placeholder="Ej: Un día a la vez 🌿" maxlength="120">
               </div>
               <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDailyStatus()">Guardar estado</button>
             </div>
-            <div class="p-card" style="padding:20px">
+            <div class="p-card" style="padding:20px" id="moodEvolucionCard">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                <div class="p-label p-label-sage" style="margin:0">Tu calendario</div>
+                <div class="p-label p-label-sage" style="margin:0">🗓️ Mi evolución · tu mes</div>
                 <button class="p-btn p-btn--secondary p-btn--sm" onclick="pClearAllMoods()" style="font-size:11px">🗑️ Borrar historial</button>
               </div>
               <!-- v1406: navegación de mes para completar días de meses anteriores -->
@@ -4481,8 +4487,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1540"></script>
-<script src="premium-redesign.js?v=20260626-1540"></script>
+<script src="premium.js?v=20260626-1541"></script>
+<script src="premium-redesign.js?v=20260626-1541"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
