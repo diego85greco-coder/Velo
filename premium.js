@@ -11157,7 +11157,7 @@ async function pRenderHelp(){
 
   var posts, usingSB = false;
   var myHelpId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
-  var sbRows = await _sbLoad('help_posts', function(q){
+  var sbRows = await _sbLoad('help_posts_feed', function(q){
     var since = new Date(Date.now() - 48*60*60*1000).toISOString();
     // Exclude closed posts (received a support message)
     return q.gte('created_at', since).or('closed.eq.false,closed.is.null')
@@ -11325,34 +11325,26 @@ async function _guardianSendRequest(post){
   var reqId  = 'gr'+Date.now();
   _pendingGuardianReqId = reqId; // store so _guardianCancelWait can target only this row
   // Insert guardian_request row — await so we know it arrived before showing overlay
+  // v1519: crear el pedido + el push server-side. El RPC resuelve el seeker
+  // desde el post_id (el feed ya no expone el user_id real de los anónimos) y
+  // arma el guardian_request + el sentinela de push de forma atómica.
   var insErr = null;
   try{
-    var insResult = await sbClient.from('guardian_requests').insert({
-      id: reqId, post_id: post.id,
-      seeker_id: post.userId||null,
-      guardian_id: myId, guardian_name: myName, guardian_av: myAv,
-      status: 'pending'
+    var _accRpc = await sbClient.rpc('accept_help_post', {
+      p_post_id: post.id, p_req_id: reqId,
+      p_guardian_name: myName, p_guardian_av: myAv
     });
-    if(insResult && insResult.error) insErr = insResult.error;
+    if(_accRpc && _accRpc.error) insErr = _accRpc.error;
+    else if(_accRpc && _accRpc.data && !_accRpc.data.ok) insErr = new Error(_accRpc.data.reason || 'accept_failed');
+    else if(_accRpc && _accRpc.data && _accRpc.data.dm_id){
+      // Sentinela de push: se borra a los 60s (ya cumplió su función).
+      var _accId = _accRpc.data.dm_id;
+      setTimeout(function(){ if(sbClient) sbClient.from('direct_messages').delete().eq('id',_accId).then(function(){}).catch(function(){}); }, 60000);
+    }
   }catch(e){ insErr = e; }
   if(insErr){
     pToast('⚠️','No se pudo enviar la solicitud. Verificá tu conexión.');
     return;
-  }
-  // v1440: PUSH al que pidió ayuda (aunque sea anónimo) para que se entere con la
-  // app cerrada de que alguien quiere acompañarlo. El popup in-app ya le llega por
-  // la suscripción a guardian_requests; esto agrega la notificación push.
-  // Sentinel dedicado que el cliente IGNORA (no crea chat) y que la Edge Function
-  // convierte en push "💚 Alguien quiere acompañarte".
-  if(post.userId && post.userId !== myId){
-    try{
-      var _accRes = await sbClient.from('direct_messages').insert({
-        from_id: myId, from_name: myName, from_av: myAv,
-        to_id: post.userId, text: '__velo_accompany_req__'
-      }).select('id').single();
-      var _accId = _accRes && _accRes.data && _accRes.data.id;
-      if(_accId) setTimeout(function(){ if(sbClient) sbClient.from('direct_messages').delete().eq('id',_accId).then(function(){}).catch(function(){}); }, 60000);
-    }catch(_){}
   }
   // Show waiting overlay with 60s countdown
   _showGuardianWaitOverlay(post, myName);
@@ -37038,7 +37030,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1518;
+    var _BUILT_V = 1519;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
