@@ -4020,6 +4020,15 @@ function pVerMiMesCompleto(){
     setTimeout(function(){ try{ _moodScrollTo('moodEvolucionCard'); }catch(_){} }, 400);
   }, 200);
 }
+// v1544: "Cambiar mi ánimo de hoy" desde el sheet → va a la página y sube al selector.
+function pCambiarAnimoHoy(){
+  try{ if(typeof pCloseMoodChipSheet === 'function') pCloseMoodChipSheet(); }catch(_){}
+  try{ var ov2 = document.getElementById('moodQuickOv'); if(ov2) ov2.remove(); }catch(_){}
+  setTimeout(function(){
+    try{ pGoTo('mood'); }catch(_){ return; }
+    setTimeout(function(){ try{ _moodScrollTo('moodRegisterCard'); }catch(_){} }, 400);
+  }, 200);
+}
 // v1409: "🤗 Mis Registros" ahora abre el GRÁFICO de evolución emocional
 // (antes abría el calendario de Seguimiento — el calendario ya está en
 // "Ver mi mes completo", así cada botón muestra una vista distinta).
@@ -33126,6 +33135,8 @@ async function _renderHomeWeekMoodGraph(){
     if(insights.length){
       html += '<div style="text-align:center;margin-top:8px;font-size:11.5px;color:var(--ink3);font-family:Jost,sans-serif;line-height:1.55">'+insights.join(' &nbsp;·&nbsp; ')+'</div>';
     }
+    // v1544: CTA principal "Cambiar mi ánimo de hoy" → sube al selector.
+    html += '<div style="text-align:center;margin-top:12px"><button onclick="pCambiarAnimoHoy()" style="background:linear-gradient(135deg,rgba(155,120,220,.92),rgba(120,90,190,.96));border:none;color:#fff;font-size:13px;font-weight:800;font-family:Jost,sans-serif;padding:11px 22px;border-radius:100px;letter-spacing:.3px;cursor:pointer;box-shadow:0 3px 12px rgba(120,90,190,.3)">✎ Cambiar mi ánimo de hoy</button></div>';
     // CTA "Ver mi mes" — usa helper que cierra el sheet si está abierto
     html += '<div style="text-align:center;margin-top:9px"><button onclick="pVerMiMesCompleto()" style="background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.55);color:rgba(170,235,200,.98);font-size:12px;font-weight:800;font-family:Jost,sans-serif;padding:8px 18px;border-radius:100px;letter-spacing:.4px;cursor:pointer;transition:all .15s;box-shadow:0 2px 10px rgba(116,198,157,.18)">Ver mi mes completo →</button></div>';
     return html;
@@ -37795,7 +37806,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1543;
+    var _BUILT_V = 1544;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
