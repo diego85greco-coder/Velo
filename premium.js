@@ -7644,6 +7644,28 @@ function _initMoodChip(){
   _updateMoodChip();
 }
 
+// v1540 — check-in emocional inline en el home: caritas para tocar y registrar
+// al toque (más claro y original que el chip ambiguo anterior).
+var _HOME_MOODS = [
+  {e:'😄',l:'Genial'},{e:'😊',l:'Bien'},{e:'😌',l:'En paz'},
+  {e:'😐',l:'Neutro'},{e:'😔',l:'Triste'},{e:'😰',l:'Ansioso/a'}
+];
+var _homeMoodForcePick = false;
+function _homeMoodQuick(emoji, label){
+  var today = (typeof _dateKey==='function') ? _dateKey() : '';
+  if(!today) return;
+  var moodObj = { emoji:emoji, label:label||'', note:'', ts:Date.now() };
+  try{ safeLS('set','velo_mood_'+today, JSON.stringify(moodObj)); }catch(_){}
+  try{ var log=JSON.parse(safeLS('get','velo_mood_log')||'[]'); log.unshift(moodObj); safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90))); }catch(_){}
+  try{ if(typeof sbSaveMoodEntry==='function') sbSaveMoodEntry(today, emoji, label||'', ''); }catch(_){}
+  _homeMoodForcePick = false;
+  try{ _updateMoodChip(); }catch(_){}
+  try{ if(typeof _updateTopbarMoodBadge==='function') _updateTopbarMoodBadge(); }catch(_){}
+  try{ if(typeof _loadTodayMoodHome==='function') _loadTodayMoodHome(); }catch(_){}
+  try{ if(typeof _renderHomeWeekMoodGraph==='function') _renderHomeWeekMoodGraph().catch(function(){}); }catch(_){}
+  try{ pToast(emoji, 'Ánimo guardado 💚'); }catch(_){}
+  try{ if(typeof _showStreakCelebration==='function') _showStreakCelebration(); }catch(_){}
+}
 function _updateMoodChip(){
   var chip = document.getElementById('homeMoodChip');
   if(!chip) return;
@@ -7682,17 +7704,32 @@ function _updateMoodChip(){
       document.head.appendChild(_kf);
     }
   }
-  chip.innerHTML =
-    '<div class="mcc-wrap'+(hasEntry?' mcc-has-entry':'')+'" style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:visible">'
-    + streakBadge
-    +'<div class="mcc-glow" style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:'+glowBg+';pointer-events:none"></div>'
-    +'<div class="mcc-icon" style="position:relative;z-index:1;width:46px;height:46px;border-radius:15px;background:'+iconBg+';border:1.5px solid '+iconBdr+';display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:'+iconShd+'">'+(emoji||'💚')+'</div>'
-    +'<div class="mcc-text" style="position:relative;z-index:1;flex:1;min-width:0">'
-    +'<div class="mcc-label" style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+lblCol+';font-family:\'Jost\',sans-serif;margin-bottom:4px">✦ Registrá tus ánimos</div>'
-    +'<div class="mcc-main" style="font-size:16px;font-weight:800;color:'+mainCol+';font-family:\'Jost\',sans-serif;line-height:1.2">'+(hasEntry?_escHtml(label||'Registrado hoy'):'¿Cómo te sentís hoy?')+'</div>'
-    +'</div>'
-    +'<span class="mcc-arrow" style="position:relative;z-index:1;font-size:22px;font-weight:300;color:'+arrowCol+';flex-shrink:0;line-height:1">›</span>'
-    +'</div>';
+  var showPicker = !hasEntry || _homeMoodForcePick;
+  if(showPicker){
+    // Estado SIN registrar (o "cambiar"): fila de caritas para tocar y guardar.
+    var facesHtml = _HOME_MOODS.map(function(m){
+      return '<button type="button" title="'+_escHtml(m.l)+'" onclick="event.stopPropagation();_homeMoodQuick(\''+m.e+'\',\''+_escHtml(m.l)+'\')" style="flex:1;min-width:0;aspect-ratio:1;background:'+iconBg+';border:1.5px solid '+iconBdr+';border-radius:14px;font-size:23px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .1s" onmousedown="this.style.transform=\'scale(1.14)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'">'+m.e+'</button>';
+    }).join('');
+    chip.innerHTML =
+      '<div class="mcc-wrap" style="padding:14px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:visible">'
+      + streakBadge
+      + '<div style="margin-bottom:10px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+lblCol+';font-family:\'Jost\',sans-serif">✦ ¿Cómo estás ahora?</div>'
+      + '<div style="font-size:12px;color:'+mainCol+';opacity:.72;font-family:\'Jost\',sans-serif;margin-top:2px">Tocá una carita — se guarda al toque</div></div>'
+      + '<div style="display:flex;gap:6px">'+facesHtml+'</div>'
+      + '<button onclick="event.stopPropagation();'+(_homeMoodForcePick?'_homeMoodForcePick=false;_updateMoodChip();':'try{pGoTo(\'mood\')}catch(_){}')+'" style="margin-top:9px;background:none;border:none;color:'+lblCol+';font-family:\'Jost\',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 0">'+(_homeMoodForcePick?'✕ cancelar':'✎ registrar con una nota →')+'</button>'
+      + '</div>';
+  } else {
+    // Estado YA registrado: claro, "Hoy te sentiste [X]" + Cambiar.
+    chip.innerHTML =
+      '<div class="mcc-wrap mcc-has-entry" style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:visible">'
+      + streakBadge
+      + '<div class="mcc-glow" style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:'+glowBg+';pointer-events:none"></div>'
+      + '<div class="mcc-icon" style="position:relative;z-index:1;width:46px;height:46px;border-radius:15px;background:'+iconBg+';border:1.5px solid '+iconBdr+';display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:'+iconShd+'">'+(emoji||'💚')+'</div>'
+      + '<div style="position:relative;z-index:1;flex:1;min-width:0"><div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+lblCol+';font-family:\'Jost\',sans-serif;margin-bottom:4px">Hoy te sentiste</div>'
+      + '<div style="font-size:16px;font-weight:800;color:'+mainCol+';font-family:\'Jost\',sans-serif;line-height:1.2">'+_escHtml(label||'Registrado')+'</div></div>'
+      + '<button onclick="event.stopPropagation();_homeMoodForcePick=true;_updateMoodChip()" title="Cambiar tu ánimo de hoy" style="position:relative;z-index:1;background:'+iconBg+';border:1.5px solid '+iconBdr+';color:'+lblCol+';border-radius:12px;padding:8px 12px;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">✎ Cambiar</button>'
+      + '</div>';
+  }
 }
 
 function pOpenMoodChipSheet(){
@@ -37746,7 +37783,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1539;
+    var _BUILT_V = 1540;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
