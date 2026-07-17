@@ -26778,6 +26778,7 @@ function _rejectDMRequest(fromId, fromName){
   var myId = safeLS('get','velo_user_id')||'';
   var myName = safeLS('get','velo_user_name')||'';
   var myAv = safeLS('get','velo_user_av')||'🧑';
+  safeLS('set','velo_dm_rejected_'+fromId,'1'); // v1534: no re-mostrar esta solicitud
   _initSupabase();
   if(sbClient && myId){
     sbClient.from('direct_messages').insert({
@@ -26785,6 +26786,38 @@ function _rejectDMRequest(fromId, fromName){
     }).then(function(){}).catch(function(){});
   }
   pToast('✓','Solicitud rechazada');
+}
+
+// v1534 — Backfill de SOLICITUDES DE CHAT pendientes: si te mandaron un mensaje
+// desde una historia (o quick profile) mientras estabas offline, el chat request
+// solo llegaba por realtime y se perdía. Esto lo recupera al abrir la app / volver
+// del background, para que SIEMPRE puedas responder. Idempotente (aceptado/rechazado
+// se filtran) y no intrusivo (no interrumpe si ya estás en un chat o hay un popup).
+async function _backfillPendingChatRequests(){
+  _initSupabase(); if(!sbClient) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId) return;
+  if(_inActiveChat) return;
+  if(document.getElementById('dmChatReqOv')) return;
+  try{
+    var since = new Date(Date.now() - 7*24*3600*1000).toISOString();
+    var res = await sbClient.from('direct_messages')
+      .select('from_id,from_name,from_av,created_at')
+      .eq('to_id', myId).eq('text','__velo_chat_req__')
+      .gte('created_at', since)
+      .order('created_at',{ascending:false}).limit(30);
+    if(!res || res.error || !res.data || !res.data.length) return;
+    var seen = {}, pending = [];
+    res.data.forEach(function(m){
+      if(!m.from_id || seen[m.from_id]) return; seen[m.from_id] = 1;
+      if(safeLS('get','velo_dm_accepted_'+m.from_id) === '1') return;
+      if(safeLS('get','velo_dm_rejected_'+m.from_id) === '1') return;
+      pending.push(m);
+    });
+    if(!pending.length) return;
+    var m0 = pending[0]; // la más reciente; las demás re-aparecen al manejar esta
+    _showDMChatRequest(m0.from_id, m0.from_name||'Usuario', m0.from_av||'🧑');
+  }catch(_){}
 }
 
 // Global DM listener — shows popup toast when a new DM arrives while in another section
@@ -26874,10 +26907,13 @@ function _startGlobalDMListener(){
   // Backfill inicial + al volver del background (iOS congela el JS y el
   // realtime se pierde los INSERTs mientras la PWA está en segundo plano)
   try{ _dmBackfillUnread(); }catch(_){}
+  // v1534: recuperar solicitudes de chat pendientes (offline) — con delay para
+  // no interrumpir el arranque de la app.
+  try{ setTimeout(function(){ _backfillPendingChatRequests(); }, 1600); }catch(_){}
   if(!window._dmBackfillVisBound){
     window._dmBackfillVisBound = true;
     document.addEventListener('visibilitychange', function(){
-      if(document.visibilityState === 'visible'){ try{ _dmBackfillUnread(); }catch(_){} }
+      if(document.visibilityState === 'visible'){ try{ _dmBackfillUnread(); }catch(_){} try{ _backfillPendingChatRequests(); }catch(_){} }
     });
   }
 
@@ -37647,7 +37683,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1533;
+    var _BUILT_V = 1534;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
