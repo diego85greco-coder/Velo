@@ -7718,29 +7718,31 @@ function _updateMoodChip(){
     }
   }
   var showPicker = !hasEntry || _homeMoodForcePick;
+  // v1545: contenedor PROPIO (sin .mcc-wrap, que en CSS es display:flex y apilaba
+  // todo horizontal apretado). Texto en mainCol (legible en claro/oscuro), caritas
+  // como botones CON etiqueta (se entiende que son clickeables) + "Ver todas".
+  var _card = '<div style="padding:15px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:visible">';
   if(showPicker){
-    // Estado SIN registrar (o "cambiar"): fila de caritas para tocar y guardar.
     var facesHtml = _HOME_MOODS.map(function(m){
-      return '<button type="button" title="'+_escHtml(m.l)+'" onclick="event.stopPropagation();_homeMoodQuick(\''+m.e+'\',\''+_escHtml(m.l)+'\')" style="flex:1;min-width:0;aspect-ratio:1;background:'+iconBg+';border:1.5px solid '+iconBdr+';border-radius:14px;font-size:23px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .1s" onmousedown="this.style.transform=\'scale(1.14)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'">'+m.e+'</button>';
+      var sl = _escHtml((m.l||'').replace('/a',''));
+      return '<button type="button" onclick="event.stopPropagation();_homeMoodQuick(\''+m.e+'\',\''+_escHtml(m.l)+'\')" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;background:'+iconBg+';border:1.5px solid '+iconBdr+';border-radius:13px;padding:8px 1px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .1s" onmousedown="this.style.transform=\'scale(1.1)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"><span style="font-size:23px;line-height:1">'+m.e+'</span><span style="font-size:8px;font-weight:700;color:'+mainCol+';opacity:.82;font-family:Jost,sans-serif;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+sl+'</span></button>';
     }).join('');
-    chip.innerHTML =
-      '<div class="mcc-wrap" style="padding:14px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:visible">'
+    chip.innerHTML = _card
       + streakBadge
-      + '<div style="margin-bottom:10px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+lblCol+';font-family:\'Jost\',sans-serif">✦ ¿Cómo estás ahora?</div>'
-      + '<div style="font-size:12px;color:'+mainCol+';opacity:.72;font-family:\'Jost\',sans-serif;margin-top:2px">Tocá una carita — se guarda al toque</div></div>'
-      + '<div style="display:flex;gap:6px">'+facesHtml+'</div>'
-      + '<button onclick="event.stopPropagation();'+(_homeMoodForcePick?'_homeMoodForcePick=false;_updateMoodChip();':'try{pGoTo(\'mood\')}catch(_){}')+'" style="margin-top:9px;background:none;border:none;color:'+lblCol+';font-family:\'Jost\',sans-serif;font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 0">'+(_homeMoodForcePick?'✕ cancelar':'✎ registrar con una nota →')+'</button>'
+      + '<div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+mainCol+';font-family:Jost,sans-serif">✦ ¿Cómo estás ahora?</div>'
+      + '<div style="font-size:11.5px;color:'+mainCol+';opacity:.72;font-family:Jost,sans-serif;margin:3px 0 11px">Tocá una carita — se guarda al toque</div>'
+      + '<div style="display:flex;gap:5px">'+facesHtml+'</div>'
+      + '<button onclick="event.stopPropagation();'+(_homeMoodForcePick?'_homeMoodForcePick=false;_updateMoodChip();':'try{pGoTo(\'mood\')}catch(_){}')+'" style="width:100%;margin-top:10px;padding:9px;background:'+iconBg+';border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">'+(_homeMoodForcePick?'✕ Cancelar':'＋ Ver todas las emociones')+'</button>'
       + '</div>';
   } else {
-    // Estado YA registrado: claro, "Hoy te sentiste [X]" + Cambiar.
-    chip.innerHTML =
-      '<div class="mcc-wrap mcc-has-entry" style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:visible">'
+    chip.innerHTML = _card
       + streakBadge
-      + '<div class="mcc-glow" style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:'+glowBg+';pointer-events:none"></div>'
-      + '<div class="mcc-icon" style="position:relative;z-index:1;width:46px;height:46px;border-radius:15px;background:'+iconBg+';border:1.5px solid '+iconBdr+';display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:'+iconShd+'">'+(emoji||'💚')+'</div>'
-      + '<div style="position:relative;z-index:1;flex:1;min-width:0"><div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+lblCol+';font-family:\'Jost\',sans-serif;margin-bottom:4px">Hoy te sentiste</div>'
-      + '<div style="font-size:16px;font-weight:800;color:'+mainCol+';font-family:\'Jost\',sans-serif;line-height:1.2">'+_escHtml(label||'Registrado')+'</div></div>'
-      + '<button onclick="event.stopPropagation();_homeMoodForcePick=true;_updateMoodChip()" title="Cambiar tu ánimo de hoy" style="position:relative;z-index:1;background:'+iconBg+';border:1.5px solid '+iconBdr+';color:'+lblCol+';border-radius:12px;padding:8px 12px;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">✎ Cambiar</button>'
+      + '<div style="display:flex;align-items:center;gap:14px">'
+      +   '<div style="width:46px;height:46px;border-radius:15px;background:'+iconBg+';border:1.5px solid '+iconBdr+';display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:'+iconShd+'">'+(emoji||'💚')+'</div>'
+      +   '<div style="flex:1;min-width:0"><div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+mainCol+';opacity:.72;font-family:Jost,sans-serif;margin-bottom:3px">Hoy te sentiste</div><div style="font-size:16px;font-weight:800;color:'+mainCol+';font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(label||'Registrado')+'</div></div>'
+      +   '<button onclick="event.stopPropagation();_homeMoodForcePick=true;_updateMoodChip()" style="background:'+iconBg+';border:1.5px solid '+iconBdr+';color:'+mainCol+';border-radius:12px;padding:8px 12px;font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">✎ Cambiar</button>'
+      + '</div>'
+      + '<button onclick="event.stopPropagation();try{pGoTo(\'mood\')}catch(_){}" style="width:100%;margin-top:11px;padding:9px;background:none;border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';opacity:.9;font-family:Jost,sans-serif;font-size:11.5px;font-weight:800;cursor:pointer">Ver más → estado · lema · evolución</button>'
       + '</div>';
   }
 }
@@ -37806,7 +37808,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1544;
+    var _BUILT_V = 1545;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
