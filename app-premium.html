@@ -36,8 +36,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1541">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1541">
+  <link rel="stylesheet" href="premium.css?v=20260626-1542">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1542">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -251,7 +251,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1541</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1542</div>
 </div>
 
 <!-- APP SHELL -->
@@ -2508,7 +2508,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                 <div style="font-size:11px;color:var(--ink3);line-height:1.55">La IA generará un análisis de tus estados de ánimo registrados del mes anterior. Lo recibirás en tu <strong>Buzón Velo</strong> el día 1 de cada mes 💌</div>
               </div>
             </div>
-            <div class="p-card" style="padding:24px;margin-bottom:16px">
+            <div class="p-card" style="padding:24px;margin-bottom:16px" id="moodRegisterCard">
               <div class="p-label p-label-sage" style="margin-bottom:14px">¿Cómo te sentís ahora?</div>
               <div class="mood-orbs" id="moodOrbs"></div>
               <div style="margin-top:16px">
@@ -2556,9 +2556,10 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                 <div id="moodCalTitle" style="font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;color:var(--ink);min-width:150px;text-align:center;text-transform:capitalize"></div>
                 <button id="moodCalNextBtn" onclick="pMoodCalNav(1)" aria-label="Mes siguiente" style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.4);color:var(--sage3);font-size:16px;font-weight:800;cursor:pointer;line-height:1">›</button>
               </div>
-              <div style="background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.35);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--sage2);font-weight:600;line-height:1.5">
+              <div style="background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.45);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:var(--ink2);font-weight:700;line-height:1.5">
                 🔒 Solo vos podés ver tus registros de ánimo — son completamente privados
               </div>
+              <button onclick="_moodScrollTo('moodRegisterCard')" style="width:100%;margin-bottom:14px;padding:12px;background:linear-gradient(135deg,rgba(155,120,220,.9),rgba(120,90,190,.95));border:none;border-radius:12px;color:#fff;font-family:'Jost',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:7px">✎ Cambiar mi ánimo de hoy</button>
               <div id="moodCalendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;max-width:340px;margin:0 auto"></div>
               <div id="moodHistory" style="margin-top:16px"></div>
             </div>
@@ -4487,8 +4488,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1541"></script>
-<script src="premium-redesign.js?v=20260626-1541"></script>
+<script src="premium.js?v=20260626-1542"></script>
+<script src="premium-redesign.js?v=20260626-1542"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

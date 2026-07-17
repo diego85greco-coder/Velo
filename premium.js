@@ -17460,15 +17460,15 @@ async function _loadMoodCalendar(){
     if(!missBanner){
       missBanner = document.createElement('div');
       missBanner.id = 'moodMissBanner';
-      missBanner.style.cssText = 'margin:10px 0 14px;padding:12px 14px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;display:flex;align-items:center;gap:10px;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);cursor:pointer';
+      missBanner.style.cssText = 'margin:10px 0 14px;padding:12px 14px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.5);border-radius:14px;display:flex;align-items:center;gap:10px;font-family:Jost,sans-serif;font-size:13px;color:var(--ink);cursor:pointer';
       missBanner.onclick = function(){ pOpenMonthlyMissed(year, month); };
       if(cal.parentNode) cal.parentNode.insertBefore(missBanner, cal);
     }
     missBanner.onclick = function(){ pOpenMonthlyMissed(year, month); };
     missBanner.innerHTML = '<span style="font-size:22px;flex-shrink:0">🌿</span>'
-      +'<div style="flex:1;min-width:0"><div style="font-weight:800;color:var(--sage3);margin-bottom:2px">Tenés '+missingPast+' día'+(missingPast===1?'':'s')+' sin registrar '+(isCurrentMonth?'este mes':'en '+new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long'}))+'</div>'
-      +'<div style="font-size:11.5px;color:var(--ink5);line-height:1.4">Tocá un día del calendario o acá para recuperar cómo te sentiste</div></div>'
-      +'<span style="font-size:16px;color:var(--sage3);flex-shrink:0">›</span>';
+      +'<div style="flex:1;min-width:0"><div style="font-weight:800;color:var(--ink);margin-bottom:2px">Tenés '+missingPast+' día'+(missingPast===1?'':'s')+' sin registrar '+(isCurrentMonth?'este mes':'en '+new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long'}))+'</div>'
+      +'<div style="font-size:11.5px;color:var(--ink2);line-height:1.4">Tocá un día del calendario o acá para recuperar cómo te sentiste</div></div>'
+      +'<span style="font-size:16px;color:var(--ink2);flex-shrink:0">›</span>';
   } else if(missBanner){
     missBanner.remove();
   }
@@ -37791,7 +37791,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1541;
+    var _BUILT_V = 1542;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

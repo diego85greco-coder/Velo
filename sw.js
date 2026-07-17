@@ -1,5 +1,5 @@
 /* Velo Service Worker v16 — always-fresh HTML + smart notifs + pre-cache + DM mute si el chat está abierto */
-var CACHE = 'velo-v109';
+var CACHE = 'velo-v110';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
