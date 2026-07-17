@@ -21300,9 +21300,9 @@ async function _renderHomeVibesCard(){
     });
     if(latestInstant){
       tiles.push({
-        id: latestInstant.id, kind: 'instant', emoji: '✨', title: 'Instantáneos',
+        id: latestInstant.id, kind: 'instant', emoji: _vibeBitacoraRef(latestInstant.media_url) ? '📖' : '✨', title: 'Instantáneos',
         latest: new Date(latestInstant.created_at).getTime(),
-        coverUrl: latestInstant.media_url,
+        coverUrl: _vibeBitacoraRef(latestInstant.media_url) ? null : latestInstant.media_url,
         coverVibeId: latestInstant.id,
         count: instantCount,
         isInstant: true
@@ -21318,7 +21318,26 @@ async function _renderHomeVibesCard(){
     var visibleTiles = tiles.slice(0, TARGET);
     // v1444: cadena de grupos CON contenido, en orden — para encadenar el carrusel
     // (al terminar las historias de un grupo, seguir con el siguiente).
-    try{ _vibesOpenChain = visibleTiles.filter(function(t){ return t.isGroup && t.count > 0; }).map(function(t){ return {id:t.id, title:t.title, emoji:t.emoji}; }); }catch(_){ _vibesOpenChain = []; }
+    // v1550: cadena ORDENADA POR CATEGORÍA con PORTADAS DE BLOQUE.
+    // Orden: (1) grupos Velo oficiales → (2) grupos de tus favoritos (privados) →
+    // (3) grupos públicos de toda la comunidad. Al cruzar a un bloque nuevo, la
+    // primera historia de ese bloque lleva una portada anunciándolo.
+    try{
+      var _catRank = function(t){ return t.kind==='official' ? 0 : t.kind==='private' ? 1 : 2; };
+      // Cadena desde TODOS los grupos con contenido (no solo los 6 del riel),
+      // así "toda la comunidad" se reproduce completa aunque el riel muestre pocos.
+      var _chainG = tiles.filter(function(t){ return t.isGroup && t.count > 0; }).slice()
+        .sort(function(a,b){ var d=_catRank(a)-_catRank(b); return d!==0 ? d : (b.latest-a.latest); });
+      var _prevCat = null;
+      _vibesOpenChain = _chainG.map(function(t){
+        var e = { id:t.id, title:t.title, emoji:t.emoji };
+        var cat = _catRank(t);
+        if(cat!==_prevCat && cat===1) e.blockCover = { emoji:'🫂', kicker:'De tu gente', title:'Historias de tus favoritos' };
+        if(cat!==_prevCat && cat===2) e.blockCover = { emoji:'🌊', kicker:'Historias públicas', title:'De toda la comunidad' };
+        _prevCat = cat;
+        return e;
+      });
+    }catch(_){ _vibesOpenChain = []; }
     // v1493: rediseño ESTILO HISTORIAS — círculos con anillo de color (como IG).
     // Anillo degradado = hay contenido sin ver · gris = visto · violeta = privado
     // · dorado = instantáneos. Más fino y profesional que las fichas rectangulares.
@@ -22498,9 +22517,19 @@ function _storyShow(){
     + '<button onclick="_closeStoryPlayer()" aria-label="Cerrar" style="background:none;border:none;color:#fff;font-size:26px;cursor:pointer;padding:4px 8px;line-height:1;text-shadow:0 1px 5px rgba(0,0,0,.7);flex-shrink:0">✕</button>';
   // media
   var mediaEl = document.getElementById('storyMedia');
-  var isVid = (typeof _vibeIsVideoUrl==='function') && _vibeIsVideoUrl(s.media_url);
+  var _btRefShow = _vibeBitacoraRef(s.media_url);
+  var isVid = !_btRefShow && (typeof _vibeIsVideoUrl==='function') && _vibeIsVideoUrl(s.media_url);
   _storyState.isVid = isVid;
-  if(mediaEl){
+  if(mediaEl && _btRefShow){
+    // Tarjeta especial: alguien compartió un post de Bitácora como historia.
+    mediaEl.innerHTML =
+        '<div style="position:absolute;inset:0;background:linear-gradient(165deg,#16324a,#0a1a2a)"></div>'
+      + '<div style="position:relative;z-index:1;text-align:center;padding:34px 28px;max-width:340px">'
+      +   '<div style="font-size:64px;line-height:1;margin-bottom:18px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.5))">📖</div>'
+      +   '<div style="font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(150,200,240,.9);font-family:Jost,sans-serif;margin-bottom:16px">'+(_storyIsMine(s)?'Nuevo post en Bitácora':'Historia en Bitácora')+'</div>'
+      +   '<div style="font-family:\'Cormorant Garamond\',serif;font-size:27px;font-style:italic;font-weight:600;color:#fff;line-height:1.3;text-shadow:0 2px 12px rgba(0,0,0,.6)">'+_escHtml(s.caption||'Una historia')+'</div>'
+      + '</div>';
+  } else if(mediaEl){
     var bgUrl = _escHtml(s.media_url||'');
     var blurBg = '<div style="position:absolute;inset:0;background:url(\''+bgUrl+'\') center/cover no-repeat;filter:blur(34px) brightness(.45);transform:scale(1.15)"></div>';
     if(isVid){
@@ -22542,7 +22571,12 @@ function _storyShow(){
 
 function _storyIsMine(s){ return !!(s && s.user_id && s.user_id === (safeLS('get','velo_user_id')||'')); }
 function _storyFooterHtml(s){
-  var cap = s.caption ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
+  var _btRef = _vibeBitacoraRef(s.media_url);
+  // En tarjetas "Bitácora" el título ya se ve en el media → no repetir la comilla.
+  var cap = (s.caption && !_btRef) ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
+  if(_btRef){
+    cap = '<button onclick="event.stopPropagation();_closeStoryPlayer();try{pGoTo(\'bitacora\');setTimeout(function(){try{_btOpenDetail(\''+_escHtml(_btRef)+'\')}catch(_){}},350)}catch(_){}" style="width:100%;padding:13px;margin-bottom:10px;background:linear-gradient(135deg,#5aa6e0,#3f7fc0);border:none;border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 16px rgba(63,127,192,.4)">📖 Leer el post →</button>' + cap;
+  }
   var isMine = _storyIsMine(s);
   if(isMine){
     // Footer del DUEÑO: guardar historia (🔖) + actividad (quién vio/reaccionó) + comentarios.
@@ -22822,7 +22856,8 @@ function _storyShowEnd(){
     if(_dk && !safeLS('get','velo_mood_'+_dk)) _sugg.push({e:'🌤️', t:'Registrá tu ánimo de hoy', a:'try{pOpenMoodQuickView()}catch(_){}'});
     if(_dk && !safeLS('get','velo_daily_resp_'+_dk)) _sugg.push({e:'💭', t:'Respondé la pregunta del día', a:'try{pGoTo(\'home\')}catch(_){}'});
   }catch(_){}
-  _sugg.push({e:'📖', t:'Escribí en tu diario íntimo', a:'try{pGoTo(\'bitacora\')}catch(_){}'});
+  _sugg.push({e:'📔', t:'Escribí en tu diario íntimo', a:'try{pGoTo(\'diary\')}catch(_){}'});
+  _sugg.push({e:'📖', t:'Compartí tu historia en Bitácora', a:'try{pGoTo(\'bitacora\')}catch(_){}'});
   _sugg.push({e:'☀️', t:'Ver buenas noticias', a:'try{pGoTo(\'news\')}catch(_){}'});
   var suggHtml = _sugg.map(function(s){
     return '<button onclick="_closeStoryPlayer();'+s.a+'" style="width:100%;padding:11px 14px;margin-bottom:7px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.18);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left"><span style="font-size:16px;flex-shrink:0">'+s.e+'</span><span style="flex:1;min-width:0">'+s.t+'</span><span style="opacity:.45;flex-shrink:0">→</span></button>';
@@ -22860,7 +22895,18 @@ function _storyShowCover(nextGroup){
   var hdr = document.getElementById('storyHeader');
   if(hdr) hdr.innerHTML = '<div style="flex:1"></div><button onclick="_closeStoryPlayer()" aria-label="Cerrar" style="background:none;border:none;color:#fff;font-size:26px;cursor:pointer;padding:4px 8px;line-height:1;text-shadow:0 1px 5px rgba(0,0,0,.7)">✕</button>';
   var mediaEl = document.getElementById('storyMedia');
-  if(mediaEl) mediaEl.innerHTML =
+  // Portada de BLOQUE (cruce de categoría) vs portada normal "Siguiente · grupo".
+  var _bc = nextGroup.blockCover;
+  if(mediaEl && _bc){
+    mediaEl.innerHTML =
+        '<div style="position:absolute;inset:0;background:linear-gradient(165deg,#1a3350,#0a1524)"></div>'
+      + '<div style="position:relative;z-index:1;text-align:center;padding:30px 26px;max-width:340px">'
+      +   '<div style="font-size:11px;font-weight:800;letter-spacing:3.5px;text-transform:uppercase;color:rgba(150,200,240,.9);font-family:Jost,sans-serif;margin-bottom:22px">'+_escHtml(_bc.kicker||'A continuación')+'</div>'
+      +   '<div style="font-size:88px;line-height:1;margin-bottom:20px;filter:drop-shadow(0 6px 22px rgba(0,0,0,.55))">'+_escHtml(_bc.emoji||'🌊')+'</div>'
+      +   '<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;font-style:italic;font-weight:600;color:#fff;line-height:1.22;margin-bottom:28px;text-shadow:0 2px 12px rgba(0,0,0,.6)">'+_escHtml(_bc.title||'Más historias')+'</div>'
+      +   '<div style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.45);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;backdrop-filter:blur(4px)">Tocá para continuar →</div>'
+      + '</div>';
+  } else if(mediaEl) mediaEl.innerHTML =
       '<div style="position:absolute;inset:0;background:linear-gradient(165deg,#123322,#07130c)"></div>'
     + '<div style="position:relative;z-index:1;text-align:center;padding:30px 26px;max-width:340px">'
     +   '<div style="font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(160,220,185,.85);font-family:Jost,sans-serif;margin-bottom:20px">Siguiente</div>'
@@ -22933,7 +22979,10 @@ async function pPlayInstant(vibeId){
     var ordered = data.slice().reverse();
     var startIdx = ordered.findIndex(function(v){ return v.id === vibeId; });
     if(startIdx < 0) startIdx = 0;
-    _openStoryPlayer(ordered, startIdx, null);
+    // v1550: al terminar las instantáneas, encadenar hacia el primer grupo de la
+    // cadena ordenada (Velo → favoritos → comunidad) para un flujo continuo.
+    var _next = (_vibesOpenChain && _vibesOpenChain.length) ? _vibesOpenChain[0] : null;
+    _openStoryPlayer(ordered, startIdx, _next);
   }catch(e){ console.warn('[play-instant]', e); try{ pOpenInstantVibe(vibeId); }catch(_){} }
 }
 
@@ -36972,12 +37021,47 @@ function _btCard(p,idx,uid){
           +'<span style="font-size:14px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||((rx.mine_postura||rx.mine_rx)?'✓':'')||'—')+'</span>'
           +'<span style="font-size:13px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
         +'</div>'
+        +'<button onclick="event.stopPropagation();_btShareToInstant(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:12px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir en instantáneas">🌊</button>'
         +'<button onclick="event.stopPropagation();_btSharePost(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:12px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir">📤</button>'
         +'<span style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
       +'</div>';
     })()
   +'</div>';
 }
+
+// Compartir un post de Bitácora como INSTANTÁNEA (historia) dentro de Velo.
+// Crea un vibe instant (group_id null, scope público) con un sentinel en
+// media_url que el reproductor detecta para mostrar una tarjeta "Nuevo en
+// Bitácora" con el título y un botón para abrir el post.
+function _btShareToInstant(id,ev){
+  if(ev){ try{ ev.stopPropagation(); }catch(_){} }
+  var p=null;
+  ['apoyo','superacion','debate','mio'].forEach(function(t){ (_btPosts[t]||[]).forEach(function(x){ if(String(x.id)===String(id)) p=x; }); });
+  if(!p){ pToast('⚠️','No encontré ese post'); return; }
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var myId=safeLS('get','velo_user_id')||'';
+  var myName=safeLS('get','velo_user_name')||'Alguien';
+  var myAv=safeLS('get','velo_user_av')||'📖';
+  var title=(p.titulo||'Una historia en Bitácora').slice(0,120);
+  var payload={
+    user_id:myId, user_name:myName, user_av:myAv,
+    media_url:'velo:bitacora:'+id,
+    caption:title,
+    instant_scope:'public',
+    instant_member_ids:[]
+  };
+  sbClient.from('vibes').insert(payload).select('id').single().then(function(r){
+    if(r && r.data && r.data.id){
+      pToast('🌊','Compartido en instantáneas ✨');
+      try{ if(typeof _renderHomeVibesCard==='function') _renderHomeVibesCard(); }catch(_){}
+    } else {
+      if(r && r.error) console.warn('[bt-share-instant]', r.error.message);
+      pToast('⚠️','No se pudo compartir ahora');
+    }
+  }).catch(function(e){ console.warn('[bt-share-instant]', e); pToast('⚠️','No se pudo compartir ahora'); });
+}
+// Devuelve el id del post de Bitácora si el media_url es un sentinel, si no null.
+function _vibeBitacoraRef(u){ u=String(u||''); return u.indexOf('velo:bitacora:')===0 ? u.slice(14) : null; }
 
 function _btSharePost(id,ev){
   if(ev) ev.stopPropagation();
@@ -37816,7 +37900,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1548;
+    var _BUILT_V = 1550;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
