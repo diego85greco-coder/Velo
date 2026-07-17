@@ -22569,8 +22569,34 @@ function _storyNext(){
     // Antes de pasar al próximo grupo, mostrar una PORTADA de transición.
     _storyShowCover(_storyState.chainNext);
   } else {
-    _closeStoryPlayer();
+    // v1530: en vez de cortar seco al home, cierre CON CUIDADO (anti-scroll infinito).
+    _storyShowEnd();
   }
+}
+// Cierre con cuidado al terminar TODAS las historias: "Viste todo por hoy 🌿"
+// + invitación a respirar, en vez de dumpear al home. (Diferencia con Instagram.)
+function _storyShowEnd(){
+  if(!_storyState) return;
+  _storyState.ended = true;
+  _storyState.coverNext = null;
+  if(_storyState.rafId){ try{ cancelAnimationFrame(_storyState.rafId); }catch(_){} }
+  var ov = document.getElementById('storyPlayerOv'); if(!ov) return;
+  // barras de progreso llenas + sin zonas de tap (nada navega en el cierre)
+  var prog = document.getElementById('storyProgress');
+  if(prog){ Array.prototype.forEach.call(prog.querySelectorAll('.sp-seg i'), function(f){ f.style.width='100%'; }); }
+  ['storyTapPrev','storyTapNext'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
+  var old = document.getElementById('storyEndCard'); if(old) old.remove();
+  var end = document.createElement('div');
+  end.id = 'storyEndCard';
+  end.style.cssText = 'position:absolute;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;background:linear-gradient(165deg,#0f2a1b,#071410);padding:30px 28px;box-sizing:border-box';
+  end.innerHTML = '<div style="text-align:center;max-width:360px;width:100%">'
+    + '<div style="font-size:62px;line-height:1;margin-bottom:18px">🌿</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:27px;font-style:italic;color:#fff;line-height:1.3;margin-bottom:12px">Viste todo por hoy</div>'
+    + '<div style="font-family:Jost,sans-serif;font-size:13.5px;color:rgba(200,235,215,.82);line-height:1.6;margin-bottom:26px">Tomate un momento para vos. Mañana va a haber momentos nuevos para acompañar.</div>'
+    + '<button onclick="_closeStoryPlayer();try{veloOpenBreathingModal()}catch(_){}" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#63d99a,#3aa06a);border:none;border-radius:100px;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px">🌬️ Respirar un momento</button>'
+    + '<button onclick="_closeStoryPlayer()" style="width:100%;padding:13px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.28);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Listo por hoy</button>'
+    + '</div>';
+  ov.appendChild(end);
 }
 function _storyPrev(){
   if(!_storyState) return;
@@ -37536,7 +37562,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1529;
+    var _BUILT_V = 1530;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
