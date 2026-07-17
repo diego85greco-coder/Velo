@@ -21028,6 +21028,25 @@ var VIBE_REACTIONS = [
   { key:'animos',       emoji:'💚', label:'Aquí dándote ánimos', tint:'#a5d9be' },
   { key:'me_inspira',   emoji:'🌱', label:'Me inspira',          tint:'#8ecb8c' }
 ];
+// v1533 — Estados de ánimo OPCIONALES para las historias (la emoción como
+// protagonista, no la estética). Cubre el rango completo: bienestar, neutro y
+// difícil, porque en Velo mostrarse vulnerable está bien.
+var VIBE_MOODS = [
+  { e:'😌', l:'en paz' },
+  { e:'😄', l:'feliz' },
+  { e:'🥰', l:'agradecido/a' },
+  { e:'💪', l:'con fuerza' },
+  { e:'🤔', l:'pensativo/a' },
+  { e:'🥺', l:'sensible' },
+  { e:'😔', l:'con un bajón' },
+  { e:'😰', l:'ansioso/a' },
+  { e:'😴', l:'agotado/a' }
+];
+function _vibeMoodLabel(e){
+  for(var i=0;i<VIBE_MOODS.length;i++){ if(VIBE_MOODS[i].e===e) return VIBE_MOODS[i].l; }
+  return '';
+}
+var _vibePendingMood = null; // ánimo elegido al crear (emoji) — opcional
 // Claves de LS de "vistos" NAMESPACEADAS POR USUARIO — localStorage se comparte
 // entre cuentas en el mismo navegador; sin el namespace, un usuario nuevo
 // heredaba los "vistos" del perfil anterior (v1367).
@@ -21802,12 +21821,26 @@ function _vibeConsigna(groupId, isInstant, instantScope){
   var d = new Date().getDate();
   return generales[d % generales.length];
 }
+function _vibeSetMood(emoji, btn){
+  var toggling = (_vibePendingMood === emoji);
+  _vibePendingMood = toggling ? null : emoji;
+  var row = document.getElementById('vibeMoodRow');
+  if(row){
+    Array.prototype.forEach.call(row.querySelectorAll('button[data-mood]'), function(b){
+      var on = (!toggling && b.getAttribute('data-mood') === emoji);
+      b.style.background  = on ? 'rgba(116,198,157,.28)' : 'rgba(255,255,255,.05)';
+      b.style.borderColor = on ? 'rgba(116,198,157,.85)' : 'rgba(180,220,195,.24)';
+      b.style.color       = on ? '#eafff2' : 'rgba(215,235,222,.9)';
+    });
+  }
+}
 function pStartCreateVibe(groupId, instantScope){
   _vibeTargetGroupId = groupId || null;
   _vibeInstantScope = instantScope || null;
   _vibeInstantMemberIds = [];
   _vibePendingImage = null;
   _vibePendingVideo = null;
+  _vibePendingMood = null;
   var isInstant = !groupId && !!instantScope;
   var ex = document.getElementById('vibeCreateOv'); if(ex) ex.remove();
   var ov = document.createElement('div');
@@ -21848,6 +21881,13 @@ function pStartCreateVibe(groupId, instantScope){
     + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 s · lo optimizamos al subir</span></button></div>'
     + '<input type="file" id="vibeFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="display:none" onchange="_vibeHandleImageInput(this)">'
     + '<textarea id="vibeCaptionInput" placeholder="Contá qué pasa en tu momento (opcional)…" rows="3" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5"></textarea>'
+    // v1533: ánimo OPCIONAL — la emoción como protagonista del momento.
+    + '<div style="margin-top:12px"><div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(180,230,200,.72);margin-bottom:8px">¿CÓMO TE SENTÍAS? · OPCIONAL</div>'
+    + '<div id="vibeMoodRow" style="display:flex;flex-wrap:wrap;gap:6px">'
+    + VIBE_MOODS.map(function(m){
+        return '<button type="button" data-mood="'+m.e+'" onclick="_vibeSetMood(\''+m.e+'\',this)" style="display:inline-flex;align-items:center;gap:5px;padding:7px 11px;background:rgba(255,255,255,.05);border:1.5px solid rgba(180,220,195,.24);border-radius:100px;cursor:pointer;font-family:Jost,sans-serif;font-size:12px;font-weight:700;color:rgba(215,235,222,.9)"><span style="font-size:15px">'+m.e+'</span>'+_escHtml(m.l)+'</button>';
+      }).join('')
+    + '</div></div>'
     + inviteBlock
     + '<label style="display:flex;align-items:center;gap:10px;padding:12px 14px;margin-top:10px;background:rgba(255,255,255,.04);border:1px solid rgba(180,220,195,.20);border-radius:12px;cursor:pointer;font-family:Jost,sans-serif;font-size:13px;color:rgba(200,230,215,.85)"><input type="checkbox" id="vibeArchiveCheck" style="width:18px;height:18px;accent-color:#5bbf87;cursor:pointer"><span>Guardar en mi historial personal (además de los 24 h)</span></label>'
     + '<div style="display:flex;gap:8px;margin-top:16px">'
@@ -22239,6 +22279,7 @@ async function pSaveVibe(){
       caption: caption,
       archived: archive
     };
+    if(_vibePendingMood) payload.mood = _vibePendingMood; // ánimo opcional (v1533)
     if(isInstant){
       payload.instant_scope = _vibeInstantScope;
       payload.instant_member_ids = _vibeInstantMemberIds || [];
@@ -22391,7 +22432,7 @@ function _storyShow(){
     +   '<span style="flex-shrink:0">'+_avInline(s.user_av||'🧑',34)+'</span>'
     +   '<div style="min-width:0">'
     +     '<div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(s.user_name||'Usuario')+'</div>'
-    +     '<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(255,255,255,.82);text-shadow:0 1px 3px rgba(0,0,0,.7)">'+ago+(left?' · caduca en '+left:'')+'</div>'
+    +     '<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(255,255,255,.82);text-shadow:0 1px 3px rgba(0,0,0,.7)">'+(s.mood?'<span style="color:rgba(255,225,150,.96);font-weight:800">'+_escHtml(s.mood+' '+_vibeMoodLabel(s.mood))+'</span> · ':'')+ago+(left?' · caduca en '+left:'')+'</div>'
     +   '</div>'
     + '</div>'
     + '<button onclick="_closeStoryPlayer()" aria-label="Cerrar" style="background:none;border:none;color:#fff;font-size:26px;cursor:pointer;padding:4px 8px;line-height:1;text-shadow:0 1px 5px rgba(0,0,0,.7);flex-shrink:0">✕</button>';
@@ -22461,8 +22502,10 @@ function _storyFooterHtml(s){
         return '<button type="button" data-rx-key="'+reaction.key+'" data-rx-tint="'+t+'" onclick="event.stopPropagation();_storyReact(\''+s.id+'\',\''+reaction.key+'\')" title="'+_escHtml(reaction.label)+'" style="flex:1;min-width:0;aspect-ratio:1;background:'+(sel?_hexRgba(t,.30):'rgba(0,0,0,.34)')+';border:1.5px solid '+(sel?t:'rgba(255,255,255,.34)')+';border-radius:50%;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;backdrop-filter:blur(3px);transition:all .18s;box-shadow:'+(sel?'0 0 14px '+_hexRgba(t,.55):'none')+';transform:'+(sel?'scale(1.08)':'none')+'">'+reaction.emoji+'</button>';
       }).join('') : '')
     + '</div>';
-  var comBtn = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="width:100%;padding:12px 16px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.4);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;backdrop-filter:blur(4px)"><span style="font-size:16px">💬</span> <span data-vibe-comment-count="'+s.id+'">Comentar</span></button>';
-  return cap + reactions + comBtn;
+  var comBtn = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="flex:1.7;min-width:0;padding:12px 12px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.4);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;backdrop-filter:blur(4px)"><span style="font-size:15px">💬</span> <span data-vibe-comment-count="'+s.id+'">Comentar</span></button>';
+  // v1533: mensaje PRIVADO al autor (DM) — comentar es público, mensaje es íntimo.
+  var dmBtn = '<button onclick="event.stopPropagation();_storyMessage('+_jsAttr(s.user_id||'')+','+_jsAttr(s.user_name||'Usuario')+','+_jsAttr(s.user_av||'🧑')+')" style="flex:1;min-width:0;padding:12px 12px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.4);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;backdrop-filter:blur(4px)"><span style="font-size:15px">✉️</span> Mensaje</button>';
+  return cap + reactions + '<div style="display:flex;gap:8px">'+comBtn+dmBtn+'</div>';
 }
 // hex '#rrggbb' → 'rgba(r,g,b,a)'
 function _hexRgba(hex, a){
@@ -22558,6 +22601,14 @@ function _storyPauseUntilClosed(overlayId){
 function _storyOpenComments(vibeId){
   pOpenVibeComments(vibeId);
   _storyPauseUntilClosed('vibeCommentsOv');
+}
+// Mensaje PRIVADO al autor de la historia: cierra el reproductor y abre el DM.
+function _storyMessage(toId, toName, toAv){
+  if(!toId){ pToast('🌱','No se puede mensajear a este momento'); return; }
+  var myId = safeLS('get','velo_user_id')||'';
+  if(toId === myId){ pToast('🌿','Es tu propia historia'); return; }
+  _closeStoryPlayer();
+  try{ pOpenDM(toId, toName||'Usuario', toAv||'🧑'); }catch(_){}
 }
 
 function _storyStartTimer(){
@@ -23141,7 +23192,7 @@ function _vibeCardHtml(v){
     : '';
   var vibeMenuBtn = '<button onclick="event.stopPropagation();pVibeCardMenu('+_jsAttr(v.id)+','+(_isMineVibe?'true':'false')+')" style="background:none;border:none;color:rgba(200,230,215,.55);font-size:18px;cursor:pointer;padding:4px 6px;flex-shrink:0;line-height:1">⋯</button>';
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
-    + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div>'+vibeSaveBtn+vibeMenuBtn+'</div>'
+    + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+(v.mood?'<span style="color:rgba(255,215,120,.95);font-weight:800">'+_escHtml(v.mood+' '+_vibeMoodLabel(v.mood))+'</span> · ':'')+ago+' · caduca en '+left+'</div></div>'+vibeSaveBtn+vibeMenuBtn+'</div>'
     + (_vibeIsVideoUrl(v.media_url)
         ? '<video src="'+_escHtml((v.media_url||'').replace('/video/upload/','/video/upload/q_auto/'))+'" controls playsinline preload="metadata" style="width:100%;max-height:520px;display:block;background:#000"></video>'
         : '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="900" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">')
@@ -37596,7 +37647,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1532;
+    var _BUILT_V = 1533;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
