@@ -4014,7 +4014,11 @@ function pVerMiMesCompleto(){
     if(ov && typeof pCloseMoodChipSheet === 'function'){ pCloseMoodChipSheet(); }
     var ov2 = document.getElementById('moodQuickOv'); if(ov2) ov2.remove();
   }catch(e){}
-  setTimeout(function(){ try{ pGoTo('mood'); }catch(_){ pOpenMonthlyMoodGraph(); } }, 200);
+  setTimeout(function(){
+    try{ pGoTo('mood'); }catch(_){ pOpenMonthlyMoodGraph(); return; }
+    // v1543: bajar DIRECTO al calendario del mes (antes abría arriba, en el selector).
+    setTimeout(function(){ try{ _moodScrollTo('moodEvolucionCard'); }catch(_){} }, 400);
+  }, 200);
 }
 // v1409: "🤗 Mis Registros" ahora abre el GRÁFICO de evolución emocional
 // (antes abría el calendario de Seguimiento — el calendario ya está en
@@ -37791,7 +37795,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1542;
+    var _BUILT_V = 1543;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
