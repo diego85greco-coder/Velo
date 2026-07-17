@@ -22671,15 +22671,31 @@ function _storyShowEnd(){
   if(prog){ Array.prototype.forEach.call(prog.querySelectorAll('.sp-seg i'), function(f){ f.style.width='100%'; }); }
   ['storyTapPrev','storyTapNext'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
   var old = document.getElementById('storyEndCard'); if(old) old.remove();
+  // v1535: sugerencias contextuales de bienestar — solo lo que NO hiciste hoy
+  // (ánimo, pregunta del día) + siempre diario y buenas noticias. Cierre con
+  // propósito, no un vacío.
+  var _sugg = [];
+  try{
+    var _dk = (typeof _dateKey==='function') ? _dateKey() : '';
+    if(_dk && !safeLS('get','velo_mood_'+_dk)) _sugg.push({e:'🌤️', t:'Registrá tu ánimo de hoy', a:'try{pOpenMoodQuickView()}catch(_){}'});
+    if(_dk && !safeLS('get','velo_daily_resp_'+_dk)) _sugg.push({e:'💭', t:'Respondé la pregunta del día', a:'try{pGoTo(\'home\')}catch(_){}'});
+  }catch(_){}
+  _sugg.push({e:'📖', t:'Escribí en tu diario íntimo', a:'try{pGoTo(\'bitacora\')}catch(_){}'});
+  _sugg.push({e:'☀️', t:'Ver buenas noticias', a:'try{pGoTo(\'news\')}catch(_){}'});
+  var suggHtml = _sugg.map(function(s){
+    return '<button onclick="_closeStoryPlayer();'+s.a+'" style="width:100%;padding:11px 14px;margin-bottom:7px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.18);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left"><span style="font-size:16px;flex-shrink:0">'+s.e+'</span><span style="flex:1;min-width:0">'+s.t+'</span><span style="opacity:.45;flex-shrink:0">→</span></button>';
+  }).join('');
   var end = document.createElement('div');
   end.id = 'storyEndCard';
-  end.style.cssText = 'position:absolute;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;background:linear-gradient(165deg,#0f2a1b,#071410);padding:30px 28px;box-sizing:border-box';
-  end.innerHTML = '<div style="text-align:center;max-width:360px;width:100%">'
-    + '<div style="font-size:62px;line-height:1;margin-bottom:18px">🌿</div>'
-    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:27px;font-style:italic;color:#fff;line-height:1.3;margin-bottom:12px">Viste todo por ahora</div>'
-    + '<div style="font-family:Jost,sans-serif;font-size:13.5px;color:rgba(200,235,215,.82);line-height:1.6;margin-bottom:26px">Estás al día. Volvé más tarde para ver si hay momentos nuevos para acompañar — mientras, tomate un ratito para vos.</div>'
-    + '<button onclick="_closeStoryPlayer();try{veloOpenBreathingModal()}catch(_){}" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#63d99a,#3aa06a);border:none;border-radius:100px;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px">🌬️ Respirar un momento</button>'
-    + '<button onclick="_closeStoryPlayer()" style="width:100%;padding:13px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.28);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Listo por ahora</button>'
+  end.style.cssText = 'position:absolute;inset:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;background:linear-gradient(165deg,#0f2a1b,#071410);padding:calc(40px + env(safe-area-inset-top,0px)) 26px 30px;box-sizing:border-box;overflow-y:auto';
+  end.innerHTML = '<div style="text-align:center;max-width:360px;width:100%;margin:auto 0">'
+    + '<div style="font-size:56px;line-height:1;margin-bottom:14px">🌿</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-style:italic;color:#fff;line-height:1.3;margin-bottom:10px">Viste todo por ahora</div>'
+    + '<div style="font-family:Jost,sans-serif;font-size:13px;color:rgba(200,235,215,.82);line-height:1.55;margin-bottom:22px">Estás al día. Volvé más tarde para ver si hay momentos nuevos — mientras, tomate un ratito para vos.</div>'
+    + '<button onclick="_closeStoryPlayer();try{veloOpenBreathingModal()}catch(_){}" style="width:100%;padding:14px;margin-bottom:16px;background:linear-gradient(135deg,#63d99a,#3aa06a);border:none;border-radius:100px;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px">🌬️ Respirar un momento</button>'
+    + '<div style="font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(180,230,200,.6);margin-bottom:10px">O si querés seguir cuidándote</div>'
+    + suggHtml
+    + '<button onclick="_closeStoryPlayer()" style="width:100%;padding:12px;margin-top:6px;background:transparent;border:1.5px solid rgba(255,255,255,.22);border-radius:100px;color:rgba(255,255,255,.85);font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer">Listo por ahora</button>'
     + '</div>';
   ov.appendChild(end);
 }
@@ -37683,7 +37699,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1534;
+    var _BUILT_V = 1535;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
