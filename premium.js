@@ -22522,11 +22522,17 @@ function _storyShow(){
   _storyState.isVid = isVid;
   if(mediaEl && _btRefShow){
     // Tarjeta especial: alguien compartió un post de Bitácora como historia.
+    // Color por SECCIÓN del post (Apoyo/Superación/Debate/Mi historia).
+    var _btC = _btColors[_vibeBitacoraCat(s.media_url)] || _btColors.apoyo;
+    var _catNames={apoyo:'Apoyo',superacion:'Superación',debate:'Debate',mio:'Mi historia'};
+    var _catNm=_catNames[_vibeBitacoraCat(s.media_url)]||'';
+    var _kick=(_storyIsMine(s)?'Nuevo post en Bitácora':'Historia en Bitácora')+(_catNm?(' · '+_catNm):'');
     mediaEl.innerHTML =
-        '<div style="position:absolute;inset:0;background:linear-gradient(165deg,#16324a,#0a1a2a)"></div>'
+        '<div style="position:absolute;inset:0;background:linear-gradient(165deg,'+_btC.bg+',rgba(6,11,18,.98))"></div>'
+      + '<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,'+_btC.glow+',transparent 62%)"></div>'
       + '<div style="position:relative;z-index:1;text-align:center;padding:34px 28px;max-width:340px">'
       +   '<div style="font-size:64px;line-height:1;margin-bottom:18px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.5))">📖</div>'
-      +   '<div style="font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(150,200,240,.9);font-family:Jost,sans-serif;margin-bottom:16px">'+(_storyIsMine(s)?'Nuevo post en Bitácora':'Historia en Bitácora')+'</div>'
+      +   '<div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+_btC.label+';font-family:Jost,sans-serif;margin-bottom:16px">'+_kick+'</div>'
       +   '<div style="font-family:\'Cormorant Garamond\',serif;font-size:27px;font-style:italic;font-weight:600;color:#fff;line-height:1.3;text-shadow:0 2px 12px rgba(0,0,0,.6)">'+_escHtml(s.caption||'Una historia')+'</div>'
       + '</div>';
   } else if(mediaEl){
@@ -22575,7 +22581,8 @@ function _storyFooterHtml(s){
   // En tarjetas "Bitácora" el título ya se ve en el media → no repetir la comilla.
   var cap = (s.caption && !_btRef) ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
   if(_btRef){
-    cap = '<button onclick="event.stopPropagation();_closeStoryPlayer();try{pGoTo(\'bitacora\');setTimeout(function(){try{_btOpenDetail(\''+_escHtml(_btRef)+'\')}catch(_){}},350)}catch(_){}" style="width:100%;padding:13px;margin-bottom:10px;background:linear-gradient(135deg,#5aa6e0,#3f7fc0);border:none;border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 16px rgba(63,127,192,.4)">📖 Leer el post →</button>' + cap;
+    var _fc = _btColors[_vibeBitacoraCat(s.media_url)] || _btColors.apoyo;
+    cap = '<button onclick="event.stopPropagation();_closeStoryPlayer();try{pGoTo(\'bitacora\');setTimeout(function(){try{_btOpenDetail(\''+_escHtml(_btRef)+'\')}catch(_){}},350)}catch(_){}" style="width:100%;padding:13px;margin-bottom:10px;background:'+_fc.badge+';border:1.5px solid '+_fc.border+';border-radius:100px;color:'+_fc.label+';font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px;backdrop-filter:blur(4px)">📖 Leer el post →</button>' + cap;
   }
   var isMine = _storyIsMine(s);
   if(isMine){
@@ -37071,9 +37078,10 @@ function _btDoShareToInstant(id){
   var myName=safeLS('get','velo_user_name')||'Alguien';
   var myAv=safeLS('get','velo_user_av')||'📖';
   var title=(p.titulo||'Una historia en Bitácora').slice(0,120);
+  var _cat=(p.categoria && _btColors[p.categoria]) ? p.categoria : '';
   var payload={
     user_id:myId, user_name:myName, user_av:myAv,
-    media_url:'velo:bitacora:'+id,
+    media_url:_cat ? ('velo:bitacora:'+_cat+':'+id) : ('velo:bitacora:'+id),
     caption:title,
     instant_scope:'public',
     instant_member_ids:[]
@@ -37088,8 +37096,19 @@ function _btDoShareToInstant(id){
     }
   }).catch(function(e){ console.warn('[bt-share-instant]', e); pToast('⚠️','No se pudo compartir ahora'); });
 }
-// Devuelve el id del post de Bitácora si el media_url es un sentinel, si no null.
-function _vibeBitacoraRef(u){ u=String(u||''); return u.indexOf('velo:bitacora:')===0 ? u.slice(14) : null; }
+// Sentinel de instantánea "Bitácora". Formato nuevo: velo:bitacora:<cat>:<id>
+// (cat ∈ apoyo/superacion/debate/mio). Formato viejo (retrocompat): velo:bitacora:<id>.
+function _vibeBitacoraParse(u){
+  u=String(u||'');
+  if(u.indexOf('velo:bitacora:')!==0) return null;
+  var rest=u.slice(14);
+  var cats={apoyo:1,superacion:1,debate:1,mio:1};
+  var ci=rest.indexOf(':');
+  if(ci>0 && cats[rest.slice(0,ci)]) return { id:rest.slice(ci+1), cat:rest.slice(0,ci) };
+  return { id:rest, cat:null };
+}
+function _vibeBitacoraRef(u){ var p=_vibeBitacoraParse(u); return p ? p.id : null; }
+function _vibeBitacoraCat(u){ var p=_vibeBitacoraParse(u); return p ? p.cat : null; }
 
 function _btSharePost(id,ev){
   if(ev) ev.stopPropagation();
@@ -37928,7 +37947,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1551;
+    var _BUILT_V = 1552;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
