@@ -22248,6 +22248,21 @@ function _closeStoryPlayer(){
   if(ov){
     try{ if(ov.dataset.prevHtmlBg !== undefined) document.documentElement.style.backgroundColor = ov.dataset.prevHtmlBg; }catch(_){}
     ov.remove();
+    // Escudo anti "click-through": al cerrar con un tap, evitar que ese mismo
+    // toque atraviese y active botones del home (ej. "Publicá tu momento").
+    try{
+      if(!document.getElementById('storyCloseShield')){
+        var sh = document.createElement('div');
+        sh.id = 'storyCloseShield';
+        sh.style.cssText = 'position:fixed;inset:0;z-index:10019;background:transparent';
+        var _eat = function(e){ e.stopPropagation(); e.preventDefault(); };
+        sh.addEventListener('click', _eat, true);
+        sh.addEventListener('pointerdown', _eat, true);
+        sh.addEventListener('touchstart', _eat, true);
+        document.body.appendChild(sh);
+        setTimeout(function(){ var x=document.getElementById('storyCloseShield'); if(x) x.remove(); }, 480);
+      }
+    }catch(_){}
   }
   // Al cerrar de verdad (no en una transición de cadena), refrescar el widget del
   // home para que las historias recién vistas pasen a gris (estilo Instagram).
@@ -22352,6 +22367,17 @@ function _storyShow(){
   // footer
   var footer = document.getElementById('storyFooter');
   if(footer) footer.innerHTML = _storyFooterHtml(s);
+  // label del botón de comentarios: "Ver comentarios · N" si hay, si no "Comentar".
+  try{
+    if(sbClient){
+      var _vid2 = s.id;
+      sbClient.from('vibe_comments').select('id', { count:'exact', head:true }).eq('vibe_id', _vid2).then(function(cr){
+        var n = (cr && typeof cr.count==='number') ? cr.count : 0;
+        var el = document.querySelector('#storyFooter [data-vibe-comment-count="'+_vid2+'"]');
+        if(el) el.textContent = n>0 ? ('Ver comentarios · '+n) : (_storyIsMine(s) ? 'Comentarios' : 'Comentar');
+      }).catch(function(){});
+    }
+  }catch(_){}
   // arrancar temporizador
   _storyState.elapsed = 0;
   if(isVid){
@@ -22369,10 +22395,10 @@ function _storyShow(){
   }
 }
 
+function _storyIsMine(s){ return !!(s && s.user_id && s.user_id === (safeLS('get','velo_user_id')||'')); }
 function _storyFooterHtml(s){
   var cap = s.caption ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
-  var myUid = safeLS('get','velo_user_id') || '';
-  var isMine = !!(s.user_id && s.user_id === myUid);
+  var isMine = _storyIsMine(s);
   if(isMine){
     // Footer del DUEÑO: guardar historia (🔖) + actividad (quién vio/reaccionó) + comentarios.
     var arch = !!s.archived;
@@ -22382,15 +22408,44 @@ function _storyFooterHtml(s){
     return cap + '<div style="display:flex;gap:8px">'+saveBtn+actBtn+comBtnO+'</div>';
   }
   // Footer del ESPECTADOR: fila LIMPIA de reacciones (una sola línea) + comentar.
+  // La reacción elegida queda RESALTADA con el color propio de esa reacción.
   var mine = _vibeMyReactions[s.id] || '';
   var reactions = '<div style="display:flex;gap:5px;margin-bottom:9px">'
     + (typeof VIBE_REACTIONS!=='undefined' ? VIBE_REACTIONS.map(function(reaction){
         var sel = mine === reaction.key;
-        return '<button type="button" onclick="event.stopPropagation();pVibeReact(\''+s.id+'\',\''+reaction.key+'\',this)" title="'+_escHtml(reaction.label)+'" style="flex:1;min-width:0;aspect-ratio:1;background:'+(sel?'rgba(255,255,255,.30)':'rgba(0,0,0,.34)')+';border:1.5px solid '+(sel?'#fff':'rgba(255,255,255,.34)')+';border-radius:50%;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;backdrop-filter:blur(3px)">'+reaction.emoji+'</button>';
+        var t = reaction.tint || '#ffffff';
+        return '<button type="button" data-rx-key="'+reaction.key+'" data-rx-tint="'+t+'" onclick="event.stopPropagation();_storyReact(\''+s.id+'\',\''+reaction.key+'\')" title="'+_escHtml(reaction.label)+'" style="flex:1;min-width:0;aspect-ratio:1;background:'+(sel?_hexRgba(t,.30):'rgba(0,0,0,.34)')+';border:1.5px solid '+(sel?t:'rgba(255,255,255,.34)')+';border-radius:50%;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;backdrop-filter:blur(3px);transition:all .18s;box-shadow:'+(sel?'0 0 14px '+_hexRgba(t,.55):'none')+';transform:'+(sel?'scale(1.08)':'none')+'">'+reaction.emoji+'</button>';
       }).join('') : '')
     + '</div>';
   var comBtn = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="width:100%;padding:12px 16px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.4);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;backdrop-filter:blur(4px)"><span style="font-size:16px">💬</span> <span data-vibe-comment-count="'+s.id+'">Comentar</span></button>';
   return cap + reactions + comBtn;
+}
+// hex '#rrggbb' → 'rgba(r,g,b,a)'
+function _hexRgba(hex, a){
+  hex = String(hex||'#ffffff').replace('#','');
+  if(hex.length===3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  var r=parseInt(hex.slice(0,2),16)||255, g=parseInt(hex.slice(2,4),16)||255, b=parseInt(hex.slice(4,6),16)||255;
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+// Reaccionar desde el reproductor: resalta al instante la elegida (con su color)
+// y guarda vía pVibeReact. Si tocás la misma, se apaga (toggle).
+function _storyReact(vibeId, key){
+  try{
+    var wasSel = (_vibeMyReactions[vibeId] === key);
+    var f = document.getElementById('storyFooter');
+    if(f){
+      var btns = f.querySelectorAll('button[data-rx-key]');
+      Array.prototype.forEach.call(btns, function(b){
+        var bk = b.getAttribute('data-rx-key'), t = b.getAttribute('data-rx-tint') || '#ffffff';
+        var on = (!wasSel && bk === key);
+        b.style.background = on ? _hexRgba(t,.30) : 'rgba(0,0,0,.34)';
+        b.style.borderColor = on ? t : 'rgba(255,255,255,.34)';
+        b.style.boxShadow = on ? '0 0 14px '+_hexRgba(t,.55) : 'none';
+        b.style.transform = on ? 'scale(1.08)' : 'none';
+      });
+    }
+  }catch(_){}
+  try{ pVibeReact(vibeId, key); }catch(_){}
 }
 
 // Actividad de MI historia: quién la vio y con qué reacción (solo el dueño).
@@ -22542,7 +22597,7 @@ function _storyGoNextGroup(){
   if(!_storyState || !_storyState.coverNext) return;
   var nid = _storyState.coverNext.id;
   _closeStoryPlayer();
-  try{ pPlayVibeGroup(nid); }catch(_){}
+  try{ pPlayVibeGroup(nid, true); }catch(_){}
 }
 // Volver desde la portada a la última historia del grupo actual (tap izquierda).
 function _storyExitCover(){
@@ -22557,12 +22612,17 @@ function _storyExitCover(){
 }
 
 // Cargar vibes de un grupo + reacciones y abrir el reproductor a pantalla completa.
-async function pPlayVibeGroup(groupId){
-  _initSupabase(); if(!sbClient){ try{ pOpenVibeGroup(groupId); }catch(_){} return; }
+async function pPlayVibeGroup(groupId, fromChain){
+  _initSupabase(); if(!sbClient){ if(!fromChain){ try{ pOpenVibeGroup(groupId); }catch(_){} } return; }
   try{
     var res = await sbClient.from('vibes').select('*').eq('group_id', groupId).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(80);
     var data = (res && res.data) || [];
-    if(!data.length){ pOpenVibeGroup(groupId); return; } // vacío → usar el visor viejo (tiene su empty-state + CTA)
+    if(!data.length){
+      // Directo (tocaste el grupo): mostrar el visor viejo con su CTA para publicar.
+      // En cadena (venís de una portada): NO abrir "publicar" — cerrar en silencio.
+      if(!fromChain){ pOpenVibeGroup(groupId); }
+      return;
+    }
     await _storyLoadReactions(data);
     var ordered = data.slice().reverse(); // viejo→nuevo (se reproduce hacia el más nuevo)
     var startIdx = 0;
@@ -37457,7 +37517,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1525;
+    var _BUILT_V = 1526;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
