@@ -7732,7 +7732,9 @@ function _updateMoodChip(){
       + '<div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+mainCol+';font-family:Jost,sans-serif">✦ ¿Cómo estás ahora?</div>'
       + '<div style="font-size:11.5px;color:'+mainCol+';opacity:.72;font-family:Jost,sans-serif;margin:3px 0 11px">Tocá una carita — se guarda al toque</div>'
       + '<div style="display:flex;gap:5px">'+facesHtml+'</div>'
-      + '<button onclick="event.stopPropagation();'+(_homeMoodForcePick?'_homeMoodForcePick=false;_updateMoodChip();':'try{pGoTo(\'mood\')}catch(_){}')+'" style="width:100%;margin-top:10px;padding:9px;background:'+iconBg+';border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">'+(_homeMoodForcePick?'✕ Cancelar':'＋ Ver todas las emociones')+'</button>'
+      + (_homeMoodForcePick
+          ? '<div style="display:flex;gap:6px;margin-top:10px"><button onclick="event.stopPropagation();_homeMoodForcePick=false;_updateMoodChip();" style="flex:1;padding:9px;background:none;border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';opacity:.85;font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">✕ Cancelar</button><button onclick="event.stopPropagation();try{pGoTo(\'mood\')}catch(_){}" style="flex:1.6;padding:9px;background:'+iconBg+';border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">＋ Ver todas las emociones</button></div>'
+          : '<button onclick="event.stopPropagation();try{pGoTo(\'mood\')}catch(_){}" style="width:100%;margin-top:10px;padding:9px;background:'+iconBg+';border:1.5px solid '+iconBdr+';border-radius:12px;color:'+mainCol+';font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">＋ Ver todas las emociones</button>')
       + '</div>';
   } else {
     chip.innerHTML = _card
@@ -37808,7 +37810,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1546;
+    var _BUILT_V = 1547;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
