@@ -12715,10 +12715,16 @@ function _renderNewsList(el, items){
   var _b=document.getElementById('newsUpdBanner'); if(_b&&_b.parentNode) _b.parentNode.removeChild(_b);
   _newsListCache = items;
   var _cy = new Date().getFullYear();
+  // v1521: cada noticia toma un color según su emoji (cálido/esperanza/calma)
+  // en vez del verde uniforme — el muro se siente vivo, no aburrido.
+  var isDark = document.body.classList.contains('r-dark');
   var _sourceTag = function(item){
     var _newsSearch = 'https://news.google.com/search?q='+encodeURIComponent((item.titulo||'')+' '+_cy)+'&hl=es-419';
+    var tagBg = isDark ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.055)';
+    var tagCol = isDark ? 'rgba(255,255,255,.82)' : 'rgba(45,40,25,.82)';
+    var tagBd = isDark ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.12)';
     return item.titulo
-      ? '<a href="'+_escHtml(_newsSearch)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:#fff;font-weight:700;text-decoration:none;background:rgba(20,110,70,.78);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.5)">🔗 Buscar en Google News</a>'
+      ? '<a href="'+_escHtml(_newsSearch)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:'+tagCol+';font-weight:700;text-decoration:none;background:'+tagBg+';padding:3px 8px;border-radius:100px;border:1px solid '+tagBd+'">🔗 Buscar en Google News</a>'
       : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>';
   };
 
@@ -12726,34 +12732,41 @@ function _renderNewsList(el, items){
   var restHtml = '';
 
   items.forEach(function(item, i){
+    var col = isDark ? _dqEmojiColor(item.emoji||'📰') : _dqEmojiColorLight(item.emoji||'📰');
+    var bodyCol = isDark ? 'rgba(255,255,255,.80)' : 'rgba(38,30,14,.82)';
+    var stripSolid = col.strip.replace(/[\d.]+\)$/,'0.9)');
     var isHero = i === 0;
     if(isHero){
-      // Feature 3: "Noticia del día" — hero card with newspaper front-page design
-      heroHtml = '<div onclick="pOpenNewsDetail(0)" style="cursor:pointer;margin-bottom:18px;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,rgba(116,198,157,.14) 0%,rgba(116,198,157,.06) 100%);border:1.5px solid rgba(116,198,157,.28);box-shadow:0 4px 24px rgba(116,198,157,.10)">'
+      // "Noticia del día" — hero con color propio según el emoji de la noticia
+      heroHtml = '<div onclick="pOpenNewsDetail(0)" style="cursor:pointer;margin-bottom:18px;border-radius:22px;overflow:hidden;background:'+col.bg+';border:1.5px solid '+col.border+';box-shadow:0 6px 26px '+col.glow+'">'
+        +'<div style="height:4px;background:'+stripSolid+'"></div>'
         +'<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:6px">'
-        +'<span style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#fff;background:rgba(20,110,70,.80);padding:3px 10px;border-radius:100px;border:1px solid rgba(116,198,157,.55)">🗞️ NOTICIA DEL DÍA</span>'
+        +'<span style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+col.label+';background:'+col.badge+';padding:3px 10px;border-radius:100px;border:1px solid '+col.border+'">🗞️ Noticia del día</span>'
         +'</div>'
         +'<div style="padding:8px 18px 6px;text-align:center">'
         +'<div style="font-size:56px;line-height:1;margin-bottom:10px">'+_escHtml(item.emoji||'📰')+'</div>'
-        +'<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">'+_escHtml(item.titulo)+'</h3>'
-        +'<p style="font-size:15px;color:var(--ink2);line-height:1.7;margin-bottom:6px">'+_escHtml(item.cuerpo)+'</p>'
+        +'<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:23px;font-weight:700;color:'+col.label+';line-height:1.3;margin-bottom:10px">'+_escHtml(item.titulo)+'</h3>'
+        +'<p style="font-size:15px;color:'+bodyCol+';line-height:1.7;margin-bottom:6px">'+_escHtml(item.cuerpo)+'</p>'
         +'<div style="display:flex;justify-content:center">'+_newsRxRowHtml(0)+'</div>'
         +'</div>'
-        +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(116,198,157,.12);margin-top:8px">'
+        +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid '+col.border+';margin-top:8px">'
         +_sourceTag(item)
-        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(20,110,70,.78);border:1px solid rgba(116,198,157,.5);border-radius:100px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:'+col.badge+';border:1px solid '+col.border+';border-radius:100px;font-size:13px;font-weight:700;color:'+col.label+';cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
         +'</div>'
         +'</div>';
     } else {
-      restHtml += '<div class="p-card p-card--hover" style="margin-bottom:12px;padding:16px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
-        +'<div style="display:flex;align-items:flex-start;gap:13px">'
-        +'<div style="font-size:32px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
+      restHtml += '<div style="margin-bottom:12px;cursor:pointer;border-radius:16px;overflow:hidden;background:'+col.bg+';border:1px solid '+col.border+';box-shadow:0 2px 12px '+col.glow+'" onclick="pOpenNewsDetail('+i+')">'
+        +'<div style="display:flex;align-items:stretch">'
+        +'<div style="width:5px;flex-shrink:0;background:'+stripSolid+'"></div>'
+        +'<div style="display:flex;align-items:flex-start;gap:13px;padding:14px 15px;flex:1;min-width:0">'
+        +'<div style="font-size:30px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:var(--ink);margin-bottom:5px;font-weight:700;line-height:1.3">'+_escHtml(item.titulo)+'</div>'
-        +'<div style="font-size:14px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16.5px;color:'+col.label+';margin-bottom:5px;font-weight:700;line-height:1.3">'+_escHtml(item.titulo)+'</div>'
+        +'<div style="font-size:14px;color:'+bodyCol+';line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
         +_newsRxRowHtml(i)
         +'<div style="margin-top:9px;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
         +_sourceTag(item)
+        +'</div>'
         +'</div>'
         +'</div>'
         +'</div>'
@@ -17991,9 +18004,12 @@ function _circleCardHtml(c, memberCounts){
   var memberCount = memberCounts && memberCounts[c.id] !== undefined ? memberCounts[c.id] : (c.members||0);
   var capPct = Math.min(100, Math.round(memberCount/maxM*100));
   var isFull = memberCount >= maxM;
+  // v1521: cada círculo toma el color de su tema (emoji) en el tile y la barra
+  // de cupo — el listado deja de ser verde uniforme y se siente vivo.
+  var col = document.body.classList.contains('r-dark') ? _dqEmojiColor(c.emoji||'☮️') : _dqEmojiColorLight(c.emoji||'☮️');
   var imgHtml = c.foto
     ? '<img src="'+c.foto+'" alt="" style="width:52px;height:52px;border-radius:18px;object-fit:cover;flex-shrink:0">'
-    : '<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
+    : '<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:'+col.badge+';border:1.5px solid '+col.border+';box-shadow:0 2px 12px '+col.glow+';display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
       +c.emoji
       +(c.official ? '<span style="position:absolute;bottom:-4px;right:-4px;font-size:14px;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)" title="Sala oficial Velo">🛡️</span>' : '')
       +'</div>';
@@ -18005,7 +18021,7 @@ function _circleCardHtml(c, memberCounts){
     +'<div style="font-size:14px;color:var(--ink2);margin-bottom:5px">'+c.desc+'</div>'
     +'<div style="height:5px"></div>'
     +'<div style="display:flex;align-items:center;gap:6px">'
-    +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
+    +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':col.strip.replace(/[\d.]+\)$/,'0.85)'))+';border-radius:100px"></div></div>'
     +'<span class="circle-member-count-'+c.id+'" style="font-size:12px;color:var(--ink3);font-weight:600">'+memberCount+'/'+maxM+'</span>'
     +(isFull ? '<span style="font-size:12px;color:var(--sos);font-weight:700">Lleno</span>' : '')
     +'</div>'
@@ -37030,7 +37046,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1520;
+    var _BUILT_V = 1521;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
