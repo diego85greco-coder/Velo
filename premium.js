@@ -21769,6 +21769,39 @@ var _vibePendingVideo = null;         // File del video elegido (máx 60s / 70MB
 var _vibeTargetGroupId = null;
 var _vibeInstantScope = null;         // 'public' | 'private' | null
 var _vibeInstantMemberIds = [];       // solo si scope='private'
+// v1532 — Consigna OPCIONAL según el tema del grupo (inspiración, no obligación).
+// El usuario publica lo que quiera sobre ese tema; esto es solo un disparador.
+function _vibeConsigna(groupId, isInstant, instantScope){
+  var t = '';
+  if(!isInstant && groupId){
+    try{ var g=(_vibesGroupsCache||[]).find(function(x){ return x.id===groupId; }); if(g) t=((g.title||'')+' '+(g.slug||'')).toLowerCase(); }catch(_){}
+  }
+  var byKey = [
+    [/felicidad|feliz|alegr/,           '¿Qué te hizo sonreír hoy?'],
+    [/mascota|perr|gat|animal/,          'Presentanos a tu compañero de cuatro patas 🐾'],
+    [/orgullo|pride|lgbt/,               'Algo de vos que hoy querés celebrar 🌈'],
+    [/dif[ií]cil|duelo|triste|ansi|dolor/,'Algo que hoy costó. Acá te acompañamos, sin juzgar.'],
+    [/lectura|libro|leer/,               '¿Qué estás leyendo? Una frase, una tapa, un rincón 📖'],
+    [/ejercicio|deporte|movimiento|gym|entren/, 'Tu movimiento de hoy — un paso ya cuenta 💪'],
+    [/calma|paz|medita|respir/,          'Un momento de calma que encontraste hoy 🌿'],
+    [/gratitud|gracias/,                 '¿Por qué das gracias hoy?'],
+    [/naturaleza|paisaje|aire libre/,    'Un pedacito de naturaleza que te frenó a mirar 🌅'],
+    [/comida|receta|cocin/,              'Algo rico que preparaste o disfrutaste 🍲'],
+    [/m[uú]sica|cancion/,                'Una canción o momento que te acompaña hoy 🎧'],
+    [/viaje|lugar/,                      'Un lugar donde estuviste hoy, cerca o lejos 🧭']
+  ];
+  for(var i=0;i<byKey.length;i++){ if(byKey[i][0].test(t)) return byKey[i][1]; }
+  if(isInstant && instantScope==='private') return 'Un momento para tus personas de confianza.';
+  var generales = [
+    '¿Qué momento de tu día querés compartir?',
+    'Algo que te hizo bien hoy.',
+    'Un pedacito de tu día, como sea.',
+    'Algo pequeño que hoy valió la pena.',
+    '¿Qué estás sintiendo en este momento?'
+  ];
+  var d = new Date().getDate();
+  return generales[d % generales.length];
+}
 function pStartCreateVibe(groupId, instantScope){
   _vibeTargetGroupId = groupId || null;
   _vibeInstantScope = instantScope || null;
@@ -21811,6 +21844,7 @@ function pStartCreateVibe(groupId, instantScope){
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:92vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
     + '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+_escHtml(header)+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Compartí tu momento</div></div>'
+    + (function(){ var c=_vibeConsigna(groupId,isInstant,instantScope); if(!c) return ''; return '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;margin-bottom:14px;background:linear-gradient(135deg,rgba(200,158,56,.13),rgba(116,198,157,.08));border:1px solid rgba(200,180,110,.30);border-radius:14px"><span style="font-size:17px;flex-shrink:0;line-height:1.3">💡</span><div style="min-width:0"><div style="font-family:Jost,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(220,200,140,.78);margin-bottom:2px">Idea · opcional</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:rgba(255,245,220,.95);line-height:1.35">'+_escHtml(c)+'</div><div style="font-family:Jost,sans-serif;font-size:11px;color:rgba(200,230,215,.6);margin-top:4px;line-height:1.4">Es solo inspiración — publicá lo que quieras sobre este tema.</div></div></div>'; })()
     + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 s · lo optimizamos al subir</span></button></div>'
     + '<input type="file" id="vibeFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="display:none" onchange="_vibeHandleImageInput(this)">'
     + '<textarea id="vibeCaptionInput" placeholder="Contá qué pasa en tu momento (opcional)…" rows="3" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5"></textarea>'
@@ -37562,7 +37596,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1531;
+    var _BUILT_V = 1532;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
