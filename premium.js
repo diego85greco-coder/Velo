@@ -8384,8 +8384,8 @@ async function _openVibeFromNotif(vibeId){
   try{
     var r = await sbClient.from('vibes').select('id,group_id').eq('id', vibeId).maybeSingle();
     if(!r || !r.data){ pToast('🌱','Ese momento ya no está disponible'); return; }
-    if(r.data.group_id) pOpenVibeGroup(r.data.group_id);
-    else pOpenInstantVibe(vibeId);
+    if(r.data.group_id) pPlayVibeGroup(r.data.group_id);
+    else pPlayInstant(vibeId);
   }catch(e){ console.warn('[open-vibe-from-notif]', e); }
 }
 
@@ -21263,7 +21263,7 @@ async function _renderHomeVibesCard(){
       var opa = isSeen ? '.72' : '1';
       var filt = isSeen ? 'grayscale(.8)' : 'none';
       var badge = isPrivate ? '<span style="position:absolute;bottom:-1px;right:-1px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:#8a68d8;border:2px solid '+_ringInner+';color:#fff;font-size:9px;border-radius:50%;z-index:3">🔒</span>' : '';
-      var onclickAction = t.isInstant ? ('pOpenInstantVibe(\''+_escHtml(t.coverVibeId)+'\')') : ('pOpenVibeGroup(\''+_escHtml(t.id)+'\')');
+      var onclickAction = t.isInstant ? ('pPlayInstant(\''+_escHtml(t.coverVibeId)+'\')') : ('pPlayVibeGroup(\''+_escHtml(t.id)+'\')');
       var visual;
       if(hasCover && _vibeIsVideoUrl(t.coverUrl)){
         // v1502: póster JPG del video (frame 0) — antes se bajaba el video entero
@@ -21415,7 +21415,7 @@ async function pRenderVibesHome(){
         var isSeen = !!_seen[v.id];
         var brd = isSeen ? 'rgba(140,140,140,.55)' : (isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)');
         var opa = isSeen ? '.55' : '1';
-        return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+(isSeen?'grayscale(.85)':'none')+'"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="240" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
+        return '<button onclick="pPlayInstant(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+(isSeen?'grayscale(.85)':'none')+'"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="240" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
       }).join('');
       instantHtml = '<div style="margin-bottom:22px">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,220,120,.85);margin-bottom:4px">✨ INSTANTÁNEOS</div>'
@@ -21512,7 +21512,7 @@ function _vibeGroupCard(gr, count){
   var joinHint = isOfficial
     ? '👉 Sumá tu momento a este grupo'
     : (isPrivate ? '👉 Compartí con tu círculo' : '👉 Sumate y compartí');
-  return '<button onclick="pOpenVibeGroup(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:'+accentBg+';border:1.5px solid '+accentBrd+';border-radius:18px;margin-bottom:8px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 4px 18px '+accentGlow+'">'
+  return '<button onclick="pPlayVibeGroup(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:'+accentBg+';border:1.5px solid '+accentBrd+';border-radius:18px;margin-bottom:8px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 4px 18px '+accentGlow+'">'
     + '<div style="width:52px;height:52px;border-radius:14px;background:rgba(0,0,0,.24);border:1.5px solid '+accentBrd+';display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;line-height:1">'+_escHtml(groupEmoji)+'</div>'
     + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;flex-wrap:wrap">'+_escHtml(gr.title||'')+verifiedBadge+privateBadge+'</div>'
@@ -22229,6 +22229,247 @@ async function pSaveVibe(){
     pToast('⚠️','Error al subir');
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// v1523 — REPRODUCTOR DE HISTORIAS estilo Instagram: pantalla completa,
+// auto-avance con temporizador, tap derecha=siguiente / izquierda=anterior,
+// mantener presionado=pausa, y al terminar un grupo encadena al siguiente.
+// Convive con los visores viejos (pOpenVibeGroup/pOpenInstantVibe) como respaldo.
+// ═══════════════════════════════════════════════════════════════════════
+var _storyState = null;
+var _STORY_IMG_MS = 5000;
+
+function _closeStoryPlayer(){
+  if(_storyState){
+    if(_storyState.rafId) { try{ cancelAnimationFrame(_storyState.rafId); }catch(_){} }
+    _storyState = null;
+  }
+  var ov = document.getElementById('storyPlayerOv');
+  if(ov){
+    try{ if(ov.dataset.prevHtmlBg !== undefined) document.documentElement.style.backgroundColor = ov.dataset.prevHtmlBg; }catch(_){}
+    ov.remove();
+  }
+}
+
+// slides: array de vibes en orden viejo→nuevo · startIdx · chainNext:{id}|null
+function _openStoryPlayer(slides, startIdx, chainNext){
+  _closeStoryPlayer();
+  if(!slides || !slides.length) return;
+  var _prevHtmlBg = document.documentElement.style.backgroundColor;
+  document.documentElement.style.backgroundColor = '#000';
+  var ov = document.createElement('div');
+  ov.id = 'storyPlayerOv';
+  ov.dataset.prevHtmlBg = _prevHtmlBg;
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10020;background:#000;overflow:hidden;color:#fff;touch-action:manipulation;-webkit-user-select:none;user-select:none';
+  ov.innerHTML =
+      '<div id="storyMedia" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden"></div>'
+    + '<div style="position:absolute;top:0;left:0;right:0;height:170px;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);pointer-events:none;z-index:2"></div>'
+    + '<div style="position:absolute;bottom:0;left:0;right:0;height:240px;background:linear-gradient(0deg,rgba(0,0,0,.62),transparent);pointer-events:none;z-index:2"></div>'
+    + '<div id="storyTapPrev" style="position:absolute;top:70px;left:0;bottom:120px;width:30%;z-index:3"></div>'
+    + '<div id="storyTapNext" style="position:absolute;top:70px;right:0;bottom:120px;width:70%;z-index:3"></div>'
+    + '<div id="storyProgress" style="position:absolute;top:0;left:0;right:0;z-index:6;display:flex;gap:3px;padding:calc(9px + env(safe-area-inset-top,0px)) 10px 4px"></div>'
+    + '<div id="storyHeader" style="position:absolute;top:calc(20px + env(safe-area-inset-top,0px));left:0;right:0;z-index:6;display:flex;align-items:center;gap:10px;padding:6px 12px"></div>'
+    + '<div id="storyFooter" style="position:absolute;bottom:0;left:0;right:0;z-index:6;padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px))"></div>';
+  document.body.appendChild(ov);
+  _storyState = { slides:slides, idx:Math.max(0,Math.min(slides.length-1, startIdx||0)),
+    rafId:null, paused:false, held:false, elapsed:0, startTs:0, dur:_STORY_IMG_MS,
+    isVid:false, chainNext:chainNext||null };
+  var prog = document.getElementById('storyProgress');
+  prog.innerHTML = slides.map(function(s,i){
+    return '<span class="sp-seg" data-i="'+i+'" style="flex:1;height:2.5px;border-radius:100px;background:rgba(255,255,255,.30);overflow:hidden"><i style="display:block;height:100%;width:0;background:#fff;border-radius:100px"></i></span>';
+  }).join('');
+  document.getElementById('storyTapPrev').addEventListener('click', function(){ if(_storyState&&_storyState.held){ _storyState.held=false; return; } _storyPrev(); });
+  document.getElementById('storyTapNext').addEventListener('click', function(){ if(_storyState&&_storyState.held){ _storyState.held=false; return; } _storyNext(); });
+  // Mantener presionado = pausa; soltar = reanuda. Un tap corto no pausa.
+  var _holdT = null;
+  ov.addEventListener('pointerdown', function(){ _holdT = setTimeout(function(){ if(_storyState){ _storyState.held=true; _storyPause(); } }, 240); });
+  var _release = function(){ if(_holdT){ clearTimeout(_holdT); _holdT=null; } if(_storyState && _storyState.paused){ _storyResume(); } };
+  ov.addEventListener('pointerup', _release);
+  ov.addEventListener('pointercancel', _release);
+  _storyShow();
+}
+
+function _storyShow(){
+  if(!_storyState) return;
+  var s = _storyState.slides[_storyState.idx];
+  if(!s){ _closeStoryPlayer(); return; }
+  // marcar como visto
+  try{
+    var _seen = {}; try{ _seen = JSON.parse(safeLS('get',_vibesSeenKey())||'{}'); }catch(_){}
+    _seen[s.id] = Date.now();
+    var _cut = Date.now() - 48*3600*1000;
+    Object.keys(_seen).forEach(function(k){ if(_seen[k] < _cut) delete _seen[k]; });
+    safeLS('set',_vibesSeenKey(), JSON.stringify(_seen));
+    _vibesSeenPushToCloud();
+  }catch(_){}
+  // barras de progreso: previas llenas, actual en 0, siguientes vacías
+  var segs = document.querySelectorAll('#storyProgress .sp-seg');
+  segs.forEach(function(seg,i){ var f = seg.querySelector('i'); if(f) f.style.width = (i < _storyState.idx) ? '100%' : '0'; });
+  // header
+  var ago = (typeof _timeAgoDM==='function') ? _timeAgoDM(new Date(s.created_at).getTime()) : '';
+  var left = (typeof _vibeTimeLeft==='function') ? _vibeTimeLeft(s.expires_at) : '';
+  var hdr = document.getElementById('storyHeader');
+  if(hdr) hdr.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer" onclick="_vibeOpenUserProfile('+_jsAttr(s.user_id||'')+','+_jsAttr(s.user_name||'Usuario')+','+_jsAttr(s.user_av||'🧑')+')">'
+    +   '<span style="flex-shrink:0">'+_avInline(s.user_av||'🧑',34)+'</span>'
+    +   '<div style="min-width:0">'
+    +     '<div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(s.user_name||'Usuario')+'</div>'
+    +     '<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(255,255,255,.82);text-shadow:0 1px 3px rgba(0,0,0,.7)">'+ago+(left?' · caduca en '+left:'')+'</div>'
+    +   '</div>'
+    + '</div>'
+    + '<button onclick="_closeStoryPlayer()" aria-label="Cerrar" style="background:none;border:none;color:#fff;font-size:26px;cursor:pointer;padding:4px 8px;line-height:1;text-shadow:0 1px 5px rgba(0,0,0,.7);flex-shrink:0">✕</button>';
+  // media
+  var mediaEl = document.getElementById('storyMedia');
+  var isVid = (typeof _vibeIsVideoUrl==='function') && _vibeIsVideoUrl(s.media_url);
+  _storyState.isVid = isVid;
+  if(mediaEl){
+    var bgUrl = _escHtml(s.media_url||'');
+    var blurBg = '<div style="position:absolute;inset:0;background:url(\''+bgUrl+'\') center/cover no-repeat;filter:blur(34px) brightness(.45);transform:scale(1.15)"></div>';
+    if(isVid){
+      mediaEl.innerHTML = blurBg + '<video id="storyVid" src="'+_escHtml((s.media_url||'').replace('/video/upload/','/video/upload/q_auto/'))+'" playsinline autoplay style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1"></video>';
+    } else {
+      mediaEl.innerHTML = blurBg + '<img id="storyImg" src="'+bgUrl+'" alt="" style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1" onerror="this.style.opacity=.4">';
+    }
+  }
+  // footer
+  var footer = document.getElementById('storyFooter');
+  if(footer) footer.innerHTML = _storyFooterHtml(s);
+  // arrancar temporizador
+  _storyState.elapsed = 0;
+  if(isVid){
+    var vid = document.getElementById('storyVid');
+    if(vid){
+      vid.onended = function(){ _storyNext(); };
+      vid.ontimeupdate = function(){
+        if(!_storyState || _storyState.isVid !== true) return;
+        if(vid.duration){ var f2 = document.querySelector('#storyProgress .sp-seg[data-i="'+_storyState.idx+'"] i'); if(f2) f2.style.width = (vid.currentTime/vid.duration*100)+'%'; }
+      };
+      try{ var _pp = vid.play(); if(_pp && _pp.catch) _pp.catch(function(){ /* autoplay bloqueado: avanza por tap */ }); }catch(_){}
+    }
+  } else {
+    _storyStartTimer();
+  }
+}
+
+function _storyFooterHtml(s){
+  var cap = s.caption ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:26vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
+  var mine = _vibeMyReactions[s.id] || '';
+  var rx = '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'
+    + (typeof VIBE_REACTIONS!=='undefined' ? VIBE_REACTIONS.map(function(reaction){
+        var sel = mine === reaction.key;
+        return '<button type="button" onclick="event.stopPropagation();pVibeReact(\''+s.id+'\',\''+reaction.key+'\',this)" title="'+_escHtml(reaction.label)+'" style="background:'+(sel?'rgba(255,255,255,.28)':'rgba(0,0,0,.34)')+';border:1.5px solid '+(sel?'#fff':'rgba(255,255,255,.42)')+';border-radius:100px;width:44px;height:44px;font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;backdrop-filter:blur(4px)">'+reaction.emoji+'</button>';
+      }).join('') : '')
+    + '</div>';
+  var comments = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="flex:1;min-width:0;padding:12px 16px;background:rgba(0,0,0,.34);border:1.5px solid rgba(255,255,255,.42);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;backdrop-filter:blur(4px)">💬 <span data-vibe-comment-count="'+s.id+'">Ver comentarios</span></button>';
+  return cap + '<div style="display:flex;align-items:center;gap:9px">'+comments+rx+'</div>';
+}
+
+// Abrir comentarios pausando el reproductor (se reanuda al cerrar la hoja).
+function _storyOpenComments(vibeId){
+  if(_storyState) _storyPause();
+  pOpenVibeComments(vibeId);
+}
+
+function _storyStartTimer(){
+  if(!_storyState || _storyState.isVid) return;
+  _storyState.startTs = Date.now();
+  if(_storyState.rafId) { try{ cancelAnimationFrame(_storyState.rafId); }catch(_){} }
+  _storyState.rafId = requestAnimationFrame(_storyTick);
+}
+
+function _storyTick(){
+  if(!_storyState || _storyState.paused || _storyState.isVid) return;
+  // congelar mientras están abiertos los comentarios
+  if(document.getElementById('vibeCommentsOv')){ _storyState.startTs = Date.now() - _storyState.elapsed; _storyState.rafId = requestAnimationFrame(_storyTick); return; }
+  var now = Date.now();
+  _storyState.elapsed = now - _storyState.startTs;
+  var pct = Math.min(1, _storyState.elapsed / _storyState.dur);
+  var f = document.querySelector('#storyProgress .sp-seg[data-i="'+_storyState.idx+'"] i');
+  if(f) f.style.width = (pct*100)+'%';
+  if(pct >= 1){ _storyNext(); return; }
+  _storyState.rafId = requestAnimationFrame(_storyTick);
+}
+
+function _storyPause(){
+  if(!_storyState) return;
+  _storyState.paused = true;
+  var v = document.getElementById('storyVid'); if(v){ try{ v.pause(); }catch(_){} }
+}
+function _storyResume(){
+  if(!_storyState || !_storyState.paused) return;
+  _storyState.paused = false;
+  var v = document.getElementById('storyVid');
+  if(v){ try{ v.play(); }catch(_){} }
+  else { _storyState.startTs = Date.now() - _storyState.elapsed; if(_storyState.rafId){ try{ cancelAnimationFrame(_storyState.rafId); }catch(_){} } _storyState.rafId = requestAnimationFrame(_storyTick); }
+}
+
+function _storyNext(){
+  if(!_storyState) return;
+  if(_storyState.idx < _storyState.slides.length - 1){
+    _storyState.idx++;
+    _storyShow();
+  } else if(_storyState.chainNext && _storyState.chainNext.id){
+    var nid = _storyState.chainNext.id;
+    _closeStoryPlayer();
+    try{ pPlayVibeGroup(nid); }catch(_){}
+  } else {
+    _closeStoryPlayer();
+  }
+}
+function _storyPrev(){
+  if(!_storyState) return;
+  if(_storyState.idx > 0){ _storyState.idx--; }
+  _storyShow(); // si ya estás en la primera, reinicia la actual
+}
+
+// Cargar vibes de un grupo + reacciones y abrir el reproductor a pantalla completa.
+async function pPlayVibeGroup(groupId){
+  _initSupabase(); if(!sbClient){ try{ pOpenVibeGroup(groupId); }catch(_){} return; }
+  try{
+    var res = await sbClient.from('vibes').select('*').eq('group_id', groupId).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(80);
+    var data = (res && res.data) || [];
+    if(!data.length){ pOpenVibeGroup(groupId); return; } // vacío → usar el visor viejo (tiene su empty-state + CTA)
+    await _storyLoadReactions(data);
+    var ordered = data.slice().reverse(); // viejo→nuevo (se reproduce hacia el más nuevo)
+    var startIdx = 0;
+    try{ var _sx = JSON.parse(safeLS('get',_vibesSeenKey())||'{}'); var fi = ordered.findIndex(function(v){ return !_sx[v.id]; }); startIdx = fi>=0?fi:0; }catch(_){ startIdx = 0; }
+    // encadenar al próximo grupo de la cadena del home
+    var next = null;
+    try{ var ci = (_vibesOpenChain||[]).findIndex(function(g){ return g.id === groupId; }); if(ci>=0 && ci < (_vibesOpenChain||[]).length-1) next = _vibesOpenChain[ci+1]; }catch(_){}
+    _openStoryPlayer(ordered, startIdx, next);
+  }catch(e){ console.warn('[play-group]', e); try{ pOpenVibeGroup(groupId); }catch(_){} }
+}
+
+// Reproducir instantáneos a pantalla completa (arranca en el tocado).
+async function pPlayInstant(vibeId){
+  _initSupabase(); if(!sbClient){ try{ pOpenInstantVibe(vibeId); }catch(_){} return; }
+  try{
+    var res = await sbClient.from('vibes').select('*').is('group_id', null).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(80);
+    var data = (res && res.data) || [];
+    if(!data.length){ pOpenInstantVibe(vibeId); return; }
+    await _storyLoadReactions(data);
+    var ordered = data.slice().reverse();
+    var startIdx = ordered.findIndex(function(v){ return v.id === vibeId; });
+    if(startIdx < 0) startIdx = 0;
+    _openStoryPlayer(ordered, startIdx, null);
+  }catch(e){ console.warn('[play-instant]', e); try{ pOpenInstantVibe(vibeId); }catch(_){} }
+}
+
+async function _storyLoadReactions(data){
+  _vibeReactionAgg = _vibeReactionAgg || {}; _vibeMyReactions = _vibeMyReactions || {};
+  try{
+    var myId = safeLS('get','velo_user_id')||'';
+    var ids = data.map(function(x){ return x.id; });
+    if(!ids.length) return;
+    var rRes = await sbClient.from('vibe_reactions').select('vibe_id,user_id,reaction').in('vibe_id', ids);
+    (rRes.data||[]).forEach(function(r){
+      if(!_vibeReactionAgg[r.vibe_id]) _vibeReactionAgg[r.vibe_id] = {};
+      _vibeReactionAgg[r.vibe_id][r.reaction] = (_vibeReactionAgg[r.vibe_id][r.reaction]||0)+1;
+      if(myId && r.user_id === myId) _vibeMyReactions[r.vibe_id] = r.reaction;
+    });
+  }catch(_){}
+}
+
 // Feed inmersivo de un grupo — MVP: grid vertical de cards (en v1314 pasa a modo IG-story swipe)
 async function pOpenVibeGroup(groupId){
   var ov = document.getElementById('vibeGroupOv'); if(ov) ov.remove();
@@ -37082,7 +37323,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1522;
+    var _BUILT_V = 1523;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
