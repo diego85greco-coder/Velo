@@ -37033,8 +37033,36 @@ function _btCard(p,idx,uid){
 // Crea un vibe instant (group_id null, scope público) con un sentinel en
 // media_url que el reproductor detecta para mostrar una tarjeta "Nuevo en
 // Bitácora" con el título y un botón para abrir el post.
+// Abre un banner explicando qué hace "compartir en instantáneas" (el 🌊 solo
+// no se entiende) y ofrece Compartir / Cancelar antes de publicar la historia.
 function _btShareToInstant(id,ev){
   if(ev){ try{ ev.stopPropagation(); }catch(_){} }
+  var p=null;
+  ['apoyo','superacion','debate','mio'].forEach(function(t){ (_btPosts[t]||[]).forEach(function(x){ if(String(x.id)===String(id)) p=x; }); });
+  if(!p){ pToast('⚠️','No encontré ese post'); return; }
+  var title=(p.titulo||'Una historia en Bitácora').slice(0,120);
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:99999;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML='<div style="background:#0e1f14;border-radius:20px 20px 0 0;padding:24px 20px calc(26px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;font-family:Jost,sans-serif;border-top:1.5px solid rgba(90,166,224,.25)">'
+    +'<div style="text-align:center;font-size:38px;line-height:1;margin-bottom:12px">🌊</div>'
+    +'<div style="text-align:center;font-family:\'Cormorant Garamond\',serif;font-size:23px;font-style:italic;color:#fff;margin-bottom:10px">Compartir en instantáneas</div>'
+    +'<p style="font-size:13.5px;color:rgba(200,225,245,.82);text-align:center;margin:0 0 16px;line-height:1.6">Vas a crear una <b style="color:#fff">historia efímera (24&nbsp;h)</b> que le avisa a la comunidad sobre este post. Muestra el título y, al tocarla, lleva directo al post.</p>'
+    +'<div style="background:rgba(90,166,224,.10);border:1.5px solid rgba(90,166,224,.30);border-radius:14px;padding:12px 14px;margin-bottom:20px;display:flex;align-items:center;gap:10px">'
+    +'<span style="font-size:20px;flex-shrink:0">📖</span>'
+    +'<span style="font-size:13px;color:#eaf3fb;font-weight:600;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_escHtml(title)+'</span>'
+    +'</div>'
+    +'<div style="display:flex;gap:12px">'
+    +'<button id="_btsiNo" style="flex:1;padding:13px;border-radius:100px;border:1.5px solid rgba(255,255,255,.22);background:transparent;color:rgba(220,235,250,.85);font-family:Jost,sans-serif;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="_btsiYes" style="flex:1.3;padding:13px;border-radius:100px;border:none;background:linear-gradient(135deg,#5aa6e0,#3f7fc0);color:#fff;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer">🌊 Compartir</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  function _close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.querySelector('#_btsiNo').addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); _close(); });
+  ov.querySelector('#_btsiYes').addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); _close(); _btDoShareToInstant(id); });
+  ov.addEventListener('click',function(e){ if(e.target===ov){ e.stopPropagation(); _close(); } });
+}
+// Publica realmente la instantánea (tras confirmar en el banner).
+function _btDoShareToInstant(id){
   var p=null;
   ['apoyo','superacion','debate','mio'].forEach(function(t){ (_btPosts[t]||[]).forEach(function(x){ if(String(x.id)===String(id)) p=x; }); });
   if(!p){ pToast('⚠️','No encontré ese post'); return; }
@@ -37900,7 +37928,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1550;
+    var _BUILT_V = 1551;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
