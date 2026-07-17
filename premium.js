@@ -1745,51 +1745,12 @@ async function _checkReferralQualification(){
   if(streak < 3) return;
   _initSupabase(); if(!sbClient) return;
   try{
-    var myRef = await sbClient.from('referrals')
-      .select('id,referrer_id,qualified_at').eq('referred_id', uid).maybeSingle();
-    if(!myRef || !myRef.data || myRef.data.qualified_at) return;
-    var refrId = myRef.data.referrer_id;
-    await sbClient.from('referrals').update({ qualified_at: new Date().toISOString() }).eq('id', myRef.data.id);
-    // Contar cuántas qualified sin premiar tiene el referrer
-    var pend = await sbClient.from('referrals')
-      .select('id',{count:'exact',head:true})
-      .eq('referrer_id', refrId).not('qualified_at','is',null).is('reward_granted_at', null);
-    var pendCount = pend.count || 0;
-    // Aviso de progreso
-    try{
-      var falta = Math.max(0, 5 - (pendCount % 5));
-      var msgBody = pendCount >= 5
-        ? '¡Ganaste 30 días de Velo Plus! Alguien que invitaste ya usó Velo 3 días seguidos. 5 invitaciones válidas cumplidas 🎉'
-        : 'Alguien que invitaste ya usó Velo 3 días seguidos. Llevás '+pendCount+'/5 invitaciones válidas — te faltan '+falta+' para ganar +30 días de Plus 💚';
-      await sbClient.from('broadcasts').insert({
-        target: 'user:'+refrId,
-        subject: pendCount >= 5 ? '🎉 ¡Ganaste Velo Plus!' : '✨ Otra invitación válida',
-        body: msgBody,
-        icon: pendCount >= 5 ? '🎉' : '💚',
-        sender: 'Velo — Comunidad'
-      });
-    }catch(e){}
-    // Si llegó a 5+ qualified sin premiar, otorgar Plus y marcar 5 como reward_granted
-    if(pendCount >= 5){
-      var rounds = Math.floor(pendCount / 5);
-      // Sumar rounds*30 días al referrer
-      var pref = await sbClient.from('profiles').select('plus_expires_at').eq('id', refrId).maybeSingle();
-      var base = Date.now();
-      if(pref && pref.data && pref.data.plus_expires_at){
-        var exi = new Date(pref.data.plus_expires_at).getTime();
-        if(exi > base) base = exi;
-      }
-      var newExp = new Date(base + rounds*30*86400000).toISOString();
-      await sbClient.from('profiles').update({ plus_expires_at: newExp }).eq('id', refrId);
-      // Marcar las (rounds*5) qualified más antiguas como premiadas
-      var rows = await sbClient.from('referrals')
-        .select('id').eq('referrer_id', refrId).not('qualified_at','is',null).is('reward_granted_at', null)
-        .order('qualified_at', {ascending: true}).limit(rounds * 5);
-      if(rows && rows.data && rows.data.length){
-        var ids = rows.data.map(function(r){ return r.id; });
-        await sbClient.from('referrals').update({ reward_granted_at: new Date().toISOString() }).in('id', ids);
-      }
-    }
+    // Calificación + premio al referrer 100% server-side (RPC SECURITY DEFINER):
+    // valida que el invitado usó la app ≥3 días REALES (mood_entries) antes de
+    // marcar la calificación, y otorga Plus al referrer por la vía autorizada
+    // (el trigger bloquea cualquier auto-otorgo directo). El aviso al referrer
+    // lo inserta el propio RPC de forma atómica.
+    await sbClient.rpc('claim_referral_qualification');
   }catch(e){ console.warn('[ref-check]', e); }
 }
 
@@ -9320,20 +9281,15 @@ async function _grantDiamanteReward(){
   try{
     var ok = await _ensureSbSession();
     if(!ok) return;
-    var ud = await sbClient.auth.getUser();
-    if(!ud.data || !ud.data.user) return;
-    var uid = ud.data.user.id;
-    var email = ud.data.user.email || '';
-    var expires = new Date(Date.now() + 90*24*3600*1000).toISOString(); // 3 months
-    await sbClient.from('profiles').update({
-      role: 'plus',
-      plus_expires_at: expires,
-      diamante_plus_granted_at: new Date().toISOString()
-    }).eq('id', uid);
-    await sbClient.from('plus_grants').insert({ email: email, expires_at: expires });
-    safeLS('set','velo_plan','plus');
-    safeLS('set','velo_diamante_plus_granted','1');
-    _updatePlanUI && _updatePlanUI();
+    // Otorgo 100% server-side: el RPC valida ≥100 conversaciones REALES
+    // (guardian_requests) antes de activar Plus. El cliente ya no escribe role
+    // ni plus_expires_at (el trigger velo_protect_role lo bloquearía igual).
+    var res = await sbClient.rpc('grant_diamante_plus');
+    if(res && !res.error && res.data && res.data.ok){
+      safeLS('set','velo_plan','plus');
+      safeLS('set','velo_diamante_plus_granted','1');
+      _updatePlanUI && _updatePlanUI();
+    }
   }catch(e){}
 }
 
@@ -37082,7 +37038,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1517;
+    var _BUILT_V = 1518;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
