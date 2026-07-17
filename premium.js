@@ -21308,7 +21308,7 @@ async function _renderHomeVibesCard(){
         + '</div>'
       + '</div>'
       + '<div class="home-vibes-widget__rail">'+thumbsHtml+'</div>'
-      + '<button onclick="pStartCreateVibe(null,\'public\')" class="home-vibes-widget__cta">'
+      + '<button onclick="pCreateVibeMenu()" class="home-vibes-widget__cta">'
         + '<span class="home-vibes-widget__cta-plus">＋</span><span>Publicá tu momento</span>'
       + '</button>'
     + '</div>';
@@ -21527,9 +21527,19 @@ function _vibeGroupCard(gr, count){
   + '</button>';
 }
 // Menú para crear vibe: instantáneo o dentro de un grupo
-function pCreateVibeMenu(){
+async function pCreateVibeMenu(){
   var ex = document.getElementById('vibeCreateMenuOv'); if(ex) ex.remove();
-  if(!_vibesGroupsCache){ pToast('⏳','Cargando grupos…'); return; }
+  // v1527: si abrís desde el home, los grupos pueden no estar en caché — cargarlos
+  // en vez de salir con "Cargando grupos…" (así el selector siempre abre).
+  if(!_vibesGroupsCache){
+    _initSupabase();
+    if(sbClient){
+      try{
+        var _gmRes = await sbClient.from('vibe_groups').select('id,kind,slug,emoji,title,owner_id,member_ids').order('created_at',{ascending:false}).limit(80);
+        _vibesGroupsCache = (_gmRes && _gmRes.data) || [];
+      }catch(_){ _vibesGroupsCache = []; }
+    } else { _vibesGroupsCache = []; }
+  }
   var official = _sortOfficialGroups(_vibesGroupsCache.filter(function(x){ return x.kind === 'official'; }));
   var ov = document.createElement('div');
   ov.id = 'vibeCreateMenuOv';
@@ -37517,7 +37527,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1526;
+    var _BUILT_V = 1527;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
