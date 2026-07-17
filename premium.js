@@ -22603,26 +22603,42 @@ function _storyOpenComments(vibeId){
   _storyPauseUntilClosed('vibeCommentsOv');
 }
 // Mensaje PRIVADO al autor de la historia: cierra el reproductor y abre el DM.
-function _storyMessage(toId, toName, toAv){
+async function _storyMessage(toId, toName, toAv){
   if(!toId){ pToast('🌱','No se puede mensajear a este momento'); return; }
   var myId = safeLS('get','velo_user_id')||'';
   if(toId === myId){ pToast('🌿','Es tu propia historia'); return; }
-  // v1537 (Nivel 1): si NO hay relación de chat (no lo tengo de favorito ni
-  // aceptamos chat antes) → mensaje al BUZÓN (DM de texto plano). Si ya hay chat
-  // habilitado o lo tengo de favorito → el flujo de chat de siempre (pOpenDM).
+  toName = toName||'Usuario'; toAv = toAv||'🧑';
+  // Modelo de buzón (v1538):
+  //  · chat ya habilitado (aceptado antes) o favorito MUTUO → chat directo
+  //  · favorito de UNA vía (uno tiene al otro) → pedido de chat CON el mensaje
+  //  · ninguno → mensaje al buzón (responde si quiere)
   var accepted = safeLS('get','velo_dm_accepted_'+toId) === '1';
   var iFav = false; try{ iFav = pIsFav(toId); }catch(_){}
   _closeStoryPlayer();
-  if(accepted || iFav){
-    try{ pOpenDM(toId, toName||'Usuario', toAv||'🧑'); }catch(_){}
-  } else {
-    _openDMBuzonCompose(toId, toName||'Usuario', toAv||'🧑');
-  }
+  if(accepted){ try{ pOpenDM(toId, toName, toAv); }catch(_){} return; }
+  var theyFav = await _theyFavoriteMe(toId);
+  if(iFav && theyFav){ try{ pOpenDM(toId, toName, toAv); }catch(_){} return; } // mutuo → directo
+  if(iFav || theyFav){ _openDMCompose(toId, toName, toAv, 'request'); return; } // una vía → pedido con mensaje
+  _openDMCompose(toId, toName, toAv, 'buzon'); // ninguno → buzón
 }
-// Nivel 1 — compositor de mensaje al BUZÓN (para no-favoritos sin chat previo).
-// El mensaje viaja como DM de texto plano: el receptor lo ve como no-leído en sus
-// contactos/campana y responde si quiere. No abre chat ni pide aceptación.
-function _openDMBuzonCompose(toId, toName, toAv){
+// ¿El OTRO me tiene a MÍ en favoritos? (para detectar el "mutuo" y la vía única).
+async function _theyFavoriteMe(toId){
+  _initSupabase();
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!sbClient || !myId || !toId) return false;
+  try{
+    var r = await sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('user_id', toId).eq('fav_id', myId);
+    return !!(r && typeof r.count === 'number' && r.count > 0);
+  }catch(_){ return false; }
+}
+// Compositor de mensaje. mode='buzon' → DM de texto plano al buzón (responde si
+// quiere). mode='request' → manda el mensaje + un pedido de chat; cuando el otro
+// acepta, se abre el chat de dos vías y queda habilitado para siempre.
+function _openDMCompose(toId, toName, toAv, mode){
+  mode = mode || 'buzon';
+  var isReq = mode === 'request';
+  var sub = isReq ? 'Se envía como pedido de chat — cuando acepte, se abre el chat.' : 'Le llega a su buzón — responde si quiere.';
+  var btnLbl = isReq ? '💬 Enviar pedido de chat' : '✉️ Enviar al buzón';
   var ex = document.getElementById('dmBuzonOv'); if(ex) ex.remove();
   var ov = document.createElement('div');
   ov.id = 'dmBuzonOv';
@@ -22630,16 +22646,16 @@ function _openDMBuzonCompose(toId, toName, toAv){
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.35);border-radius:22px 22px 0 0;display:flex;flex-direction:column">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
-    + '<div style="display:flex;align-items:center;gap:10px;padding:4px 0 12px"><span style="flex-shrink:0">'+_avInline(toAv||'🧑',32)+'</span><div style="min-width:0"><div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:#fff;font-style:italic">Mensaje a '+_escHtml(toName||'Usuario')+'</div><div style="font-size:11px;color:rgba(180,220,195,.72);font-family:Jost,sans-serif;margin-top:1px">Le llega a su buzón — responde si quiere.</div></div></div>'
+    + '<div style="display:flex;align-items:center;gap:10px;padding:4px 0 12px"><span style="flex-shrink:0">'+_avInline(toAv||'🧑',32)+'</span><div style="min-width:0"><div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:#fff;font-style:italic">Mensaje a '+_escHtml(toName||'Usuario')+'</div><div style="font-size:11px;color:rgba(180,220,195,.72);font-family:Jost,sans-serif;margin-top:1px">'+sub+'</div></div></div>'
     + '<textarea id="dmBuzonInput" placeholder="Escribí tu mensaje…" rows="3" maxlength="500" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.28);border-radius:12px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.45;margin-bottom:10px"></textarea>'
     + '<div style="display:flex;gap:8px">'
       + '<button onclick="document.getElementById(\'dmBuzonOv\').remove()" style="flex:1;padding:12px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.2);border-radius:12px;color:rgba(200,230,215,.7);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Cancelar</button>'
-      + '<button onclick="_sendDMBuzon('+_jsAttr(toId)+','+_jsAttr(toName||'Usuario')+','+_jsAttr(toAv||'🧑')+')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer">✉️ Enviar al buzón</button>'
+      + '<button onclick="_sendDMCompose('+_jsAttr(toId)+','+_jsAttr(toName||'Usuario')+','+_jsAttr(toAv||'🧑')+','+_jsAttr(mode)+')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer">'+btnLbl+'</button>'
     + '</div></div>';
   document.body.appendChild(ov);
   setTimeout(function(){ var i=document.getElementById('dmBuzonInput'); if(i) i.focus(); }, 120);
 }
-async function _sendDMBuzon(toId, toName, toAv){
+async function _sendDMCompose(toId, toName, toAv, mode){
   var inp = document.getElementById('dmBuzonInput');
   var text = inp ? (inp.value||'').trim() : '';
   if(!text){ pToast('🌱','Escribí un mensaje'); return; }
@@ -22651,8 +22667,15 @@ async function _sendDMBuzon(toId, toName, toAv){
   try{
     var r = await sbClient.from('direct_messages').insert({ from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:text });
     if(r && r.error){ pToast('⚠️','No se pudo enviar — probá de nuevo'); return; }
+    if(mode === 'request'){
+      // Pedido de chat que acompaña al mensaje. Reusa el flujo de aceptación de
+      // siempre (__velo_chat_req__ → _showDMChatRequest → aceptar → _enterDMChat).
+      try{ await sbClient.from('direct_messages').insert({ from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:'__velo_chat_req__' }); }catch(_){}
+      safeLS('set','velo_dm_req_sent_'+toId,'1');
+    }
     var ov = document.getElementById('dmBuzonOv'); if(ov) ov.remove();
-    pToast('✉️','Tu mensaje quedó en el buzón de '+(toName||'la persona'));
+    if(mode === 'request') pToast('💬','Enviamos tu mensaje y un pedido de chat a '+(toName||'la persona')+' — esperando que acepte');
+    else pToast('✉️','Tu mensaje quedó en el buzón de '+(toName||'la persona'));
   }catch(e){ pToast('⚠️','No se pudo enviar — probá de nuevo'); }
 }
 
@@ -37709,7 +37732,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1537;
+    var _BUILT_V = 1538;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
