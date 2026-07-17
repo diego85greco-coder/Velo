@@ -22341,6 +22341,12 @@ async function pSaveVibe(){
       payload.group_id = _vibeTargetGroupId;
     }
     var r = await sbClient.from('vibes').insert(payload).select('id,group_id').single();
+    // v1548: red de seguridad — si la columna 'mood' aún no existe en la base
+    // (falta correr su SQL), reintentar SIN el ánimo para que publicar no falle.
+    if(r && r.error && payload.mood && /mood/i.test(r.error.message||'')){
+      delete payload.mood;
+      r = await sbClient.from('vibes').insert(payload).select('id,group_id').single();
+    }
     if(r && r.data && r.data.id){
       var _wasVideo = !!_vibePendingVideo;
       pToast('🌊','Compartido');
@@ -37810,7 +37816,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1547;
+    var _BUILT_V = 1548;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
