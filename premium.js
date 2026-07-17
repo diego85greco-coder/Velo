@@ -22295,8 +22295,8 @@ function _openStoryPlayer(slides, startIdx, chainNext){
       '<div id="storyMedia" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden"></div>'
     + '<div style="position:absolute;top:0;left:0;right:0;height:170px;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);pointer-events:none;z-index:2"></div>'
     + '<div style="position:absolute;bottom:0;left:0;right:0;height:240px;background:linear-gradient(0deg,rgba(0,0,0,.62),transparent);pointer-events:none;z-index:2"></div>'
-    + '<div id="storyTapPrev" style="position:absolute;top:70px;left:0;bottom:120px;width:30%;z-index:3"></div>'
-    + '<div id="storyTapNext" style="position:absolute;top:70px;right:0;bottom:120px;width:70%;z-index:3"></div>'
+    + '<div id="storyTapPrev" style="position:absolute;top:58px;left:0;bottom:104px;width:50%;z-index:3"></div>'
+    + '<div id="storyTapNext" style="position:absolute;top:58px;right:0;bottom:104px;width:50%;z-index:3"></div>'
     + '<div id="storyProgress" style="position:absolute;top:0;left:0;right:0;z-index:6;display:flex;gap:3px;padding:calc(9px + env(safe-area-inset-top,0px)) 10px 4px"></div>'
     + '<div id="storyHeader" style="position:absolute;top:calc(20px + env(safe-area-inset-top,0px));left:0;right:0;z-index:6;display:flex;align-items:center;gap:10px;padding:6px 12px"></div>'
     + '<div id="storyFooter" style="position:absolute;bottom:0;left:0;right:0;z-index:6;padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px))"></div>';
@@ -37527,7 +37527,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1527;
+    var _BUILT_V = 1528;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
