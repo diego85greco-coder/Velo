@@ -22603,11 +22603,20 @@ function _storyShowCover(nextGroup){
   if(footer) footer.innerHTML = '';
   _storyStartTimer();
 }
-function _storyGoNextGroup(){
-  if(!_storyState || !_storyState.coverNext) return;
+async function _storyGoNextGroup(){
+  if(!_storyState || !_storyState.coverNext || _storyState.chaining) return;
+  _storyState.chaining = true;
+  if(_storyState.rafId){ try{ cancelAnimationFrame(_storyState.rafId); }catch(_){} }
   var nid = _storyState.coverNext.id;
-  _closeStoryPlayer();
-  try{ pPlayVibeGroup(nid, true); }catch(_){}
+  // v1529: NO cerrar todavía — cargar el próximo grupo con la portada aún en
+  // pantalla, así no se ve un "flash" del home mientras carga. pPlayVibeGroup
+  // hace _closeStoryPlayer al abrir el nuevo reproductor (nodo distinto).
+  var ovBefore = document.getElementById('storyPlayerOv');
+  try{ await pPlayVibeGroup(nid, true); }catch(_){}
+  // Si el overlay no cambió (mismo nodo), el próximo grupo estaba vacío y no se
+  // abrió nada → recién ahí cerramos la portada, sin flash intermedio.
+  var ovAfter = document.getElementById('storyPlayerOv');
+  if(ovAfter && ovAfter === ovBefore) _closeStoryPlayer();
 }
 // Volver desde la portada a la última historia del grupo actual (tap izquierda).
 function _storyExitCover(){
@@ -37527,7 +37536,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1528;
+    var _BUILT_V = 1529;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
