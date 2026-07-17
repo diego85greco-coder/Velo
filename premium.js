@@ -22249,6 +22249,11 @@ function _closeStoryPlayer(){
     try{ if(ov.dataset.prevHtmlBg !== undefined) document.documentElement.style.backgroundColor = ov.dataset.prevHtmlBg; }catch(_){}
     ov.remove();
   }
+  // Al cerrar de verdad (no en una transición de cadena), refrescar el widget del
+  // home para que las historias recién vistas pasen a gris (estilo Instagram).
+  setTimeout(function(){
+    if(!document.getElementById('storyPlayerOv')){ try{ if(typeof _renderHomeVibesCard==='function') _renderHomeVibesCard(); }catch(_){} }
+  }, 0);
 }
 
 // slides: array de vibes en orden viejo→nuevo · startIdx · chainNext:{id}|null
@@ -22303,6 +22308,18 @@ function _storyShow(){
     safeLS('set',_vibesSeenKey(), JSON.stringify(_seen));
     _vibesSeenPushToCloud();
   }catch(_){}
+  // registrar la vista server-side (solo historias de OTROS) para que el dueño
+  // pueda ver su "Actividad" — quién la vio. Idempotente (onConflict).
+  try{
+    var _myV = safeLS('get','velo_user_id')||'';
+    if(_myV && s.user_id && s.user_id !== _myV && sbClient){
+      sbClient.from('vibe_views').upsert({
+        vibe_id: s.id, viewer_id: _myV,
+        viewer_name: safeLS('get','velo_user_name')||'Alguien',
+        viewer_av: safeLS('get','velo_user_av')||'🧑'
+      }, { onConflict:'vibe_id,viewer_id', ignoreDuplicates:true }).then(function(){}).catch(function(){});
+    }
+  }catch(_){}
   // barras de progreso: previas llenas, actual en 0, siguientes vacías
   var segs = document.querySelectorAll('#storyProgress .sp-seg');
   segs.forEach(function(seg,i){ var f = seg.querySelector('i'); if(f) f.style.width = (i < _storyState.idx) ? '100%' : '0'; });
@@ -22353,22 +22370,95 @@ function _storyShow(){
 }
 
 function _storyFooterHtml(s){
-  var cap = s.caption ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:26vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
+  var cap = s.caption ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
+  var myUid = safeLS('get','velo_user_id') || '';
+  var isMine = !!(s.user_id && s.user_id === myUid);
+  if(isMine){
+    // Footer del DUEÑO: guardar historia (🔖) + actividad (quién vio/reaccionó) + comentarios.
+    var arch = !!s.archived;
+    var saveBtn = '<button onclick="event.stopPropagation();pVibeToggleArchive('+_jsAttr(s.id)+',this)" data-vibe-archived="'+(arch?'1':'0')+'" title="Guardá esta historia en tu perfil" style="flex:1;min-width:0;padding:12px 8px;background:'+(arch?'rgba(240,200,92,.24)':'rgba(0,0,0,.36)')+';border:1.5px solid '+(arch?'rgba(240,200,92,.7)':'rgba(255,255,255,.38)')+';border-radius:100px;color:'+(arch?'#f5cf6a':'#fff')+';font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;backdrop-filter:blur(4px)"><span style="font-size:15px">🔖</span><span data-vibe-arch-lbl>'+(arch?'Guardado':'Guardar')+'</span></button>';
+    var actBtn = '<button onclick="event.stopPropagation();_storyOpenActivity(\''+s.id+'\')" style="flex:1;min-width:0;padding:12px 8px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.38);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;backdrop-filter:blur(4px)"><span style="font-size:15px">👁️</span> Actividad</button>';
+    var comBtnO = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="flex:1;min-width:0;padding:12px 8px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.38);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;backdrop-filter:blur(4px)"><span style="font-size:15px">💬</span><span data-vibe-comment-count="'+s.id+'">Comentarios</span></button>';
+    return cap + '<div style="display:flex;gap:8px">'+saveBtn+actBtn+comBtnO+'</div>';
+  }
+  // Footer del ESPECTADOR: fila LIMPIA de reacciones (una sola línea) + comentar.
   var mine = _vibeMyReactions[s.id] || '';
-  var rx = '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'
+  var reactions = '<div style="display:flex;gap:5px;margin-bottom:9px">'
     + (typeof VIBE_REACTIONS!=='undefined' ? VIBE_REACTIONS.map(function(reaction){
         var sel = mine === reaction.key;
-        return '<button type="button" onclick="event.stopPropagation();pVibeReact(\''+s.id+'\',\''+reaction.key+'\',this)" title="'+_escHtml(reaction.label)+'" style="background:'+(sel?'rgba(255,255,255,.28)':'rgba(0,0,0,.34)')+';border:1.5px solid '+(sel?'#fff':'rgba(255,255,255,.42)')+';border-radius:100px;width:44px;height:44px;font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;backdrop-filter:blur(4px)">'+reaction.emoji+'</button>';
+        return '<button type="button" onclick="event.stopPropagation();pVibeReact(\''+s.id+'\',\''+reaction.key+'\',this)" title="'+_escHtml(reaction.label)+'" style="flex:1;min-width:0;aspect-ratio:1;background:'+(sel?'rgba(255,255,255,.30)':'rgba(0,0,0,.34)')+';border:1.5px solid '+(sel?'#fff':'rgba(255,255,255,.34)')+';border-radius:50%;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;backdrop-filter:blur(3px)">'+reaction.emoji+'</button>';
       }).join('') : '')
     + '</div>';
-  var comments = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="flex:1;min-width:0;padding:12px 16px;background:rgba(0,0,0,.34);border:1.5px solid rgba(255,255,255,.42);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;backdrop-filter:blur(4px)">💬 <span data-vibe-comment-count="'+s.id+'">Ver comentarios</span></button>';
-  return cap + '<div style="display:flex;align-items:center;gap:9px">'+comments+rx+'</div>';
+  var comBtn = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="width:100%;padding:12px 16px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.4);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;backdrop-filter:blur(4px)"><span style="font-size:16px">💬</span> <span data-vibe-comment-count="'+s.id+'">Comentar</span></button>';
+  return cap + reactions + comBtn;
+}
+
+// Actividad de MI historia: quién la vio y con qué reacción (solo el dueño).
+function _storyActivityRow(av, name, rxEmoji, ts){
+  var when = ts ? ((typeof _timeAgoDM==='function') ? _timeAgoDM(new Date(ts).getTime()) : '') : '';
+  return '<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(180,220,195,.08);font-family:Jost,sans-serif">'
+    + '<span style="flex-shrink:0">'+_avInline(av||'🧑',30)+'</span>'
+    + '<span style="flex:1;min-width:0;font-size:13.5px;font-weight:700;color:rgba(230,245,235,.95);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name||'Alguien')+'</span>'
+    + (when ? '<span style="font-size:10.5px;color:rgba(180,220,195,.5)">'+when+'</span>' : '')
+    + (rxEmoji ? '<span style="font-size:18px;flex-shrink:0">'+rxEmoji+'</span>' : '')
+    + '</div>';
+}
+async function _storyOpenActivity(vibeId){
+  if(_storyState) _storyPause();
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); if(_storyState) _storyResume(); return; }
+  var ov = document.getElementById('storyActivityOv'); if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'storyActivityOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10040;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  var _close = function(){ var o=document.getElementById('storyActivityOv'); if(o) o.remove(); if(_storyState) _storyResume(); };
+  ov.onclick = function(e){ if(e.target===ov) _close(); };
+  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.35);border-radius:22px 22px 0 0;max-height:82vh;display:flex;flex-direction:column">'
+    + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
+    + '<div style="text-align:center;padding:4px 0 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">👁️ Actividad</div></div>'
+    + '<div id="storyActivityList" style="flex:1;overflow-y:auto;min-height:80px">Cargando…</div>'
+    + '<button id="storyActivityClose" style="margin-top:12px;padding:11px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.2);border-radius:12px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Cerrar</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  var cb = document.getElementById('storyActivityClose'); if(cb) cb.onclick = _close;
+  try{
+    // vibe_views puede no existir aún (hasta correr su SQL): que no rompa las reacciones.
+    var views = [];
+    try{ var vres = await sbClient.from('vibe_views').select('viewer_id,viewer_name,viewer_av,created_at').eq('vibe_id', vibeId).order('created_at',{ascending:false}).limit(300); if(vres && !vres.error && vres.data) views = vres.data; }catch(_v){}
+    var rres = await sbClient.from('vibe_reactions').select('user_id,reaction').eq('vibe_id', vibeId);
+    var reacts = (rres&&rres.data)||[];
+    var rxByUser = {}; reacts.forEach(function(r){ rxByUser[r.user_id]=r.reaction; });
+    var rxEmoji = {}; VIBE_REACTIONS.forEach(function(r){ rxEmoji[r.key]=r.emoji; });
+    var seenIds = {}; views.forEach(function(v){ seenIds[v.viewer_id]=1; });
+    var missing = reacts.map(function(r){ return r.user_id; }).filter(function(id){ return id && !seenIds[id]; });
+    missing = missing.filter(function(v,i,a){ return a.indexOf(v)===i; });
+    var nameMap = {};
+    if(missing.length){ try{ var pr = await sbClient.from('profiles').select('id,nombre,username,avatar').in('id', missing); (pr.data||[]).forEach(function(p){ nameMap[p.id]={n:p.nombre||p.username||'Alguien', a:(p.avatar&&!String(p.avatar).startsWith('data:'))?p.avatar:''}; }); }catch(_){} }
+    var listEl = document.getElementById('storyActivityList'); if(!listEl) return;
+    var head = '<div style="display:flex;gap:8px;margin-bottom:12px;font-family:Jost,sans-serif">'
+      + '<div style="flex:1;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(180,220,195,.16);border-radius:12px;padding:9px"><div style="font-size:18px;font-weight:800;color:#fff">'+views.length+'</div><div style="font-size:10.5px;color:rgba(200,230,215,.6)">'+(views.length===1?'vista':'vistas')+'</div></div>'
+      + '<div style="flex:1;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(180,220,195,.16);border-radius:12px;padding:9px"><div style="font-size:18px;font-weight:800;color:#fff">'+reacts.length+'</div><div style="font-size:10.5px;color:rgba(200,230,215,.6)">'+(reacts.length===1?'reacción':'reacciones')+'</div></div>'
+      + '</div>';
+    var rows = views.map(function(v){ return _storyActivityRow(v.viewer_av, v.viewer_name, rxEmoji[rxByUser[v.viewer_id]]||'', v.created_at); });
+    missing.forEach(function(id){ var nm = nameMap[id]||{n:'Alguien',a:''}; rows.push(_storyActivityRow(nm.a||'🧑', nm.n, rxEmoji[rxByUser[id]]||'', null)); });
+    listEl.innerHTML = rows.length ? (head + rows.join('')) : '<div style="text-align:center;padding:24px;color:rgba(200,230,215,.5);font-family:Jost,sans-serif;font-size:13px;font-style:italic">Todavía nadie vio esta historia 🌱</div>';
+  }catch(e){ var le=document.getElementById('storyActivityList'); if(le) le.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(220,120,120,.7);font-family:Jost,sans-serif">No se pudo cargar la actividad</div>'; }
+}
+
+// Pausar el reproductor mientras una hoja (comentarios) esté abierta y reanudar
+// AUTOMÁTICAMENTE cuando se cierra — evita que quede pausado para siempre.
+function _storyPauseUntilClosed(overlayId){
+  if(!_storyState) return;
+  _storyPause();
+  var iv = setInterval(function(){
+    if(!_storyState){ clearInterval(iv); return; }
+    if(!document.getElementById(overlayId)){ clearInterval(iv); _storyResume(); }
+  }, 350);
 }
 
 // Abrir comentarios pausando el reproductor (se reanuda al cerrar la hoja).
 function _storyOpenComments(vibeId){
-  if(_storyState) _storyPause();
   pOpenVibeComments(vibeId);
+  _storyPauseUntilClosed('vibeCommentsOv');
 }
 
 function _storyStartTimer(){
@@ -37367,7 +37457,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1524;
+    var _BUILT_V = 1525;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
