@@ -4333,7 +4333,7 @@ body.r-dark #homeUserName { color: rgba(255,255,255,.92) !important; }
   50%       { box-shadow: 0 3px 14px rgba(116,198,157,.22); }
 }
 #homeCurrentMoodLine {
-  animation: velo-mood-pulse 6s ease-in-out infinite !important;
+  animation: none !important; /* v1520: sin latido — estética más serena */
   font-size: 12px !important;
   padding: 5px 12px !important;
 }
@@ -4534,7 +4534,7 @@ body.r-dark #homeUserName {
   50%       { box-shadow: 0 4px 18px rgba(116,198,157,.28); }
 }
 .home-mood-btn {
-  animation: estado-btn-pulse 4s ease-in-out 1s infinite !important;
+  animation: none !important; /* v1520: sin latido */
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -4658,10 +4658,10 @@ body:not(.r-dark) #pg-home #homeDailyQuote {
   }
 }
 body.r-dark #pg-home #homeDailyQuote {
-  animation: quote-border-pulse-dk 3.5s ease-in-out infinite !important;
+  animation: none !important; /* v1520: sin borde pulsante */
 }
 body:not(.r-dark) #pg-home #homeDailyQuote {
-  animation: quote-border-pulse-lt 3.5s ease-in-out infinite !important;
+  animation: none !important; /* v1520: sin borde pulsante */
 }
 
 /* Quote mark: faster float */
@@ -4726,7 +4726,7 @@ body:not(.r-dark) #pg-home #homeDailyQuoteAuthor {
   }
 }
 #homeCurrentMoodLine {
-  animation: pill-ring-pulse 2.6s ease-in-out infinite !important;
+  animation: none !important; /* v1520: sin anillo pulsante que escala */
   border: none !important;
 }
 body:not(.r-dark) #homeCurrentMoodLine {
@@ -5000,7 +5000,7 @@ body.r-dark .r-hero-actions .p-btn--secondary:hover {
   50%       { box-shadow: 0 8px 30px rgba(200,146,10,.26), inset 0 1px 0 rgba(255,255,255,.85); border-color: rgba(200,146,10,.40); }
 }
 #homeDailyQuote {
-  animation: r-quote-breathe 5s ease-in-out infinite !important;
+  animation: none !important; /* v1520: sin respiración */
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -15724,3 +15724,36 @@ body:not(.r-dark) #homeDailyShareBtn svg {
   stroke: #ffffff !important;
   filter: none !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v1520 — Estética más serena: se neutralizan las animaciones decorativas
+   que "laten" (glow/float/pulse/breathe infinitas) en home, botones y pills.
+   Redefinir el keyframe como vacío detiene el efecto sin tocar cada selector
+   (100% reversible: borrar este bloque restaura las animaciones originales).
+   Se CONSERVAN las funcionales: SOS, ejercicio de respiración y dots "en vivo".
+   ══════════════════════════════════════════════════════════════════════ */
+@keyframes quote-glow-light { }
+@keyframes quote-glow-dark { }
+@keyframes name-glow { }
+@keyframes avatar-glow { }
+@keyframes card-float-glow { }
+@keyframes card-float-glow-dk { }
+@keyframes quote-filter-glow { }
+@keyframes r-topbtn-float { }
+@keyframes r-topbtn-glow { }
+@keyframes r-topbtn-glow-sage { }
+@keyframes pill-amber-glow { }
+@keyframes pill-sage-glow { }
+@keyframes pill-amber-glow-lt { }
+@keyframes pill-sage-glow-lt { }
+@keyframes estilo-fab-glow { }
+@keyframes profile-fab-glow { }
+@keyframes velo-estado-glow { }
+@keyframes velo-mood-pulse { }
+@keyframes estado-btn-pulse { }
+@keyframes quote-border-pulse-dk { }
+@keyframes quote-border-pulse-lt { }
+@keyframes pill-ring-pulse { }
+@keyframes r-quote-breathe { }
+@keyframes mood-card-glow-light { }
+@keyframes mood-card-glow-dark { }
