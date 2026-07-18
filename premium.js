@@ -22442,6 +22442,17 @@ async function pSaveVibe(){
 // ═══════════════════════════════════════════════════════════════════════
 var _storyState = null;
 var _STORY_IMG_MS = 5000;
+// Historias de video: arrancan MUDAS (autoplay confiable en móvil) salvo que el
+// usuario haya activado el sonido antes. Toggle con el botón 🔊/🔇 del header.
+var _storyMuted = (safeLS('get','velo_story_muted') !== '0');
+function _storyToggleMute(){
+  _storyMuted = !_storyMuted;
+  try{ safeLS('set','velo_story_muted', _storyMuted ? '1' : '0'); }catch(_){}
+  var vid = document.getElementById('storyVid');
+  if(vid){ vid.muted = _storyMuted; if(!_storyMuted){ try{ var p=vid.play(); if(p&&p.catch) p.catch(function(){}); }catch(_){} } }
+  var b = document.getElementById('storyMuteBtn');
+  if(b) b.textContent = _storyMuted ? '🔇' : '🔊';
+}
 
 function _closeStoryPlayer(){
   if(_storyState){
@@ -22546,6 +22557,8 @@ function _storyShow(){
   var ago = (typeof _timeAgoDM==='function') ? _timeAgoDM(new Date(s.created_at).getTime()) : '';
   var left = (typeof _vibeTimeLeft==='function') ? _vibeTimeLeft(s.expires_at) : '';
   var hdr = document.getElementById('storyHeader');
+  var _isVidHdr = !_vibeBitacoraRef(s.media_url) && (typeof _vibeIsVideoUrl==='function') && _vibeIsVideoUrl(s.media_url);
+  var _muteBtn = _isVidHdr ? '<button id="storyMuteBtn" onclick="event.stopPropagation();_storyToggleMute()" aria-label="Sonido" style="background:rgba(0,0,0,.42);border:none;color:#fff;font-size:17px;cursor:pointer;width:36px;height:36px;line-height:1;border-radius:50%;flex-shrink:0;backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">'+(_storyMuted?'🔇':'🔊')+'</button>' : '';
   if(hdr) hdr.innerHTML =
       '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer" onclick="_vibeOpenUserProfile('+_jsAttr(s.user_id||'')+','+_jsAttr(s.user_name||'Usuario')+','+_jsAttr(s.user_av||'🧑')+')">'
     +   '<span style="flex-shrink:0">'+_avInline(s.user_av||'🧑',34)+'</span>'
@@ -22554,6 +22567,7 @@ function _storyShow(){
     +     '<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(255,255,255,.82);text-shadow:0 1px 3px rgba(0,0,0,.7)">'+(s.mood?'<span style="color:rgba(255,225,150,.96);font-weight:800">'+_escHtml(s.mood+' '+_vibeMoodLabel(s.mood))+'</span> · ':'')+ago+(left?' · caduca en '+left:'')+'</div>'
     +   '</div>'
     + '</div>'
+    + _muteBtn
     + '<button onclick="_closeStoryPlayer()" aria-label="Cerrar" style="background:none;border:none;color:#fff;font-size:26px;cursor:pointer;padding:4px 8px;line-height:1;text-shadow:0 1px 5px rgba(0,0,0,.7);flex-shrink:0">✕</button>';
   // media
   var mediaEl = document.getElementById('storyMedia');
@@ -22579,7 +22593,7 @@ function _storyShow(){
     var bgUrl = _escHtml(s.media_url||'');
     var blurBg = '<div style="position:absolute;inset:0;background:url(\''+bgUrl+'\') center/cover no-repeat;filter:blur(34px) brightness(.45);transform:scale(1.15)"></div>';
     if(isVid){
-      mediaEl.innerHTML = blurBg + '<video id="storyVid" src="'+_escHtml((s.media_url||'').replace('/video/upload/','/video/upload/q_auto/'))+'" playsinline autoplay style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1"></video>';
+      mediaEl.innerHTML = blurBg + '<video id="storyVid" src="'+_escHtml((s.media_url||'').replace('/video/upload/','/video/upload/q_auto/'))+'" playsinline autoplay'+(_storyMuted?' muted':'')+' style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1"></video>';
     } else {
       mediaEl.innerHTML = blurBg + '<img id="storyImg" src="'+bgUrl+'" alt="" style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1" onerror="this.style.opacity=.4">';
     }
@@ -22603,6 +22617,7 @@ function _storyShow(){
   if(isVid){
     var vid = document.getElementById('storyVid');
     if(vid){
+      vid.muted = _storyMuted; // respetar preferencia de sonido
       vid.onended = function(){ _storyNext(); };
       vid.ontimeupdate = function(){
         if(!_storyState || _storyState.isVid !== true) return;
@@ -38047,7 +38062,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1563;
+    var _BUILT_V = 1564;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
