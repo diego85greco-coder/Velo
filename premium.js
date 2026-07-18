@@ -12137,7 +12137,9 @@ async function pSendHelp(){
   var _risky = _localCrisisCheck(msg); // v1506: triaje instantáneo
   _geminiModerateContent(msg, 'sala-de-ayuda');
   var showProfile = document.getElementById('helpShowProfile') && document.getElementById('helpShowProfile').checked;
-  var isAnon = !showProfile;
+  // El incógnito global SIEMPRE gana: si está activo, el post va anónimo aunque
+  // el toggle local diga "mostrar perfil" (respeta lo que el usuario confía).
+  var isAnon = !showProfile || safeLS('get','velo_incognito')==='true';
   var name = isAnon ? 'Usuario Anónimo' : _myDisplayName();
   var userAv = isAnon ? '' : (safeLS('get','velo_user_av')||'🧑');
   ta.value = '';
@@ -14327,7 +14329,7 @@ async function pSendBottle(){
     return;
   }
   var text = ta.value.trim();
-  var isAnon = !showProfile;
+  var isAnon = !showProfile || safeLS('get','velo_incognito')==='true'; // incógnito global gana
   var myName = isAnon ? null : _myDisplayName();
   var myAv   = isAnon ? null : (safeLS('get','velo_user_av')||'🧑');
   var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
@@ -19600,7 +19602,8 @@ async function pSubmitHappyPost(){
   var name  = _myDisplayName();
   var posts = _processHappyQueue();
   var happyShowProfile = document.getElementById('happyShowProfile');
-  var isAnon = !(happyShowProfile && happyShowProfile.checked);
+  // El incógnito global SIEMPRE gana sobre el toggle local.
+  var isAnon = !(happyShowProfile && happyShowProfile.checked) || safeLS('get','velo_incognito')==='true';
   var userAv = isAnon ? '' : (safeLS('get','velo_user_av') || '🧑');
   var post  = {
     id: 'h'+Date.now(), userId: myId,
@@ -28691,7 +28694,7 @@ async function _renderAdmin(){
       var repRes = await sbClient.from('reportes').select('estado,categoria').eq('estado','abierto');
       if(!repRes.error && repRes.data){
         openReports = repRes.data.length;
-        crisisOpen  = repRes.data.filter(function(r){ return r.categoria==='crisis'; }).length;
+        crisisOpen  = repRes.data.filter(function(r){ return r.categoria && r.categoria.indexOf('crisis')===0; }).length;
       }
     }catch(e){}
     try{
@@ -31971,9 +31974,18 @@ async function _generateMonthlySummary(month, mName, year){
   if(sbMoods&&sbMoods.length){
     monthMoods=sbMoods.map(function(m){ return {emoji:m.emoji,label:m.label,ts:new Date(m.date_key+'T12:00:00').getTime(),note:m.note}; });
   } else {
-    // Offline fallback: use local mood_log filtered to this month
+    // Offline fallback: use local mood_log filtered to this month.
+    // Filtrar por dateKey (el DÍA real del ánimo), no por ts (momento de guardado):
+    // los backfills se guardan hoy pero con dateKey del día pasado, y por ts caían
+    // en el mes equivocado. Fallback a ts para entradas viejas sin dateKey.
     var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
-    monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
+    var _mm=String(mon).length<2?'0'+mon:String(mon);
+    monthMoods=moodLog.filter(function(m){
+      if(m.dateKey){ return m.dateKey.slice(0,4)===String(yr) && m.dateKey.slice(5,7)===_mm; }
+      var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1);
+    }).map(function(m){
+      return {emoji:m.emoji,label:m.label,note:m.note,ts:m.dateKey?new Date(m.dateKey+'T12:00:00').getTime():(m.ts||0)};
+    });
   }
   // v1420: clasificación por score (cubre las 18 emociones). Sets legacy solo
   // como respaldo para emojis viejos que no están en _VELO_MOOD_SCORE.
@@ -37987,7 +37999,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1559;
+    var _BUILT_V = 1560;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
