@@ -18012,6 +18012,7 @@ var _circleRenderPending = false; // prevents concurrent _renderCircleMessages c
 var _circleRenderQueued  = false; // a render was requested while one was in-flight
 var _circleLastDbMsgId   = null;  // last DB message id rendered — avoids unnecessary full re-renders
 var _circleMembersCh  = null;  // realtime channel circle_members
+var _circleMemberUpsertP = null; // promesa del upsert de membresía (para leer mensajes DESPUÉS de ser miembro)
 var _selectedCircleFoto = '';  // base64 photo for new circle
 
 function pRenderCircles(){
@@ -18188,7 +18189,10 @@ function pOpenCircle(id, circleData){
     // Upsert user into circle_members for real-time presence counting
     var _cmId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
     if(_cmId){
-      sbClient.from('circle_members').upsert({circle_id:id, user_id:_cmId, last_seen:new Date().toISOString()},
+      // Guardar la promesa: la RLS member-only de circle_messages requiere que esta
+      // membresía esté commiteada antes de leer los mensajes (si no, la 1ª lectura
+      // vuelve vacía). _renderCircleMessagesInner la espera.
+      _circleMemberUpsertP = sbClient.from('circle_members').upsert({circle_id:id, user_id:_cmId, last_seen:new Date().toISOString()},
         {onConflict:'circle_id,user_id'}).then(function(){}).catch(function(){});
     }
     // Announce join once per session per circle
@@ -18252,6 +18256,8 @@ async function _renderCircleMessagesInner(){
     el.scrollTop = el.scrollHeight;
   }
 
+  // Esperar a que la membresía commitee (la RLS member-only lo exige para leer).
+  try{ if(_circleMemberUpsertP) await _circleMemberUpsertP; }catch(_){}
   // Load newest 100 messages from Supabase (descending → reverse for chronological display)
   var sbRows = await _sbLoad('circle_messages', function(q){
     return q.eq('circle_id', _curCircle.id).order('created_at',{ascending:false}).limit(100);
@@ -38041,7 +38047,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1562;
+    var _BUILT_V = 1563;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
