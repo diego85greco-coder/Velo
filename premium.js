@@ -1035,7 +1035,6 @@ async function _sbSyncProfileInner(userId){
    ['profStatusFilm','velo_status_film'],['profStatusPhrase','velo_status_phrase']].forEach(function(kv){
     var _el = document.getElementById(kv[0]); if(_el) _el.value = safeLS('get',kv[1]) || '';
   });
-  typeof pRenderHomeGreet === 'function' && pRenderHomeGreet();
   // One-time migration: merge any locally-cached shown/deleted IDs into _syncedReadIds
   // (synchronous update) so the poll below has the full picture, then pushes to Supabase async
   if(typeof _migrateBcastLocalToSb === 'function') _migrateBcastLocalToSb();
@@ -27061,7 +27060,6 @@ function _startProfileSync(userId){
       if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
       _updateSidebarUser();
       _renderHomeStatusToggle();
-      typeof pRenderHomeGreet === 'function' && pRenderHomeGreet();
     })
     .subscribe();
 }
@@ -30617,8 +30615,16 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
           if(!_dmR.error && _dmR.data) activity.buddyDmsReceived = _dmR.data.filter(function(m){ return m.text && m.text.indexOf('__velo_')!==0; }).length;
         }
       }catch(e){}
-      // Comparación con semana anterior
-      var _prevMoodsRaw = await sbLoadAllMoods(new Date(prevWeekStartTs).getFullYear(), new Date(prevWeekStartTs).getMonth()+1);
+      // Comparación con semana anterior. La semana previa puede CRUZAR un fin de
+      // mes (ej. 29 ene – 4 feb): cargar un solo mes dejaba afuera los días del otro
+      // y subcontaba prevWeekReg. Cargamos ambos meses candidatos y unimos por date_key.
+      var _pwS = new Date(prevWeekStartTs), _pwE = new Date(weekStartTs - 1);
+      var _prevMoodsRaw = (await sbLoadAllMoods(_pwS.getFullYear(), _pwS.getMonth()+1)) || [];
+      if(_pwE.getMonth() !== _pwS.getMonth() || _pwE.getFullYear() !== _pwS.getFullYear()){
+        var _extraM = (await sbLoadAllMoods(_pwE.getFullYear(), _pwE.getMonth()+1)) || [];
+        var _seenK = {}; _prevMoodsRaw.forEach(function(m){ if(m.date_key) _seenK[m.date_key]=1; });
+        _extraM.forEach(function(m){ if(m.date_key && !_seenK[m.date_key]) _prevMoodsRaw.push(m); });
+      }
       if(_prevMoodsRaw){
         var _prevScores = [];
         _prevMoodsRaw.forEach(function(m){
@@ -37999,7 +38005,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1560;
+    var _BUILT_V = 1561;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
