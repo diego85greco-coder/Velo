@@ -8212,11 +8212,13 @@ async function pOpenDqResponseSheet(responseId){
 async function _loadDqComments(responseId){
   _initSupabase(); if(!sbClient) return [];
   try{
-    var res = await sbClient.from('dq_comments')
-      .select('id,text,user_name,user_avatar,user_id,created_at')
-      .eq('response_id', String(responseId))
-      .order('created_at', {ascending: true})
-      .limit(50);
+    var _dqSel='id,text,user_name,user_avatar,user_id,created_at';
+    var res = await sbClient.from('dq_comments_feed')
+      .select(_dqSel).eq('response_id', String(responseId)).order('created_at', {ascending: true}).limit(50);
+    if(res.error){
+      res = await sbClient.from('dq_comments')
+        .select(_dqSel).eq('response_id', String(responseId)).order('created_at', {ascending: true}).limit(50);
+    }
     if(res.error) return [];
     var comments = res.data || [];
     // Filtrar comentarios de usuarios bloqueados (excepto anónimos)
@@ -30628,7 +30630,7 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
       if(!_dqR.error) activity.dqAnswered = _dqR.count || 0;
       // Comentarios que hice en DQ
       try{
-        var _dqC = await sbClient.from('dq_comments').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
+        var _dqC = await sbClient.from('dq_comments_feed').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
         if(!_dqC.error) activity.dqComments = _dqC.count || 0;
       }catch(e){}
       // Momentos publicados
@@ -33451,7 +33453,7 @@ async function _buildWeekActivity(refTs, moodScoreMap){
     var _dqR = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
     if(!_dqR.error) activity.dqAnswered = _dqR.count || 0;
     try{
-      var _dqC = await sbClient.from('dq_comments').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+      var _dqC = await sbClient.from('dq_comments_feed').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
       if(!_dqC.error) activity.dqComments = _dqC.count || 0;
     }catch(e){}
     // Momentos (Muro Feliz / comunidad)
@@ -38066,7 +38068,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1565;
+    var _BUILT_V = 1566;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
