@@ -24523,6 +24523,10 @@ function _syncBroadcastRead(bcId){
   if(!bcId) return;
   safeLS('set','velo_bcast_read_'+bcId,'1');
   _syncedReadIds[bcId] = 1;
+  // Quitar de la lista de no-leídos que cuenta la campana. Sin esto, un broadcast
+  // que quedó en velo_bcast_unread pero ya no aparece en el fetch del buzón (envejeció
+  // fuera de la ventana) mantenía la campana en "1" para siempre (drift).
+  try{ var _u=JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); if(_u.indexOf(bcId)>=0){ safeLS('set','velo_bcast_unread', JSON.stringify(_u.filter(function(x){ return x!==bcId; }))); } }catch(_){}
   _initSupabase();
   if(!sbClient) return;
   (async function(){
@@ -25190,11 +25194,18 @@ async function _hydrateDMLastMsgs(peerIds){
       var peer = m.from_id === myId ? m.to_id : m.from_id;
       if(!peer || seen[peer]) return;
       if(peerIds.indexOf(peer) < 0) return;
-      seen[peer] = true;
-      // No mostrar sentinels internos como último mensaje
       var txt = String(m.text||'');
-      if(txt.indexOf('__velo_') === 0) return;
-      _dmCacheSet(peer, txt, m.from_id === myId, new Date(m.created_at).getTime());
+      // Audio/foto → preview propio. Otros sentinels internos → saltar SIN reclamar el
+      // peer (así el último mensaje REAL más viejo sí queda como preview). Antes se
+      // marcaba seen[peer] antes de este chequeo: un sentinel reciente dejaba la
+      // conversación sin preview aunque hubiera mensajes reales debajo.
+      var _prev;
+      if(txt.indexOf('__velo_dm_audio__') === 0) _prev = '🎙️ Nota de voz';
+      else if(txt.indexOf('__velo_dm_image__') === 0) _prev = '📷 Foto';
+      else if(txt.indexOf('__velo_') === 0) return;
+      else _prev = txt;
+      seen[peer] = true;
+      _dmCacheSet(peer, _prev, m.from_id === myId, new Date(m.created_at).getTime());
     });
   }catch(e){}
 }
@@ -37964,7 +37975,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1557;
+    var _BUILT_V = 1558;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
