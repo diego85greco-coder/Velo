@@ -310,7 +310,16 @@ function _initSupabase(){
     // Cross-account session guard: if another user's token becomes active while this
     // app is running (same browser, second tab, or refresh token swap), detect it and
     // force re-login to prevent one account's data from leaking into another.
+    // Realtime usa la anon key por defecto. Con RLS que exigen auth.uid() (DMs,
+    // notificaciones, guardian_requests, circle_messages, etc.), el realtime-como-anon
+    // NO recibe filas -> las actualizaciones solo llegaban al recargar/cambiar de
+    // sección (el REST sí manda el JWT). Pasarle el token al websocket lo arregla.
+    function _syncRealtimeAuth(tok){
+      try{ if(tok && sbClient.realtime && sbClient.realtime.setAuth) sbClient.realtime.setAuth(tok); }catch(_){}
+    }
+    try{ sbClient.auth.getSession().then(function(r){ var s=r&&r.data&&r.data.session; if(s&&s.access_token) _syncRealtimeAuth(s.access_token); }).catch(function(){}); }catch(_){}
     sbClient.auth.onAuthStateChange(function(event, session){
+      if(session && session.access_token) _syncRealtimeAuth(session.access_token); // mantener el realtime autenticado (login/refresh/sesión inicial)
       if(!_authenticated) return; // ignore events during login/init flow
       var _storedUid = safeLS('get','velo_user_id') || '';
       if(!_storedUid) return; // no stored user yet — still setting up
@@ -38080,7 +38089,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1568;
+    var _BUILT_V = 1569;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
