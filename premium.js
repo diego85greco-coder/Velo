@@ -30620,14 +30620,14 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
           var _btRxR = await sbClient.from('bitacora_reactions').select('id').in('post_id',_btIds).gte('created_at', weekISO);
           if(!_btRxR.error && _btRxR.data) activity.btReactionsReceived = _btRxR.data.length;
           // Comentarios a mis posts esta semana
-          var _btCmR = await sbClient.from('bitacora_comments').select('id').in('post_id',_btIds).gte('created_at', weekISO);
+          var _btCmR = await sbClient.from('bitacora_comments_full').select('id').in('post_id',_btIds).gte('created_at', weekISO);
           if(!_btCmR.error && _btCmR.data) activity.btCommentsReceived = _btCmR.data.length;
         }
       }
       // Reacciones y comentarios QUE DÍ esta semana en bitácora
       var _btRxG = await sbClient.from('bitacora_reactions').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
       if(!_btRxG.error) activity.btReactionsGiven = _btRxG.count || 0;
-      var _btCmG = await sbClient.from('bitacora_comments').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
+      var _btCmG = await sbClient.from('bitacora_comments_full').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
       if(!_btCmG.error) activity.btCommentsGiven = _btCmG.count || 0;
       // Sala de Ayuda — pedidos que hice
       var _hp = await sbClient.from('help_posts').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
@@ -33446,13 +33446,13 @@ async function _buildWeekActivity(refTs, moodScoreMap){
       if(_btIds.length){
         var _btRxR = await sbClient.from('bitacora_reactions').select('id').in('post_id',_btIds).gte('created_at', weekISO);
         if(!_btRxR.error && _btRxR.data) activity.btReactionsReceived = _btRxR.data.length;
-        var _btCmR = await sbClient.from('bitacora_comments').select('id').in('post_id',_btIds).gte('created_at', weekISO);
+        var _btCmR = await sbClient.from('bitacora_comments_full').select('id').in('post_id',_btIds).gte('created_at', weekISO);
         if(!_btCmR.error && _btCmR.data) activity.btCommentsReceived = _btCmR.data.length;
       }
     }
     var _btRxG = await sbClient.from('bitacora_reactions').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
     if(!_btRxG.error) activity.btReactionsGiven = _btRxG.count || 0;
-    var _btCmG = await sbClient.from('bitacora_comments').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+    var _btCmG = await sbClient.from('bitacora_comments_full').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
     if(!_btCmG.error) activity.btCommentsGiven = _btCmG.count || 0;
     // Sala de Ayuda
     var _hp = await sbClient.from('help_posts').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
@@ -36992,7 +36992,7 @@ function _btLoadTab(type,refresh){
         rxDone=true; tryRender();
       }).catch(function(){ rxDone=true; tryRender(); });
     ids.forEach(function(id){ _btCommentCounts[id]=0; });
-    sbClient.from('bitacora_comments').select('post_id').in('post_id',ids)
+    sbClient.from('bitacora_comments_full').select('post_id').in('post_id',ids)
       .then(function(cmtRes){
         if(cmtRes.data){
           cmtRes.data.forEach(function(c){ _btCommentCounts[c.post_id]=(_btCommentCounts[c.post_id]||0)+1; });
@@ -38080,7 +38080,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1567;
+    var _BUILT_V = 1568;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
