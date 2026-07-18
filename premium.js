@@ -31993,10 +31993,22 @@ async function _generateMonthlySummary(month, mName, year){
   });
 
   // ── Medals ──
-  // (Se removió la lectura de la clave huérfana velo_medals, que nunca se escribía.
-  //  Los logros reales viven en velo_achievements como mapa; enchufarlos al reporte
-  //  mensual es una feature aparte. Por ahora la sección de medallas queda vacía.)
+  // Logros REALES desbloqueados este mes. velo_achievements es un mapa
+  // { clave: { at: <timestamp> } } (lo escribe _checkAchievements). Mapeamos cada
+  // clave a su definición (VELO_ACHIEVEMENTS) para nombre+emoji y filtramos por el
+  // mes del reporte con el timestamp de desbloqueo.
   var monthMedals=[];
+  try{
+    var _unlockedAch = (typeof _getUnlockedAchievements==='function') ? _getUnlockedAchievements() : {};
+    var _achDefs = {}; try{ (VELO_ACHIEVEMENTS||[]).forEach(function(a){ _achDefs[a.k]=a; }); }catch(_){}
+    Object.keys(_unlockedAch||{}).forEach(function(k){
+      var u=_unlockedAch[k]; var at=(u&&u.at)||0; if(!at) return; // sin timestamp: no se puede fechar
+      var d=new Date(at); if(d.getFullYear()!==yr || d.getMonth()!==(mon-1)) return;
+      var def=_achDefs[k];
+      monthMedals.push({ name: def?((def.e?def.e+' ':'')+def.n):('🏅 '+k), ts:at });
+    });
+    monthMedals.sort(function(a,b){ return a.ts-b.ts; });
+  }catch(_){ monthMedals=[]; }
 
   // ── Supabase ──
   var reviewsData=[],totalReviews=0,helpedOthers=0,helpReceived=0;
@@ -37975,7 +37987,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1558;
+    var _BUILT_V = 1559;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
