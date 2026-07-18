@@ -1370,12 +1370,18 @@ function _clearSession(){
   _stopGuardianReqListener();
   [_guardianRtCh, _guardianBcastCh, _helpRtCh, _bottleRtCh, _happyRtCh, _momentoRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
    _grReqCh, _seekerGrCh, _gcRtCh, _gcSeekerCh, _buzónRtCh, _helpChatRtCh, _profileRtCh,
-   _circleMembersCh].forEach(function(ch){ _sbUnsub(ch); });
+   _circleMembersCh, _dmReadCh, _dmTypingSendCh, _homeVibesRtCh, _btRtCh, _btDetailChannel].forEach(function(ch){ _sbUnsub(ch); });
   _guardianRtCh = null; _guardianBcastCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null; _momentoRtCh = null;
   _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
   _grReqCh = null; _seekerGrCh = null; _gcRtCh = null; _gcSeekerCh = null;
   _buzónRtCh = null; _helpChatRtCh = null; _profileRtCh = null;
   _circleMembersCh = null;
+  // v1562: canales que antes seguían vivos tras logout (fuga de sockets + handlers
+  // con la identidad anterior en el closure).
+  _dmReadCh = null; _dmTypingSendCh = null; _homeVibesRtCh = null; _btRtCh = null; _btDetailChannel = null;
+  try{ Object.keys(_chatReadChannels||{}).forEach(function(k){ _sbUnsub(_chatReadChannels[k]); }); _chatReadChannels = {}; }catch(_){}
+  try{ (_guardianReqExtraChs||[]).forEach(function(ch){ _sbUnsub(ch); }); _guardianReqExtraChs = []; }catch(_){}
+  if(typeof _dmReadPollTmr!=='undefined' && _dmReadPollTmr){ clearInterval(_dmReadPollTmr); _dmReadPollTmr = null; }
   if(_homeRefreshTmr){ clearInterval(_homeRefreshTmr); _homeRefreshTmr = null; }
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
@@ -1454,6 +1460,20 @@ async function pSignOut(){
       try{ await sbClient.from('profiles').upsert(_soUpdate, { onConflict:'id' }); }catch(e){}
     }
   }
+  // Push: desvincular la subscripción de ESTE dispositivo de la cuenta que se va.
+  // La sub push es del navegador/SW, no de la cuenta: si no la limpiamos, las
+  // notificaciones (con el texto del mensaje) del usuario A siguen llegando a este
+  // teléfono aunque después se loguee el usuario B (fuga en dispositivo compartido).
+  if(sbClient && _soUid && _soUid !== 'guest'){
+    try{ await sbClient.from('profiles').update({ push_subscription:null }).eq('id', _soUid); }catch(e){}
+  }
+  try{
+    if(navigator.serviceWorker){
+      var _soReg = await navigator.serviceWorker.ready;
+      var _soSub = _soReg && await _soReg.pushManager.getSubscription();
+      if(_soSub) await _soSub.unsubscribe();
+    }
+  }catch(e){}
   if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
   _clearSession();
   _authenticated = false;
@@ -14593,7 +14613,10 @@ async function pSaveDiary(){
   try{
     var serialized = JSON.stringify(entries.slice(0,200));
     if(serialized.length > 4 * 1024 * 1024){ throw new Error('too big for LS'); }
-    safeLS('set','velo_diary', serialized);
+    // setItem DIRECTO (no safeLS): safeLS traga el QuotaExceededError y devuelve
+    // null, así que el fallback de compactación de abajo nunca se disparaba en el
+    // caso de quota REAL (LS lleno pero serializado < 4MB). Directo, el throw propaga.
+    localStorage.setItem('velo_diary', serialized);
     lsOk = true;
   }catch(e){
     console.warn('[diary] LS quota — guardando versión compacta sin blobs:', e && e.message);
@@ -28495,6 +28518,13 @@ async function pProRegNext(){
   var specVal  = spec.value.trim();
   var emailVal = email.value.trim().toLowerCase();
   var passVal  = pass.value;
+  // Cross-account: si había OTRA cuenta logueada en este dispositivo, limpiarla
+  // ANTES de crear la cuenta Pro. Si no, el diario/ánimos/inbox/cola de sync de la
+  // cuenta anterior quedan en localStorage y — peor — la cola de diario se sube bajo
+  // la identidad Pro nueva (fuga de datos privados en dispositivo compartido).
+  _initSupabase();
+  if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
+  if(typeof _clearSession==='function'){ try{ _clearSession(); }catch(e){} }
   safeLS('set','velo_pro_name',   nameVal);
   safeLS('set','velo_pro_spec',   specVal);
   safeLS('set','velo_user_email', emailVal);
@@ -32619,7 +32649,10 @@ async function sbSignIn(email, password){
 function _queueDiarySync(entry){
   var q=[]; try{q=JSON.parse(safeLS('get','velo_diary_sync_q')||'[]');}catch(e){}
   if(q.some(function(x){return String(x.ts)===String(entry.ts);})) return;
-  q.push({text:entry.text,dateLabel:entry.dateLabel,ts:entry.ts,title:entry.title||''});
+  // Incluir audio/image: antes se descartaban al encolar, así una entrada guardada
+  // offline sincronizaba SIN su nota de voz/foto -> se perdía el blob en otros
+  // dispositivos. Ahora el blob viaja en la cola y sube en el reintento.
+  q.push({text:entry.text,dateLabel:entry.dateLabel,ts:entry.ts,title:entry.title||'',audio:entry.audio||null,image:entry.image||null});
   safeLS('set','velo_diary_sync_q', JSON.stringify(q.slice(0,50)));
 }
 
@@ -32633,8 +32666,11 @@ async function _retryDiarySync(){
   for(var i=0;i<q.length;i++){
     var e=q[i];
     try{
+      var _rrow={user_id:uid,text:e.text,date_label:e.dateLabel,ts:e.ts,title:e.title||''};
+      if(e.audio) _rrow.audio=e.audio;
+      if(e.image) _rrow.image=e.image;
       var res=await sbClient.from('diary_entries').upsert(
-        {user_id:uid,text:e.text,date_label:e.dateLabel,ts:e.ts,title:e.title||''},
+        _rrow,
         {onConflict:'user_id,ts',ignoreDuplicates:true}
       );
       if(res.error) remaining.push(e);
@@ -38005,7 +38041,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1561;
+    var _BUILT_V = 1562;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
