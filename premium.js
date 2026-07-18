@@ -22593,10 +22593,17 @@ function _storyShow(){
       + '</div>';
   } else if(mediaEl){
     var bgUrl = _escHtml(s.media_url||'');
-    var blurBg = '<div style="position:absolute;inset:0;background:url(\''+bgUrl+'\') center/cover no-repeat;filter:blur(34px) brightness(.45);transform:scale(1.15)"></div>';
     if(isVid){
-      mediaEl.innerHTML = blurBg + '<video id="storyVid" src="'+_escHtml((s.media_url||'').replace('/video/upload/','/video/upload/q_auto/'))+'" playsinline autoplay'+(_storyMuted?' muted':'')+' style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1"></video>';
+      // Póster (primer frame) para NO mostrar negro mientras el video carga:
+      // sirve de fondo desenfocado + poster del <video> + hay spinner de carga.
+      var _poster = (typeof _cldVideoPoster==='function' && _cldVideoPoster(s.media_url, 720)) || '';
+      var _vBlur = _poster
+        ? '<div style="position:absolute;inset:0;background:url(\''+_escHtml(_poster)+'\') center/cover no-repeat;filter:blur(34px) brightness(.45);transform:scale(1.15)"></div>'
+        : '<div style="position:absolute;inset:0;background:linear-gradient(165deg,#0c1a12,#05100a)"></div>';
+      var _spin = '<div id="storyVidSpin" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;width:34px;height:34px;border:3px solid rgba(255,255,255,.22);border-top-color:#fff;border-radius:50%;animation:dqSpin .8s linear infinite"></div>';
+      mediaEl.innerHTML = _vBlur + _spin + '<video id="storyVid" src="'+_escHtml((s.media_url||'').replace('/video/upload/','/video/upload/q_auto/'))+'"'+(_poster?' poster="'+_escHtml(_poster)+'"':'')+' playsinline autoplay preload="auto"'+(_storyMuted?' muted':'')+' style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1"></video>';
     } else {
+      var blurBg = '<div style="position:absolute;inset:0;background:url(\''+bgUrl+'\') center/cover no-repeat;filter:blur(34px) brightness(.45);transform:scale(1.15)"></div>';
       mediaEl.innerHTML = blurBg + '<img id="storyImg" src="'+bgUrl+'" alt="" style="position:relative;max-width:100%;max-height:100%;object-fit:contain;z-index:1" onerror="this.style.opacity=.4">';
     }
   }
@@ -22620,7 +22627,12 @@ function _storyShow(){
     var vid = document.getElementById('storyVid');
     if(vid){
       vid.muted = _storyMuted; // respetar preferencia de sonido
+      var _hideSpin = function(){ var sp=document.getElementById('storyVidSpin'); if(sp) sp.remove(); };
+      vid.onplaying = _hideSpin; vid.onloadeddata = _hideSpin;
       vid.onended = function(){ _storyNext(); };
+      // Si el video no carga (URL rota / red), no dejar la historia colgada en negro:
+      // sacar el spinner y avanzar tras un momento.
+      vid.onerror = function(){ _hideSpin(); setTimeout(function(){ if(_storyState && _storyState.isVid) _storyNext(); }, 600); };
       vid.ontimeupdate = function(){
         if(!_storyState || _storyState.isVid !== true) return;
         if(vid.duration){ var f2 = document.querySelector('#storyProgress .sp-seg[data-i="'+_storyState.idx+'"] i'); if(f2) f2.style.width = (vid.currentTime/vid.duration*100)+'%'; }
@@ -38068,7 +38080,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1566;
+    var _BUILT_V = 1567;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
