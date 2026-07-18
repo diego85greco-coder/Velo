@@ -21692,8 +21692,9 @@ async function pCreateVibeMenu(){
   var officialItems = official.map(function(gr){
     return '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.32);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px;flex-shrink:0">'+_escHtml(gr.emoji||'🌊')+'</span><span style="flex:1;font-size:13.5px;font-weight:700">'+_escHtml(gr.title||'')+'</span><span style="font-size:9.5px;color:#4dd988;font-weight:800;letter-spacing:1px">✓ VELO</span></button>';
   }).join('');
-  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:88vh;overflow-y:auto">'
+  ov.innerHTML = '<div class="p-sheet" style="position:relative;max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:88vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
+    + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove()" aria-label="Cerrar" style="position:absolute;top:12px;right:12px;width:34px;height:34px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:50%;color:#fff;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:3">✕</button>'
     + '<div style="text-align:center;padding:6px 0 14px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">Compartí un momento</div></div>'
     // Momento instantáneo (nuevo v1315)
     + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">✨ MOMENTO INSTANTÁNEO</div>'
@@ -38089,7 +38090,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1569;
+    var _BUILT_V = 1570;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
