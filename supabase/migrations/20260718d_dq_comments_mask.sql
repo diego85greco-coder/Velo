@@ -13,7 +13,7 @@ create or replace view public.dq_comments_feed as
   select
     id, response_id, text, user_name, user_avatar,
     case
-      when (coalesce(user_name, '') not in ('', 'Anónimo')) or user_id = (auth.uid())::text
+      when (coalesce(user_name, '') not in ('', 'Anónimo')) or user_id = auth.uid()
       then user_id else null
     end as user_id,
     created_at
