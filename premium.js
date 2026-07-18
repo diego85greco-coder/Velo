@@ -9810,8 +9810,6 @@ function pSaveGuardianSetup(){
   if(sbClient && uid){
     sbClient.from('profiles').update({ guardian_specialties: specsVal || null }).eq('id', uid).then(function(){}).catch(function(){});
   }
-  // Mark setup as done so the modal never appears again (even if bio was left blank)
-  safeLS('set','velo_guardian_setup_done', '1');
   var existing = document.getElementById('guardianSetupOv');
   if(existing) existing.remove();
   // Activate guardian mode (sets localStorage + upserts presence with is_guardian:true)
@@ -17926,7 +17924,6 @@ function _stopRespira(){
   _stopRespiraAmbient();
   _stopRespiraMusic();
   pInitRespira();
-  safeLS('set','velo_breathed_once','1');
 }
 
 // ── VELA ───────────────────────────────────────────────────────
@@ -31563,11 +31560,6 @@ async function pRunAiScan(){
       if(m.text && m.text.trim()) samples.push({ cid:cid, text:m.text.slice(0,200) });
     });
   });
-  // Also scan help chat messages
-  var helpMsgs = []; try{ helpMsgs = JSON.parse(safeLS('get','velo_help_msgs')||'[]'); }catch(e){}
-  helpMsgs.slice(0,20).forEach(function(m){
-    if(m.text) samples.push({ cid:'sala-ayuda', text:m.text.slice(0,200) });
-  });
   // Also scan bottle messages (Mensajes al Mar)
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
   bottles.slice(0,20).forEach(function(b){
@@ -31985,8 +31977,10 @@ async function _generateMonthlySummary(month, mName, year){
   });
 
   // ── Medals ──
-  var medals=[]; try{medals=JSON.parse(safeLS('get','velo_medals')||'[]');}catch(e){}
-  var monthMedals=medals.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
+  // (Se removió la lectura de la clave huérfana velo_medals, que nunca se escribía.
+  //  Los logros reales viven en velo_achievements como mapa; enchufarlos al reporte
+  //  mensual es una feature aparte. Por ahora la sección de medallas queda vacía.)
+  var monthMedals=[];
 
   // ── Supabase ──
   var reviewsData=[],totalReviews=0,helpedOthers=0,helpReceived=0;
@@ -37965,7 +37959,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1555;
+    var _BUILT_V = 1556;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
