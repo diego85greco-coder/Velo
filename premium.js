@@ -2272,6 +2272,7 @@ async function pBuddyRequestSend(toId, toName){
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
   var uid = safeLS('get','velo_user_id') || '';
   if(!uid || !toId || toId === uid) return;
+  if(pBuddyRequestSend._busy) return; pBuddyRequestSend._busy = true; // anti doble-submit
   try{
     var r = await sbClient.from('buddy_requests').insert({ from_id: uid, to_id: toId, status: 'pending' });
     // v1384: mensaje explícito si falta la tabla (SQL no corrido) — antes
@@ -2297,6 +2298,7 @@ async function pBuddyRequestSend(toId, toName){
     var l = document.getElementById('buddyListOv'); if(l) l.remove();
     setTimeout(pOpenBuddyModal, 250);
   }catch(e){ pToast('⚠️','Error al enviar'); }
+  finally{ pBuddyRequestSend._busy = false; }
 }
 async function pBuddyRequestRespond(reqId, fromId, fromName, accept){
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
@@ -5761,7 +5763,9 @@ function pSaveQuickMood(){
   safeLS('set','velo_mood_'+today, JSON.stringify(moodObj));
   // Update mood log for suggestions
   var log = []; try{ log = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
-  log.unshift(moodObj); safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90)));
+  log = log.filter(function(m){ return m.dateKey !== today; }); // dedupe hoy (una entrada por día)
+  log.unshift(Object.assign({}, moodObj, {dateKey: today}));
+  safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90)));
   sbSaveMoodEntry(today, _selectedQuickMoodEmoji, labels[_selectedQuickMoodEmoji]||'', phrase.trim());
   // Update UI
   var moodLine = document.getElementById('homeCurrentMoodLine');
@@ -7669,7 +7673,7 @@ function _homeMoodQuick(emoji, label){
   if(!today) return;
   var moodObj = { emoji:emoji, label:label||'', note:'', ts:Date.now() };
   try{ safeLS('set','velo_mood_'+today, JSON.stringify(moodObj)); }catch(_){}
-  try{ var log=JSON.parse(safeLS('get','velo_mood_log')||'[]'); log.unshift(moodObj); safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90))); }catch(_){}
+  try{ var log=JSON.parse(safeLS('get','velo_mood_log')||'[]'); log=log.filter(function(m){ return m.dateKey !== today; }); log.unshift(Object.assign({},moodObj,{dateKey:today})); safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90))); }catch(_){}
   try{ if(typeof sbSaveMoodEntry==='function') sbSaveMoodEntry(today, emoji, label||'', ''); }catch(_){}
   _homeMoodForcePick = false;
   try{ _updateMoodChip(); }catch(_){}
@@ -18464,6 +18468,7 @@ async function pSubmitCreateCircle(){
   var capMaxEl = document.getElementById('newCircleCapMax');
   var emoji   = _selectedCircleEmoji || '⭕';
   if(!nameEl || !nameEl.value.trim()){ pToast('⚠️','Poné un nombre al círculo'); return; }
+  if(pSubmitCreateCircle._busy) return; pSubmitCreateCircle._busy = true; // anti doble-submit (evita saltarse el máximo de 2)
   var capMin = Math.max(5, Math.min(30, parseInt((capMinEl&&capMinEl.value)||'5', 10)));
   var capMax = Math.max(capMin, Math.min(30, parseInt((capMaxEl&&capMaxEl.value)||'30', 10)));
   var myId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || 'anon';
@@ -18474,6 +18479,7 @@ async function pSubmitCreateCircle(){
       var existRes = await sbClient.from('circles').select('id',{count:'exact',head:true}).eq('creator_id',myId).eq('official',false);
       if(!existRes.error && (existRes.count||0)>=2){
         pToast('⚠️','Tenés 2 salas activas (el máximo permitido). Eliminá una para crear una nueva.');
+        pSubmitCreateCircle._busy = false;
         return;
       }
     }catch(e){}
@@ -18506,6 +18512,7 @@ async function pSubmitCreateCircle(){
   closeModal('createCircleOv');
   pToast('⭕','¡Círculo "'+c.name+'" creado! 🌿');
   pRenderCircles();
+  pSubmitCreateCircle._busy = false;
 }
 
 var _selectedCircleEmoji = '⭕';
@@ -22571,6 +22578,8 @@ function _storyShow(){
       try{ var _pp = vid.play(); if(_pp && _pp.catch) _pp.catch(function(){ /* autoplay bloqueado: avanza por tap */ }); }catch(_){}
     }
   } else {
+    // Restaurar la duración de imagen (una portada previa la deja en 2600 ms).
+    _storyState.dur = _STORY_IMG_MS;
     _storyStartTimer();
   }
 }
@@ -22960,8 +22969,12 @@ async function pPlayVibeGroup(groupId, fromChain){
     var data = (res && res.data) || [];
     if(!data.length){
       // Directo (tocaste el grupo): mostrar el visor viejo con su CTA para publicar.
-      // En cadena (venís de una portada): NO abrir "publicar" — cerrar en silencio.
-      if(!fromChain){ pOpenVibeGroup(groupId); }
+      if(!fromChain){ pOpenVibeGroup(groupId); return; }
+      // En cadena: si el grupo quedó vacío (expiró entre la carga del home y la
+      // reproducción), SALTAR al próximo de la cadena en vez de cortarla.
+      var _ni = -1;
+      try{ var _idx = (_vibesOpenChain||[]).findIndex(function(g){ return g.id === groupId; }); if(_idx>=0 && _idx < (_vibesOpenChain||[]).length-1) _ni = _idx+1; }catch(_){}
+      if(_ni >= 0) return pPlayVibeGroup(_vibesOpenChain[_ni].id, true);
       return;
     }
     await _storyLoadReactions(data);
@@ -37952,7 +37965,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1554;
+    var _BUILT_V = 1555;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
