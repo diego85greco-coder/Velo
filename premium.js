@@ -2456,7 +2456,7 @@ function _showInAppNotifToast(bc, extraCount){
       + (body ? '<div style="font-size:12px;color:rgba(180,220,195,.75);line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_escHtml(body)+'</div>' : '')
     + '</div>'
     + '<button onclick="event.stopPropagation();var t=document.getElementById(\'inAppNotifToast\');if(t)t.remove()" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0">×</button>';
-  toast.onclick = function(){ toast.remove(); pOpenInboxSheet && pOpenInboxSheet(); };
+  toast.onclick = function(){ toast.remove(); try{ pGoTo('inbox'); }catch(_){} };
   document.body.appendChild(toast);
   requestAnimationFrame(function(){ toast.style.transform = 'translateY(0)'; });
   setTimeout(function(){
@@ -9342,7 +9342,7 @@ async function _grantDiamanteReward(){
     if(res && !res.error && res.data && res.data.ok){
       safeLS('set','velo_plan','plus');
       safeLS('set','velo_diamante_plus_granted','1');
-      _updatePlanUI && _updatePlanUI();
+      if(typeof _updatePlanUI==='function') _updatePlanUI();
     }
   }catch(e){}
 }
@@ -37952,7 +37952,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1553;
+    var _BUILT_V = 1554;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
