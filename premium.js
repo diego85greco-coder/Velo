@@ -6655,6 +6655,14 @@ if('serviceWorker' in navigator && 'PushManager' in window){
       var url = e.data.url || '/';
       // Diferir para que la app termine de bootear
       setTimeout(function(){
+        // DM: abrir la conversación aunque el action sea 'open' genérico (pasa al
+        // tocar el CUERPO de la notif, no el botón "Ver mensaje"). El url viene
+        // como '/?open=dm&peer=<id>'.
+        var _dmM = /[?&]open=dm&peer=([^&]+)/.exec(url) || (action==='open-dm' ? /peer=([^&]+)/.exec(url) : null);
+        if(_dmM && _dmM[1] && typeof _openDMFromDeepLink === 'function'){
+          try{ _openDMFromDeepLink(decodeURIComponent(_dmM[1])); }catch(_){}
+          return;
+        }
         if(action === 'open-wrapped' && typeof pOpenMonthlyWrapped === 'function'){
           try{ pOpenMonthlyWrapped(); }catch(_){}
         } else if(action === 'open-wrapped-annual' && typeof pOpenAnnualWrapped === 'function'){
@@ -26998,6 +27006,11 @@ async function pSendDM(){
 // el cliente invoca la function directo después del insert.
 // Fire-and-forget: no bloqueamos el UI si tarda o falla.
 function _triggerDMPushNotif(record){
+  // v1571: el push ya lo manda el DB webhook sobre direct_messages (server-side,
+  // confiable aunque se cierre la app del que envía). Este invoke del cliente era
+  // una SEGUNDA fuente -> push duplicado. Se anula; el webhook es la fuente única.
+  return;
+  /* eslint-disable no-unreachable */
   if(!record || !sbClient || !sbClient.functions) return;
   try{
     var txt = String(record.text || '');
@@ -38090,7 +38103,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1570;
+    var _BUILT_V = 1571;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
