@@ -37028,7 +37028,7 @@ function _btCard(p,idx,uid){
           +'<span style="font-size:14px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||((rx.mine_postura||rx.mine_rx)?'✓':'')||'—')+'</span>'
           +'<span style="font-size:13px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
         +'</div>'
-        +'<button onclick="event.stopPropagation();_btShareToInstant(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:12px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir en instantáneas">🌊</button>'
+        +(isOwn ? '<button onclick="event.stopPropagation();_btShareToInstant(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:12px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir en instantáneas">🌊</button>' : '')
         +'<button onclick="event.stopPropagation();_btSharePost(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:12px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir">📤</button>'
         +'<span style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
       +'</div>';
@@ -37047,6 +37047,9 @@ function _btShareToInstant(id,ev){
   var p=null;
   ['apoyo','superacion','debate','mio'].forEach(function(t){ (_btPosts[t]||[]).forEach(function(x){ if(String(x.id)===String(id)) p=x; }); });
   if(!p){ pToast('⚠️','No encontré ese post'); return; }
+  // Solo el AUTOR puede compartir su propio post (consentimiento + atribución).
+  var _myId=safeLS('get','velo_user_id')||'';
+  if(!(p.user_id && _myId && String(p.user_id)===String(_myId))){ pToast('🔒','Solo podés compartir tus propios posts'); return; }
   var title=(p.titulo||'Una historia en Bitácora').slice(0,120);
   var ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:99999;display:flex;align-items:flex-end;justify-content:center';
@@ -37075,6 +37078,8 @@ function _btDoShareToInstant(id){
   if(!p){ pToast('⚠️','No encontré ese post'); return; }
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
   var myId=safeLS('get','velo_user_id')||'';
+  // Guard de propiedad (defensa en profundidad).
+  if(!(p.user_id && myId && String(p.user_id)===String(myId))){ pToast('🔒','Solo podés compartir tus propios posts'); return; }
   var myName=safeLS('get','velo_user_name')||'Alguien';
   var myAv=safeLS('get','velo_user_av')||'📖';
   var title=(p.titulo||'Una historia en Bitácora').slice(0,120);
@@ -37947,7 +37952,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1552;
+    var _BUILT_V = 1553;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
