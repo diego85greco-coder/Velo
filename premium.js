@@ -34828,12 +34828,16 @@ function pFocusMomentoInput(){
 
 async function _loadMomentoComments(momentoId){
   _initSupabase(); if(!sbClient) return [];
+  var _sel='id,text,user_name,user_avatar,user_id,created_at';
   try{
-    var res=await sbClient.from('momento_comments')
-      .select('id,text,user_name,user_avatar,user_id,created_at')
-      .eq('momento_id',String(momentoId))
-      .order('created_at',{ascending:true})
-      .limit(50);
+    // Leer la vista con máscara (oculta user_id en comentarios anónimos). Fallback
+    // al crudo si la vista aún no existe (para no degradar antes de correr el SQL).
+    var res=await sbClient.from('momento_comments_feed')
+      .select(_sel).eq('momento_id',String(momentoId)).order('created_at',{ascending:true}).limit(50);
+    if(res.error){
+      res=await sbClient.from('momento_comments')
+        .select(_sel).eq('momento_id',String(momentoId)).order('created_at',{ascending:true}).limit(50);
+    }
     if(res.error) return [];
     return res.data||[];
   }catch(e){ return []; }
@@ -38062,7 +38066,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1564;
+    var _BUILT_V = 1565;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
