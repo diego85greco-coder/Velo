@@ -10762,7 +10762,7 @@ async function _gcRender(){
       .order('created_at',{ascending:true}).limit(120);
     var data = res.data || [];
     var sentinels = ['__velo_chat_req__','__velo_accompany_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    var msgs = data.filter(function(m){ var t=m.text||''; return sentinels.indexOf(t)<0&&!t.startsWith('__velo_guardian_req__:')&&!t.startsWith('__velo_guardian_acc__:')&&!t.startsWith('__velo_guardian_rej__:')&&!t.startsWith('__velo_guardian_bye__:')&&!t.startsWith('__velo_dm_bye__:')&&!t.startsWith('__velo_help_bye__:'); });
+    var msgs = data.filter(function(m){ var t=m.text||''; return sentinels.indexOf(t)<0&&!t.startsWith('__velo_typing__:')&&!t.startsWith('__velo_guardian_req__:')&&!t.startsWith('__velo_guardian_acc__:')&&!t.startsWith('__velo_guardian_rej__:')&&!t.startsWith('__velo_guardian_bye__:')&&!t.startsWith('__velo_dm_bye__:')&&!t.startsWith('__velo_help_bye__:'); });
     if(!msgs.length){
       if(!document.getElementById('gcPlaceholder')){
         el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:15px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
@@ -11907,7 +11907,12 @@ function pHelpChatTyping(){
     from_id: myId, to_id: _curHelpPost.userId,
     text: '__velo_typing__:'+myName,
     created_at: new Date().toISOString()
-  }).then(function(){}).catch(function(){});
+  }).select('id').single().then(function(r){
+    // Auto-borrar: el "está escribiendo…" es efímero. Si no se borra, se acumula
+    // en direct_messages y llena la ventana .limit() desplazando mensajes reales.
+    var _tid = r && r.data && r.data.id;
+    if(_tid) setTimeout(function(){ if(sbClient) sbClient.from('direct_messages').delete().eq('id',_tid).then(function(){}).catch(function(){}); }, 8000);
+  }).catch(function(){});
 }
 
 async function pSendHelpChatMsg(){
@@ -26119,7 +26124,7 @@ async function _renderDMThread(){
     var sentinels = ['__velo_chat_req__','__velo_accompany_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
     var msgs = (data||[]).filter(function(m){
       var t=m.text||'';
-      if(sentinels.indexOf(t)>=0||t.startsWith('__velo_guardian_req__:')||t.startsWith('__velo_guardian_acc__:')||t.startsWith('__velo_guardian_rej__:')||t.startsWith('__velo_guardian_bye__:')||t.startsWith('__velo_dm_bye__:')||t.startsWith('__velo_help_bye__:')) return false;
+      if(sentinels.indexOf(t)>=0||t.startsWith('__velo_typing__:')||t.startsWith('__velo_guardian_req__:')||t.startsWith('__velo_guardian_acc__:')||t.startsWith('__velo_guardian_rej__:')||t.startsWith('__velo_guardian_bye__:')||t.startsWith('__velo_dm_bye__:')||t.startsWith('__velo_help_bye__:')) return false;
       // v1372: NO filtrar por _dmSessionStart — el DM de favoritos es persistente
       // (estilo Instagram), no una sesión efímera. Filtrar por sesión ocultaba
       // TODO el historial anterior, incluido el mensaje recién recibido que
@@ -37959,7 +37964,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1556;
+    var _BUILT_V = 1557;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
