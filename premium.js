@@ -30694,6 +30694,16 @@ async function pAdminSendWeeklyReport(){
   _initSupabase();
   var saved = await sbSaveBroadcast('users','📊 Tu resumen semanal — '+dateKey,'__WEEKLY_REPORT__'+dateKey,'📊','Velo — Resumen Semanal','');
   pToast('📊', saved ? 'Resumen semanal enviado a todos los usuarios ✅' : 'Guardado localmente (sin conexión)');
+  // v1577: registrar en historial (por semana = domingo de esta semana) para mostrar
+  // "✅ ya enviado esta semana" en el panel, igual que el mensual.
+  try{
+    var _sun=new Date(today); _sun.setDate(today.getDate()-today.getDay());
+    var _wk=_sun.getFullYear()+'-'+String(_sun.getMonth()+1).padStart(2,'0')+'-'+String(_sun.getDate()).padStart(2,'0');
+    var _wh=[]; try{_wh=JSON.parse(safeLS('get','velo_weekly_reports')||'[]');}catch(_){}
+    _wh=_wh.filter(function(r){ return r.week!==_wk; });
+    _wh.unshift({week:_wk, ts:Date.now()});
+    safeLS('set','velo_weekly_reports', JSON.stringify(_wh.slice(0,12)));
+  }catch(_){}
   _switchAdminTab('gestion');
 }
 
@@ -31049,10 +31059,18 @@ function _adminTabGestion(panel){
         var sentThis=history.find(function(r){ return r.month===(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); });
         var todayStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         var isSunday = d.getDay()===0;
+        // v1577: ¿ya se envió el resumen de ESTA semana? (semana = domingo)
+        var _sunW=new Date(d); _sunW.setDate(d.getDate()-d.getDay());
+        var weekId=_sunW.getFullYear()+'-'+String(_sunW.getMonth()+1).padStart(2,'0')+'-'+String(_sunW.getDate()).padStart(2,'0');
+        var wHistory=[]; try{wHistory=JSON.parse(safeLS('get','velo_weekly_reports')||'[]');}catch(e){}
+        var sentThisWeek=wHistory.find(function(r){ return r.week===weekId; });
         return '<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.7);margin-bottom:10px">📋 RESUMEN SEMANAL IA</div>'
           +'<div style="background:rgba(200,158,56,.06);border:1px solid rgba(200,158,56,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
           +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Cada usuario ve sus propios ánimos y estadísticas de la semana al abrir el mensaje. Enviá siempre los domingos.</p>'
-          +'<button onclick="pAdminSendWeeklyReport()" style="width:100%;padding:10px;background:rgba(200,158,56,.15);border:1px solid rgba(200,158,56,.3);color:rgba(200,158,56,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px">📋 Enviar resumen semanal de hoy ('+(isSunday?'domingo ✓':'hoy — recomendado domingos')+') a todos</button>'
+          +(sentThisWeek
+            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:13px;color:rgba(116,198,157,.85);margin-bottom:8px">✅ Enviado esta semana el '+new Date(sentThisWeek.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+' '+new Date(sentThisWeek.ts).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})+'</div>'
+              +'<button onclick="if(confirm(\'¿Re-enviar el resumen semanal? Los usuarios que ya lo vieron pueden recibirlo otra vez.\')) pAdminSendWeeklyReport()" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12.5px;font-weight:700">↻ Re-enviar igual</button>'
+            : '<button onclick="pAdminSendWeeklyReport()" style="width:100%;padding:10px;background:rgba(200,158,56,.15);border:1px solid rgba(200,158,56,.3);color:rgba(200,158,56,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px">📋 Enviar resumen semanal de hoy ('+(isSunday?'domingo ✓':'hoy — recomendado domingos')+') a todos</button>')
           +'</div>'
           +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">📊 RESUMEN MENSUAL IA</div>'
           +'<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
@@ -38235,7 +38253,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1576;
+    var _BUILT_V = 1577;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
