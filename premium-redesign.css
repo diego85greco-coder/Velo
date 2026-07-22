@@ -13427,7 +13427,7 @@ body.r-theme-green:not(.r-dark) #homeRegisterOuter {
   background: linear-gradient(155deg, rgba(72,180,112,.22), rgba(50,155,88,.16)) !important;
   border-top-color: rgba(50,165,92,.40) !important;
 }
-body.r-theme-green:not(.r-dark) #homeBgCanvas { opacity: .50 !important; }
+body.r-theme-green:not(.r-dark) #homeBgCanvas { opacity: .82 !important; }
 body.r-theme-green:not(.r-dark) input,
 body.r-theme-green:not(.r-dark) textarea,
 body.r-theme-green:not(.r-dark) select {
@@ -13498,7 +13498,7 @@ body.r-lavender:not(.r-dark) #homeRegisterOuter {
   background: linear-gradient(155deg, rgba(60,120,200,.22), rgba(40,98,175,.16)) !important;
   border-top-color: rgba(55,115,200,.40) !important;
 }
-body.r-lavender:not(.r-dark) #homeBgCanvas { opacity: .48 !important; filter: hue-rotate(200deg); }
+body.r-lavender:not(.r-dark) #homeBgCanvas { opacity: .82 !important; filter: hue-rotate(200deg) saturate(1.4); }
 body.r-lavender:not(.r-dark) input,
 body.r-lavender:not(.r-dark) textarea,
 body.r-lavender:not(.r-dark) select {
