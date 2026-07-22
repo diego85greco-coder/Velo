@@ -18934,10 +18934,12 @@ async function pRenderHappy(){
   }
 
   // Load from Supabase (shared wall) or fall back to localStorage
-  var sbRows = await _sbLoad('happy_posts', function(q){
+  var _happyQ1 = function(q){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
     return q.gte('created_at',cutoff).order('created_at',{ascending:false}).limit(50);
-  });
+  };
+  var sbRows = await _sbLoad('happy_posts_full', _happyQ1);       // vista con máscara
+  if(sbRows === null) sbRows = await _sbLoad('happy_posts', _happyQ1); // fallback si la vista no existe aún
   if(_navToken !== _tok) return;
   var posts, usingSB = false;
   if(sbRows !== null){
@@ -35409,10 +35411,12 @@ async function _loadHomeHappyFeed(){
   else { feed.innerHTML = _emptyState; }
 
   _initSupabase();
-  var sbRows = await _sbLoad('happy_posts', function(q){
+  var _happyQ2 = function(q){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
     return q.gte('created_at',cutoff).order('created_at',{ascending:false}).limit(4);
-  });
+  };
+  var sbRows = await _sbLoad('happy_posts_full', _happyQ2);
+  if(sbRows === null) sbRows = await _sbLoad('happy_posts', _happyQ2);
   var posts;
   if(sbRows !== null){
     posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
@@ -38231,7 +38235,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1574;
+    var _BUILT_V = 1575;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
