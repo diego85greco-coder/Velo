@@ -8106,20 +8106,14 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 @media (max-width: 767px) {
   .p-page:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
   .p-page.active:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
-  /* v1580b: RESTAURADO el z-index:2 que v1578 habia quitado. Ese z-index es lo
-     que hace las particulas VISIBLES (flotan por encima del contenido); sin el,
-     quedaban en z-index base TAPADAS por el contenedor de contenido (z-index:1) y
-     no se veian ni a opacidad .92. En OSCURO flotan lindas sobre la interfaz. Para
-     no traer de vuelta el manchado en CLARO (puntitos azules sobre las tarjetas
-     glass), en modo claro se bajan detras del contenido (regla mas abajo). */
+  /* v1582: RESTAURADO el z-index:2 que v1578 habia quitado, en AMBOS modos. Ese
+     z-index es lo que hace las particulas VISIBLES (flotan por encima del
+     contenido); sin el, quedaban en z-index base TAPADAS por el contenedor de
+     contenido (z-index:1) y no se veian ni a opacidad .92. Visible en claro Y
+     oscuro, como estaba antes de romperse. */
   #homeBgCanvas {
     z-index: 2 !important;
     opacity: 0.55;
-  }
-  /* CLARO: canvas detras del contenido -> particulas solo en los huecos, sin
-     manchar las tarjetas glass. */
-  body:not(.r-dark) #homeBgCanvas {
-    z-index: 0 !important;
   }
 }
 
@@ -13433,7 +13427,7 @@ body.r-theme-green:not(.r-dark) #homeRegisterOuter {
   background: linear-gradient(155deg, rgba(72,180,112,.22), rgba(50,155,88,.16)) !important;
   border-top-color: rgba(50,165,92,.40) !important;
 }
-body.r-theme-green:not(.r-dark) #homeBgCanvas { opacity: .38 !important; }
+body.r-theme-green:not(.r-dark) #homeBgCanvas { opacity: .50 !important; }
 body.r-theme-green:not(.r-dark) input,
 body.r-theme-green:not(.r-dark) textarea,
 body.r-theme-green:not(.r-dark) select {
@@ -13504,7 +13498,7 @@ body.r-lavender:not(.r-dark) #homeRegisterOuter {
   background: linear-gradient(155deg, rgba(60,120,200,.22), rgba(40,98,175,.16)) !important;
   border-top-color: rgba(55,115,200,.40) !important;
 }
-body.r-lavender:not(.r-dark) #homeBgCanvas { opacity: .32 !important; filter: hue-rotate(200deg); }
+body.r-lavender:not(.r-dark) #homeBgCanvas { opacity: .48 !important; filter: hue-rotate(200deg); }
 body.r-lavender:not(.r-dark) input,
 body.r-lavender:not(.r-dark) textarea,
 body.r-lavender:not(.r-dark) select {
