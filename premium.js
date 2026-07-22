@@ -21377,9 +21377,9 @@ async function _renderHomeVibesCard(){
     });
     if(latestInstant){
       tiles.push({
-        id: latestInstant.id, kind: 'instant', emoji: _vibeBitacoraRef(latestInstant.media_url) ? '📖' : '✨', title: 'Instantáneos',
+        id: latestInstant.id, kind: 'instant', emoji: (_vibeBitacoraRef(latestInstant.media_url) ? '📖' : (_vibeTextBg(latestInstant.media_url) ? '✍️' : '✨')), title: 'Instantáneos',
         latest: new Date(latestInstant.created_at).getTime(),
-        coverUrl: _vibeBitacoraRef(latestInstant.media_url) ? null : latestInstant.media_url,
+        coverUrl: (_vibeBitacoraRef(latestInstant.media_url) || _vibeTextBg(latestInstant.media_url)) ? null : latestInstant.media_url,
         coverVibeId: latestInstant.id,
         count: instantCount,
         isInstant: true
@@ -21726,6 +21726,7 @@ async function pCreateVibeMenu(){
     + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">✨ MOMENTO INSTANTÁNEO</div>'
     + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe(null,\'public\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,220,120,.14);border:1.5px solid rgba(255,200,80,.48);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">🌟</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Instantáneo público</div><div style="font-size:11px;color:rgba(255,220,140,.72);margin-top:2px">Un solo momento visible para toda la comunidad — 24 h</div></div></button>'
     + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe(null,\'private\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(155,120,220,.14);border:1.5px solid rgba(155,120,220,.55);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">🔒</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Instantáneo privado</div><div style="font-size:11px;color:rgba(215,200,255,.72);margin-top:2px">Elegís qué contactos favoritos lo ven</div></div></button>'
+    + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartTextVibe(\'public\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">✍️</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Solo texto</div><div style="font-size:11px;color:rgba(180,230,200,.72);margin-top:2px">Escribí algo sobre un fondo de color — sin foto ni video</div></div></button>'
     + '<div style="height:16px"></div>'
     // Grupos oficiales
     + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">🌱 GRUPOS OFICIALES DE VELO</div>'
@@ -21984,6 +21985,75 @@ function _vibeSetMood(emoji, btn){
       b.style.color       = on ? '#eafff2' : 'rgba(215,235,222,.9)';
     });
   }
+}
+// ── VIBE DE SOLO TEXTO (sin foto/video) — v1573 ──────────────────────
+// Se guarda como instantánea con un sentinel en media_url: velo:text:<bgIdx>.
+// El reproductor lo detecta y renderiza el caption sobre el degradado elegido.
+var _VIBE_TEXT_BGS = [
+  'linear-gradient(165deg,#1f6f52,#0c3826)', // verde velo
+  'linear-gradient(165deg,#3a5a9c,#16233f)', // azul
+  'linear-gradient(165deg,#7d4fb0,#2e1a4a)', // violeta
+  'linear-gradient(165deg,#c8892a,#5a3a08)', // ámbar
+  'linear-gradient(165deg,#b0446a,#4a1526)', // rosa
+  'linear-gradient(165deg,#2a8a8a,#0c3838)', // teal
+  'linear-gradient(165deg,#556070,#1a2028)', // gris
+  'linear-gradient(165deg,#111318,#000000)'  // negro
+];
+var _vibeTextBgIdx = 0;
+function _vibeTextBg(u){ u=String(u||''); if(u.indexOf('velo:text:')!==0) return null; var i=parseInt(u.slice(10),10); if(isNaN(i)||i<0||i>=_VIBE_TEXT_BGS.length) i=0; return _VIBE_TEXT_BGS[i]; }
+function _vibeTextPickBg(i){
+  _vibeTextBgIdx=i;
+  var ov=document.getElementById('vibeTextComposerOv'); if(!ov) return;
+  ov.style.background=_VIBE_TEXT_BGS[i];
+  Array.prototype.forEach.call(ov.querySelectorAll('[data-txtbg]'), function(b,idx){ b.style.borderColor = (idx===i)?'#fff':'rgba(255,255,255,.35)'; });
+}
+function pStartTextVibe(scope){
+  var sc = scope==='private' ? 'private' : 'public';
+  var ex=document.getElementById('vibeTextComposerOv'); if(ex) ex.remove();
+  var ov=document.createElement('div');
+  ov.id='vibeTextComposerOv';
+  ov.style.cssText='position:fixed;inset:0;z-index:10030;display:flex;flex-direction:column;background:'+_VIBE_TEXT_BGS[_vibeTextBgIdx];
+  ov.innerHTML=
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 8px">'
+    +   '<button onclick="document.getElementById(\'vibeTextComposerOv\').remove()" aria-label="Cerrar" style="background:rgba(0,0,0,.3);border:none;color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;line-height:1">✕</button>'
+    +   '<button id="vibeTextShareBtn" onclick="pSaveTextVibe(\''+sc+'\')" style="background:#fff;border:none;color:#111;font-family:Jost,sans-serif;font-size:14px;font-weight:800;padding:9px 20px;border-radius:100px;cursor:pointer">Compartir →</button>'
+    + '</div>'
+    + '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">'
+    +   '<textarea id="vibeTextInput" maxlength="280" placeholder="Escribí algo…" rows="4" style="width:100%;max-width:420px;background:transparent;border:none;outline:none;resize:none;color:#fff;font-family:\'Cormorant Garamond\',serif;font-size:30px;font-style:italic;text-align:center;line-height:1.35;text-shadow:0 2px 12px rgba(0,0,0,.5)"></textarea>'
+    + '</div>'
+    + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:12px 16px calc(20px + env(safe-area-inset-bottom,0px))">'
+    +   _VIBE_TEXT_BGS.map(function(bg,i){ return '<button data-txtbg="1" onclick="_vibeTextPickBg('+i+')" aria-label="Color" style="width:34px;height:34px;border-radius:50%;cursor:pointer;background:'+bg+';border:2.5px solid '+(i===_vibeTextBgIdx?'#fff':'rgba(255,255,255,.35)')+'"></button>'; }).join('')
+    + '</div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var t=document.getElementById('vibeTextInput'); if(t) t.focus(); }, 120);
+}
+async function pSaveTextVibe(scope){
+  var el=document.getElementById('vibeTextInput');
+  var txt=el?el.value.trim():'';
+  if(!txt){ pToast('✍️','Escribí algo antes de compartir'); return; }
+  var btn=document.getElementById('vibeTextShareBtn'); if(btn){ btn.disabled=true; btn.textContent='…'; }
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); if(btn){btn.disabled=false;btn.textContent='Compartir →';} return; }
+  var payload={
+    user_id: safeLS('get','velo_user_id')||'',
+    user_name: safeLS('get','velo_user_name')||'Usuario',
+    user_av: safeLS('get','velo_user_av')||'🧑',
+    media_url: 'velo:text:'+_vibeTextBgIdx,
+    caption: txt.slice(0,280),
+    instant_scope: (scope==='private'?'private':'public'),
+    instant_member_ids: []
+  };
+  try{
+    var r=await sbClient.from('vibes').insert(payload).select('id').single();
+    if(r && r.data && r.data.id){
+      pToast('🌊','Compartido ✨');
+      var ov=document.getElementById('vibeTextComposerOv'); if(ov) ov.remove();
+      try{ if(typeof _renderHomeVibesCard==='function') _renderHomeVibesCard(); }catch(_){}
+    } else {
+      if(btn){btn.disabled=false;btn.textContent='Compartir →';}
+      if(r&&r.error) console.warn('[text-vibe]', r.error.message);
+      pToast('⚠️','No se pudo compartir ahora');
+    }
+  }catch(e){ console.warn('[text-vibe]', e); if(btn){btn.disabled=false;btn.textContent='Compartir →';} pToast('⚠️','No se pudo compartir ahora'); }
 }
 function pStartCreateVibe(groupId, instantScope){
   _vibeTargetGroupId = groupId || null;
@@ -22610,9 +22680,17 @@ function _storyShow(){
   // media
   var mediaEl = document.getElementById('storyMedia');
   var _btRefShow = _vibeBitacoraRef(s.media_url);
-  var isVid = !_btRefShow && (typeof _vibeIsVideoUrl==='function') && _vibeIsVideoUrl(s.media_url);
+  var _txtBgShow = _vibeTextBg(s.media_url);
+  var isVid = !_btRefShow && !_txtBgShow && (typeof _vibeIsVideoUrl==='function') && _vibeIsVideoUrl(s.media_url);
   _storyState.isVid = isVid;
-  if(mediaEl && _btRefShow){
+  if(mediaEl && _txtBgShow){
+    // Vibe de SOLO TEXTO: caption grande centrado sobre el degradado elegido.
+    mediaEl.innerHTML =
+        '<div style="position:absolute;inset:0;background:'+_txtBgShow+'"></div>'
+      + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:34px 30px">'
+      +   '<div style="position:relative;z-index:1;text-align:center;max-width:420px;font-family:\'Cormorant Garamond\',serif;font-size:30px;font-style:italic;font-weight:600;color:#fff;line-height:1.4;white-space:pre-wrap;word-break:break-word;text-shadow:0 2px 14px rgba(0,0,0,.5)">'+_escHtml(s.caption||'')+'</div>'
+      + '</div>';
+  } else if(mediaEl && _btRefShow){
     // Tarjeta especial: alguien compartió un post de Bitácora como historia.
     // Color por SECCIÓN del post (Apoyo/Superación/Debate/Mi historia).
     var _btC = _btColors[_vibeBitacoraCat(s.media_url)] || _btColors.apoyo;
@@ -22685,8 +22763,9 @@ function _storyShow(){
 function _storyIsMine(s){ return !!(s && s.user_id && s.user_id === (safeLS('get','velo_user_id')||'')); }
 function _storyFooterHtml(s){
   var _btRef = _vibeBitacoraRef(s.media_url);
-  // En tarjetas "Bitácora" el título ya se ve en el media → no repetir la comilla.
-  var cap = (s.caption && !_btRef) ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
+  // En tarjetas "Bitácora" y en vibes de SOLO TEXTO el texto ya se ve en el media
+  // → no repetir la comilla en el footer.
+  var cap = (s.caption && !_btRef && !_vibeTextBg(s.media_url)) ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
   if(_btRef){
     var _fc = _btColors[_vibeBitacoraCat(s.media_url)] || _btColors.apoyo;
     cap = '<button onclick="event.stopPropagation();_closeStoryPlayer();try{pGoTo(\'bitacora\');setTimeout(function(){try{_btOpenDetail(\''+_escHtml(_btRef)+'\')}catch(_){}},350)}catch(_){}" style="width:100%;padding:13px;margin-bottom:10px;background:'+_fc.badge+';border:1.5px solid '+_fc.border+';border-radius:100px;color:'+_fc.label+';font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px;backdrop-filter:blur(4px)">📖 Leer el post →</button>' + cap;
@@ -38151,7 +38230,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1572;
+    var _BUILT_V = 1573;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
