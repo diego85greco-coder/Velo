@@ -27136,11 +27136,14 @@ async function pSendDM(){
 // el cliente invoca la function directo después del insert.
 // Fire-and-forget: no bloqueamos el UI si tarda o falla.
 function _triggerDMPushNotif(record){
-  // v1571: el push ya lo manda el DB webhook sobre direct_messages (server-side,
-  // confiable aunque se cierre la app del que envía). Este invoke del cliente era
-  // una SEGUNDA fuente -> push duplicado. Se anula; el webhook es la fuente única.
-  return;
-  /* eslint-disable no-unreachable */
+  // v1579: RE-ACTIVADO. v1571 lo habia anulado apostando a que el DB webhook sobre
+  // direct_messages era la fuente unica confiable — pero el webhook NO estaba
+  // disparando, asi que los push de DM dejaron de llegar por completo. Un disparo
+  // de prueba directo a la Edge Function devolvio "sent" (VAPID ok, sub ok, entrega
+  // ok): el unico eslabon roto era el webhook. Esta via del cliente invoca la
+  // function directo y es la que realmente entrega. El duplicado que motivo v1571 lo
+  // evita el tag `velo-dm-${from_id}`: si el webhook igual dispara, el SO colapsa
+  // ambas notifs en una sola (reemplaza por tag), no se ven dos.
   if(!record || !sbClient || !sbClient.functions) return;
   try{
     var txt = String(record.text || '');
@@ -38253,7 +38256,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1578;
+    var _BUILT_V = 1579;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
