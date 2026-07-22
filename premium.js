@@ -21139,8 +21139,26 @@ var VIBE_REACTIONS = [
   { key:'gracias',      emoji:'🙏', label:'Gracias por compartir',tint:'#b5a6d9' },
   { key:'me_hace_bien', emoji:'✨', label:'Me hace bien',        tint:'#e6d9b0' },
   { key:'animos',       emoji:'💚', label:'Aquí dándote ánimos', tint:'#a5d9be' },
-  { key:'me_inspira',   emoji:'🌱', label:'Me inspira',          tint:'#8ecb8c' }
+  { key:'me_inspira',   emoji:'🌱', label:'Me inspira',          tint:'#8ecb8c' },
+  // v1572: reacciones EXTRA — no entran en la fila rápida (se ven con el botón ＋),
+  // pero sus emojis/labels se resuelven en todos lados porque comparten este array.
+  { key:'abrazo_grande',emoji:'🫂', label:'Un abrazo grande',    tint:'#e9b8a4' },
+  { key:'conmovido',    emoji:'🥺', label:'Me conmueve',         tint:'#c9a8d9' },
+  { key:'sanando',      emoji:'❤️‍🩹', label:'Sanando',           tint:'#e88f9c' },
+  { key:'admiro',       emoji:'🤩', label:'Admirable',           tint:'#f5c76a' },
+  { key:'celebro',      emoji:'🥳', label:'Lo celebro',          tint:'#e6a5d9' },
+  { key:'emociona',     emoji:'😭', label:'Me emociona',         tint:'#a8c9e0' },
+  { key:'bronca',       emoji:'🤬', label:'Bancamos la bronca',  tint:'#e8877c' },
+  { key:'sonrisa',      emoji:'🤭', label:'Me sacó una sonrisa', tint:'#f0d0a0' },
+  { key:'pienso',       emoji:'🤔', label:'Me hace pensar',      tint:'#b5c0d0' },
+  { key:'aplausos',     emoji:'👏', label:'Aplausos',            tint:'#f5c76a' },
+  { key:'cruzo_dedos',  emoji:'🤞', label:'Cruzo los dedos',     tint:'#a5d9be' },
+  { key:'uf',           emoji:'🥶', label:'Uf',                  tint:'#9cc8e0' },
+  { key:'intenso',      emoji:'🥵', label:'Qué intenso',         tint:'#e8877c' },
+  { key:'orgullo',      emoji:'🏳️‍🌈', label:'Orgullo',           tint:'#d09ce0' },
+  { key:'con_vos',      emoji:'🏳️‍⚧️', label:'Con vos',           tint:'#9cc8e0' }
 ];
+var _VIBE_REACTIONS_QUICK = 8; // las primeras N van en la fila; el resto en el picker ＋
 // v1533 — Estados de ánimo OPCIONALES para las historias (la emoción como
 // protagonista, no la estética). Cubre el rango completo: bienestar, neutro y
 // difícil, porque en Velo mostrarse vulnerable está bien.
@@ -22685,17 +22703,47 @@ function _storyFooterHtml(s){
   // Footer del ESPECTADOR: fila LIMPIA de reacciones (una sola línea) + comentar.
   // La reacción elegida queda RESALTADA con el color propio de esa reacción.
   var mine = _vibeMyReactions[s.id] || '';
+  var _rxQuick = (typeof VIBE_REACTIONS!=='undefined') ? VIBE_REACTIONS.slice(0, _VIBE_REACTIONS_QUICK) : [];
+  var _mineIsExtra = mine && !_rxQuick.some(function(r){ return r.key===mine; });
+  var _mineDef = _mineIsExtra ? VIBE_REACTIONS.filter(function(r){ return r.key===mine; })[0] : null;
   var reactions = '<div style="display:flex;gap:5px;margin-bottom:9px">'
-    + (typeof VIBE_REACTIONS!=='undefined' ? VIBE_REACTIONS.map(function(reaction){
+    + _rxQuick.map(function(reaction){
         var sel = mine === reaction.key;
         var t = reaction.tint || '#ffffff';
         return '<button type="button" data-rx-key="'+reaction.key+'" data-rx-tint="'+t+'" onclick="event.stopPropagation();_storyReact(\''+s.id+'\',\''+reaction.key+'\')" title="'+_escHtml(reaction.label)+'" style="flex:1;min-width:0;aspect-ratio:1;background:'+(sel?_hexRgba(t,.30):'rgba(0,0,0,.34)')+';border:1.5px solid '+(sel?t:'rgba(255,255,255,.34)')+';border-radius:50%;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;backdrop-filter:blur(3px);transition:all .18s;box-shadow:'+(sel?'0 0 14px '+_hexRgba(t,.55):'none')+';transform:'+(sel?'scale(1.08)':'none')+'">'+reaction.emoji+'</button>';
-      }).join('') : '')
+      }).join('')
+    // Botón ＋: abre el picker con TODAS las reacciones. Si tu reacción elegida es
+    // una "extra", este botón la muestra resaltada en vez del ＋.
+    + '<button type="button" onclick="event.stopPropagation();_storyOpenReactionPicker(\''+s.id+'\')" title="Más reacciones" style="flex:1;min-width:0;aspect-ratio:1;background:'+(_mineDef?_hexRgba(_mineDef.tint||'#fff',.30):'rgba(0,0,0,.34)')+';border:1.5px solid '+(_mineDef?(_mineDef.tint||'#fff'):'rgba(255,255,255,.34)')+';border-radius:50%;font-size:'+(_mineDef?'17px':'19px')+';font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;backdrop-filter:blur(3px);color:#fff;box-shadow:'+(_mineDef?'0 0 14px '+_hexRgba(_mineDef.tint||'#fff',.55):'none')+'">'+(_mineDef?_mineDef.emoji:'＋')+'</button>'
     + '</div>';
   var comBtn = '<button onclick="event.stopPropagation();_storyOpenComments(\''+s.id+'\')" style="flex:1.7;min-width:0;padding:12px 12px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.4);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;backdrop-filter:blur(4px)"><span style="font-size:15px">💬</span> <span data-vibe-comment-count="'+s.id+'">Comentar</span></button>';
   // v1533: mensaje PRIVADO al autor (DM) — comentar es público, mensaje es íntimo.
   var dmBtn = '<button onclick="event.stopPropagation();_storyMessage('+_jsAttr(s.user_id||'')+','+_jsAttr(s.user_name||'Usuario')+','+_jsAttr(s.user_av||'🧑')+')" style="flex:1;min-width:0;padding:12px 12px;background:rgba(0,0,0,.36);border:1.5px solid rgba(255,255,255,.4);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;backdrop-filter:blur(4px)"><span style="font-size:15px">✉️</span> Mensaje</button>';
   return cap + reactions + '<div style="display:flex;gap:8px">'+comBtn+dmBtn+'</div>';
+}
+// Picker con TODAS las reacciones (grid). Tocar aplica y cierra. Pausa la historia
+// mientras está abierto y la reanuda al cerrar.
+function _storyOpenReactionPicker(vibeId){
+  if(_storyState) _storyPause();
+  var ex=document.getElementById('storyRxPickerOv'); if(ex) ex.remove();
+  var mine=_vibeMyReactions[vibeId]||'';
+  var ov=document.createElement('div');
+  ov.id='storyRxPickerOv';
+  ov.style.cssText='position:fixed;inset:0;z-index:10045;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  var _close=function(){ var o=document.getElementById('storyRxPickerOv'); if(o) o.remove(); if(_storyState) _storyResume(); };
+  ov.onclick=function(e){ if(e.target===ov) _close(); };
+  var grid=(typeof VIBE_REACTIONS!=='undefined'?VIBE_REACTIONS:[]).map(function(r){
+    var sel=mine===r.key; var t=r.tint||'#ffffff';
+    return '<button onclick="event.stopPropagation();_storyReact(\''+vibeId+'\',\''+r.key+'\');var o=document.getElementById(\'storyRxPickerOv\');if(o)o.remove();if(_storyState)_storyResume();" title="'+_escHtml(r.label)+'" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:'+(sel?_hexRgba(t,.22):'rgba(255,255,255,.05)')+';border:1.5px solid '+(sel?t:'rgba(255,255,255,.14)')+';border-radius:16px;padding:12px 5px;cursor:pointer">'
+      +'<span style="font-size:26px;line-height:1">'+r.emoji+'</span>'
+      +'<span style="font-size:9.5px;color:rgba(255,255,255,.72);font-family:Jost,sans-serif;line-height:1.15;text-align:center">'+_escHtml(r.label)+'</span></button>';
+  }).join('');
+  ov.innerHTML='<div class="p-sheet" style="max-width:560px;width:100%;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.30);border-radius:22px 22px 0 0;max-height:80vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
+    +'<div style="text-align:center;padding:2px 0 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:#fff;font-style:italic">Elegí tu reacción</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+grid+'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
 }
 // hex '#rrggbb' → 'rgba(r,g,b,a)'
 function _hexRgba(hex, a){
@@ -38103,7 +38151,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1571;
+    var _BUILT_V = 1572;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
