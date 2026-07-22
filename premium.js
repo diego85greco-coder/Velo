@@ -21677,21 +21677,31 @@ function _vibeGroupCard(gr, count){
   var accentBrd  = isPrivate ? 'rgba(155,120,220,.60)' : isOfficial ? 'rgba(116,198,157,.55)' : 'rgba(200,180,80,.50)';
   var accentBg   = isPrivate ? 'rgba(80,50,150,.16)'   : isOfficial ? 'rgba(60,140,95,.16)'    : 'rgba(180,150,50,.14)';
   var accentGlow = isPrivate ? 'rgba(155,120,220,.28)' : isOfficial ? 'rgba(116,198,157,.28)'  : 'rgba(200,180,80,.24)';
-  var accentText = isPrivate ? 'rgba(215,200,255,.85)' : isOfficial ? 'rgba(180,230,200,.85)' : 'rgba(230,215,140,.85)';
+  // v1586: colores theme-aware. En modo CLARO los textos claros (blanco/verde
+  // palido) quedaban ilegibles sobre las tarjetas claras -> se oscurecen.
+  var _isDk = document.body.classList.contains('r-dark');
+  var accentText = _isDk
+    ? (isPrivate ? 'rgba(215,200,255,.85)' : isOfficial ? 'rgba(180,230,200,.85)' : 'rgba(230,215,140,.85)')
+    : (isPrivate ? 'rgba(95,55,175,.95)'  : isOfficial ? 'rgba(30,120,78,.95)'    : 'rgba(140,105,15,.95)');
+  var titleCol = _isDk ? '#fff' : '#14301d';
+  var descCol  = _isDk ? 'rgba(200,230,215,.68)' : 'rgba(28,64,42,.75)';
+  var metaCol  = _isDk ? 'rgba(180,220,195,.60)' : 'rgba(35,80,54,.68)';
+  var metaDot  = _isDk ? 'rgba(180,220,195,.50)' : 'rgba(35,80,54,.45)';
+  var emojiBoxBg = _isDk ? 'rgba(0,0,0,.24)' : 'rgba(255,255,255,.55)';
   var verifiedBadge = isOfficial ? '<span title="Grupo oficial de Velo" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:#4dd988;border-radius:50%;color:#0a1810;font-size:10px;font-weight:800;margin-left:6px">✓</span>' : '';
   var privateBadge  = isPrivate ? '<span style="display:inline-block;padding:2px 8px;background:rgba(155,120,220,.28);border:1px solid rgba(155,120,220,.55);border-radius:100px;color:#e0d0ff;font-size:9.5px;font-weight:800;letter-spacing:1px;margin-left:8px">🔒 PRIVADO</span>' : '';
   var joinHint = isOfficial
     ? '👉 Sumá tu momento a este grupo'
     : (isPrivate ? '👉 Compartí con tu círculo' : '👉 Sumate y compartí');
   return '<button onclick="pPlayVibeGroup(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:'+accentBg+';border:1.5px solid '+accentBrd+';border-radius:18px;margin-bottom:8px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 4px 18px '+accentGlow+'">'
-    + '<div style="width:52px;height:52px;border-radius:14px;background:rgba(0,0,0,.24);border:1.5px solid '+accentBrd+';display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;line-height:1">'+_escHtml(groupEmoji)+'</div>'
+    + '<div style="width:52px;height:52px;border-radius:14px;background:'+emojiBoxBg+';border:1.5px solid '+accentBrd+';display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;line-height:1">'+_escHtml(groupEmoji)+'</div>'
     + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;flex-wrap:wrap">'+_escHtml(gr.title||'')+verifiedBadge+privateBadge+'</div>'
-      + (gr.description ? '<div style="font-size:11.5px;color:rgba(200,230,215,.68);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(gr.description)+'</div>' : '')
+      + '<div style="font-size:15px;font-weight:800;color:'+titleCol+';display:flex;align-items:center;flex-wrap:wrap">'+_escHtml(gr.title||'')+verifiedBadge+privateBadge+'</div>'
+      + (gr.description ? '<div style="font-size:11.5px;color:'+descCol+';margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(gr.description)+'</div>' : '')
       + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">'
         + '<div style="font-size:10.5px;font-weight:800;color:'+accentText+';letter-spacing:.4px">'+joinHint+'</div>'
-        + '<div style="font-size:10.5px;font-weight:600;color:rgba(180,220,195,.50);letter-spacing:.3px">·</div>'
-        + '<div style="font-size:10.5px;font-weight:700;color:rgba(180,220,195,.60);letter-spacing:.3px">'+(count>0?count+' hoy':'sin historias')+'</div>'
+        + '<div style="font-size:10.5px;font-weight:600;color:'+metaDot+';letter-spacing:.3px">·</div>'
+        + '<div style="font-size:10.5px;font-weight:700;color:'+metaCol+';letter-spacing:.3px">'+(count>0?count+' hoy':'sin historias')+'</div>'
       + '</div>'
     + '</div>'
     + '<span style="font-size:18px;color:'+accentText+';flex-shrink:0">›</span>'
@@ -38260,7 +38270,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1585;
+    var _BUILT_V = 1586;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
