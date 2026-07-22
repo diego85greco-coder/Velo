@@ -13113,12 +13113,15 @@ body.r-lavender #homeBgCanvas {
   filter: hue-rotate(188deg) saturate(1.15) brightness(1.05) !important;
 }
 body.r-dark.r-lavender #homeBgCanvas {
-  opacity: .40 !important;
+  opacity: .92 !important;
 }
 
-/* Dark mode default particle visibility */
+/* Dark mode: particulas claramente visibles. El canvas esta en z-index base
+   (detras del contenido, ver app-premium.html), asi que aunque suba fuerte la
+   opacidad NO manchan las tarjetas glass — solo brillan en los huecos del fondo.
+   Las tarjetas oscuras ocultan el poco sangrado que pase. */
 body.r-dark #homeBgCanvas {
-  opacity: .42 !important;
+  opacity: .92 !important;
 }
 
 /* Card de registro (el grande verde oscuro) → índigo oscuro */
