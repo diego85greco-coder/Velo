@@ -45,9 +45,11 @@ a { text-decoration: none; color: inherit; }
   --gold: #C8920A; --gold2: #E8B020; --gold3: #FFF4CC;
   --bronze: #B8722A; --silver: #888A8D; --diamond: #0090B0;
   --ink: #1C2E22; --ink2: #2A4232; --ink3: #3D6048;
-  --ink4: #6B9478; --ink5: #A8C8B0; --ink6: #D4E8DA;
+  /* v1576: secundarios más legibles sobre el cream (antes muy lavados) */
+  --ink4: #527C61; --ink5: #84A692; --ink6: #C4DCCB;
   --white: #FFFFFF;
-  --border: rgba(45,106,79,.10); --border2: rgba(45,106,79,.16); --border3: rgba(45,106,79,.24);
+  /* v1576: bordes un punto más definidos para separar mejor tarjetas/divisores */
+  --border: rgba(45,106,79,.14); --border2: rgba(45,106,79,.20); --border3: rgba(45,106,79,.28);
   --sos: #C03028;
   --sh: 0 2px 16px rgba(45,106,79,.07);
   --sh2: 0 6px 24px rgba(45,106,79,.12);

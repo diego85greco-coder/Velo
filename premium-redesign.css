@@ -874,22 +874,27 @@ body.r-dark::after {
 }
 
 body.r-dark {
-  --r-glass-bg: rgba(15, 30, 20, 0.48);
-  --r-glass-bord: rgba(80, 160, 110, 0.22);
-  --r-glass-shadow: 0 1px 0 rgba(116,198,157,.08) inset, 0 8px 30px rgba(0,0,0,.35);
-  --r-sage-glow: rgba(58, 140, 100, 0.45);
+  /* v1576: tarjetas glass con más cuerpo y separación del fondo (antes se veían lavadas) */
+  --r-glass-bg: rgba(19, 36, 26, 0.62);
+  --r-glass-bord: rgba(96, 182, 126, 0.30);
+  --r-glass-shadow: 0 1px 0 rgba(140,220,175,.10) inset, 0 10px 34px rgba(0,0,0,.46);
+  --r-sage-glow: rgba(64, 150, 108, 0.48);
 }
 
 /* ── Core text and surface overrides ─────────────────────────────── */
 body.r-dark,
 body.r-dark .p-main-content,
 body.r-dark .p-sidebar {
-  --ink:  #e8f2ec;
-  --ink2: #c8ddd0;
-  --ink3: #94b8a4;
-  --ink4: #6e9a84;
-  --ink5: #4a7060;
-  --border: rgba(80,160,110,.22);
+  --ink:  #eaf4ee;
+  --ink2: #cfe2d7;
+  --ink3: #a2c4b2;
+  /* v1576: secundarios más claros para que se lean bien sobre el fondo oscuro */
+  --ink4: #86b09a;
+  --ink5: #688f7b;
+  --border: rgba(96,182,126,.30);
+  /* v1576: oro más brillante en oscuro (el #C8920A se veía apagado sobre el fondo) */
+  --gold: #E8B84A;
+  --gold2: #F5CC66;
 }
 
 /* sidebar */
