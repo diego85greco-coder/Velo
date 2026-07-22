@@ -18,13 +18,13 @@ create view public.bitacora_posts_full as
   select
     bp.id, bp.categoria, bp.titulo, bp.contenido, bp.is_anon,
     bp.votos_a, bp.votos_b, bp.created_at, bp.postura_a, bp.postura_b, bp.tema,
-    case when (not bp.is_anon) or bp.user_id = auth.uid()
+    case when (not bp.is_anon) or bp.user_id = (auth.uid())::text
          then bp.user_id else null end as user_id,
     case when bp.is_anon then null else p.username end as author_username,
     case when bp.is_anon then null else p.nombre   end as author_name,
     case when bp.is_anon then null else p.avatar    end as author_avatar
   from public.bitacora_posts bp
-  left join public.profiles p on p.id = bp.user_id;
+  left join public.profiles p on p.id::text = bp.user_id;
 
 grant select on public.bitacora_posts_full to anon, authenticated;
 revoke select on public.bitacora_posts from anon;
