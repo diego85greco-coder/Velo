@@ -27543,13 +27543,17 @@ function _showDMToast(fromId, fromName, fromAv, text){
   if(existing) existing.remove();
   var banner = document.createElement('div');
   banner.id = 'dmToastBanner';
-  banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg-card,#1a2e1a);border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.35);padding:12px 16px;display:flex;align-items:center;gap:12px;max-width:340px;width:calc(100% - 32px);cursor:pointer;border:1.5px solid var(--border2);animation:slideDown .25s ease';
+  // v1585: colores EXPLICITOS claros sobre fondo oscuro (antes usaba var(--ink)
+  // que en modo claro era oscuro -> texto oscuro sobre banner oscuro, ilegible).
+  // El toast es un overlay tipo notificacion iOS: se ve premium igual en claro y
+  // oscuro con un fondo verde profundo glass + texto claro.
+  banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(145deg,rgba(24,46,32,.97),rgba(16,34,24,.97));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:18px;box-shadow:0 10px 34px rgba(0,0,0,.34);padding:12px 16px;display:flex;align-items:center;gap:12px;max-width:340px;width:calc(100% - 32px);cursor:pointer;border:1.5px solid rgba(120,200,150,.30);animation:slideDown .25s ease';
   banner.innerHTML = '<div style="font-size:32px;flex-shrink:0">'+_avInline(fromAv,38)+'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(fromName)+' te escribió 💬</div>'
-    +'<div style="font-size:14px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(text.slice(0,60))+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.97);margin-bottom:2px">'+_escHtml(fromName)+' te escribió 💬</div>'
+    +'<div style="font-size:14px;color:rgba(210,235,220,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(text.slice(0,60))+'</div>'
     +'</div>'
-    +'<button onclick="event.stopPropagation();var _dtb=document.getElementById(\'dmToastBanner\');if(_dtb)_dtb.remove();" style="font-size:16px;background:none;border:none;cursor:pointer;color:var(--ink4);padding:4px;flex-shrink:0">✕</button>';
+    +'<button onclick="event.stopPropagation();var _dtb=document.getElementById(\'dmToastBanner\');if(_dtb)_dtb.remove();" style="font-size:16px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);padding:4px;flex-shrink:0">✕</button>';
   banner.onclick = function(){
     banner.remove();
     // Back to guardian chat if this message is from the active guardian session
@@ -38256,7 +38260,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1584;
+    var _BUILT_V = 1585;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
