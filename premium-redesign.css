@@ -8106,9 +8106,11 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 @media (max-width: 767px) {
   .p-page:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
   .p-page.active:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
-  /* Home canvas: lift ABOVE glass cards so particles float over the interface */
+  /* v1578: NO elevar por encima de las tarjetas — pintaba las partículas ENCIMA
+     de "Vibes de hoy" y demás cards en claro (se veía manchado/sucio). Vuelve a
+     quedar detrás del contenido (z-index base, ver app-premium.html). La opacidad
+     efectiva en claro/oscuro la deciden las reglas por-tema más abajo. */
   #homeBgCanvas {
-    z-index: 2 !important;
     opacity: 0.48;
   }
 }
@@ -13575,11 +13577,10 @@ body.r-lavender:not(.r-dark) #homeRegisterOuter * {
   color: var(--ink) !important;
 }
 
-/* Canvas particles — clearly visible blue particles on light bg */
-body.r-theme-green:not(.r-dark) #homeBgCanvas,
-body.r-lavender:not(.r-dark) #homeBgCanvas {
-  opacity: .78 !important;
-}
+/* v1578: removida — esta regla pisaba (misma especificidad, definida DESPUÉS)
+   los valores sutiles ya tunados arriba (.08 verde / .06 lavanda con hue-rotate),
+   subiendo la opacidad real a .78 -> las partículas se veían como manchas azules
+   sobre las tarjetas en modo claro. Los valores sutiles de arriba vuelven a regir. */
 
 /* Status pill / mood toggle */
 body.r-theme-green:not(.r-dark) #homeStatusToggle,
