@@ -13427,7 +13427,8 @@ body.r-theme-green:not(.r-dark) #homeRegisterOuter {
   background: linear-gradient(155deg, rgba(72,180,112,.22), rgba(50,155,88,.16)) !important;
   border-top-color: rgba(50,165,92,.40) !important;
 }
-body.r-theme-green:not(.r-dark) #homeBgCanvas { opacity: .82 !important; }
+/* v1584: CLARO verde — particulas oscuras/saturadas para contraste sobre fondo claro */
+body.r-theme-green:not(.r-dark) #homeBgCanvas { opacity: .95 !important; filter: saturate(1.6) brightness(0.55) !important; }
 body.r-theme-green:not(.r-dark) input,
 body.r-theme-green:not(.r-dark) textarea,
 body.r-theme-green:not(.r-dark) select {
@@ -13498,7 +13499,14 @@ body.r-lavender:not(.r-dark) #homeRegisterOuter {
   background: linear-gradient(155deg, rgba(60,120,200,.22), rgba(40,98,175,.16)) !important;
   border-top-color: rgba(55,115,200,.40) !important;
 }
-body.r-lavender:not(.r-dark) #homeBgCanvas { opacity: .82 !important; filter: hue-rotate(200deg) saturate(1.4); }
+/* v1584: CLARO lavanda — particulas OSCURAS y saturadas para que contrasten
+   sobre el fondo claro (antes el hue-rotate las volvia verde palido, invisibles).
+   brightness(0.5) las oscurece a violeta profundo -> se ven claramente. El
+   !important gana sobre la regla general body.r-lavender de mas arriba. */
+body.r-lavender:not(.r-dark) #homeBgCanvas {
+  opacity: .95 !important;
+  filter: saturate(1.7) brightness(0.5) !important;
+}
 body.r-lavender:not(.r-dark) input,
 body.r-lavender:not(.r-dark) textarea,
 body.r-lavender:not(.r-dark) select {
