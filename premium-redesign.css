@@ -13112,6 +13112,14 @@ body.r-lavender .r-hero-v2::after {
 body.r-lavender #homeBgCanvas {
   filter: hue-rotate(188deg) saturate(1.15) brightness(1.05) !important;
 }
+body.r-dark.r-lavender #homeBgCanvas {
+  opacity: .40 !important;
+}
+
+/* Dark mode default particle visibility */
+body.r-dark #homeBgCanvas {
+  opacity: .42 !important;
+}
 
 /* Card de registro (el grande verde oscuro) → índigo oscuro */
 body.r-lavender #homeRegisterOuter {
