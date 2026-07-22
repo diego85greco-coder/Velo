@@ -412,19 +412,23 @@ async function sendWeeklySummary(users) {
   const now = new Date();
   if (now.getUTCDay() !== 0) return { sent: 0 }; // 0 = Domingo UTC
   const utcH = now.getUTCHours();
-  if (utcH !== 7 && utcH !== 12) return { sent: 0 };
+  // Ventana AMPLIA (6-15 UTC) en vez de hora exacta: GitHub retrasa los crons
+  // rutinariamente 1-3 h, y con `utcH === 7` el resumen se perdía cuando el run
+  // caía a las 8-9 UTC (que es lo habitual). Cubre los slots de mañana/mediodía
+  // del domingo + sus retrasos.
+  if (utcH < 6 || utcH > 15) return { sent: 0 };
 
   // Clave de la semana = fecha del domingo (YYYY-MM-DD UTC)
   const weekKey = now.toISOString().slice(0, 10);
-  console.log(`[weekly] Domingo ${weekKey} — enviando resumen semanal`);
+  console.log(`[weekly] Domingo ${weekKey} (run a las ${utcH}h UTC) — resumen semanal`);
 
-  // Insert automático del broadcast al buzón — solo una vez por domingo (por eso
-  // solo lo hacemos en el slot de las 7 UTC, no en el de las 12).
-  // El cliente detecta el body "__WEEKLY_REPORT__YYYY-MM-DD" y arma el resumen
-  // personalizado desde los datos locales del user. Con la dedup por body, si
-  // el workflow se re-ejecuta el mismo domingo, no se duplica.
-  if (utcH === 7) {
-    try {
+  // Insert del broadcast al buzón con DEDUP REAL por existencia: se inserta solo si
+  // no está ya el de esta semana. Así CUALQUIERA de los runs del domingo (7, 8, 9,
+  // 12…) lo inserta una única vez — ya no depende de pegarle a la hora exacta.
+  try {
+    const { data: existingWk } = await supabase.from('broadcasts')
+      .select('id').eq('body', '__WEEKLY_REPORT__' + weekKey).limit(1);
+    if (!existingWk || !existingWk.length) {
       const bcast = {
         target: 'users',
         subject: '📊 Tu resumen semanal — ' + weekKey,
@@ -435,9 +439,11 @@ async function sendWeeklySummary(users) {
       };
       const { error: bcErr } = await supabase.from('broadcasts').insert(bcast);
       if (bcErr) console.warn('[weekly-broadcast]', bcErr.message);
-      else console.log('[weekly-broadcast] resumen semanal insertado en broadcasts para', weekKey);
-    } catch (e) { console.warn('[weekly-broadcast]', e && e.message); }
-  }
+      else console.log('[weekly-broadcast] resumen semanal insertado para', weekKey);
+    } else {
+      console.log('[weekly-broadcast] ya existía el resumen de', weekKey, '— skip');
+    }
+  } catch (e) { console.warn('[weekly-broadcast]', e && e.message); }
 
   // Users con al menos 1 mood en los últimos 7 días (evitamos molestar a inactivos)
   const weekAgo = new Date(now); weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
