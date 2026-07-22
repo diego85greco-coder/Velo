@@ -8106,12 +8106,20 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 @media (max-width: 767px) {
   .p-page:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
   .p-page.active:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
-  /* v1578: NO elevar por encima de las tarjetas — pintaba las partículas ENCIMA
-     de "Vibes de hoy" y demás cards en claro (se veía manchado/sucio). Vuelve a
-     quedar detrás del contenido (z-index base, ver app-premium.html). La opacidad
-     efectiva en claro/oscuro la deciden las reglas por-tema más abajo. */
+  /* v1580b: RESTAURADO el z-index:2 que v1578 habia quitado. Ese z-index es lo
+     que hace las particulas VISIBLES (flotan por encima del contenido); sin el,
+     quedaban en z-index base TAPADAS por el contenedor de contenido (z-index:1) y
+     no se veian ni a opacidad .92. En OSCURO flotan lindas sobre la interfaz. Para
+     no traer de vuelta el manchado en CLARO (puntitos azules sobre las tarjetas
+     glass), en modo claro se bajan detras del contenido (regla mas abajo). */
   #homeBgCanvas {
-    opacity: 0.48;
+    z-index: 2 !important;
+    opacity: 0.55;
+  }
+  /* CLARO: canvas detras del contenido -> particulas solo en los huecos, sin
+     manchar las tarjetas glass. */
+  body:not(.r-dark) #homeBgCanvas {
+    z-index: 0 !important;
   }
 }
 
@@ -13112,16 +13120,14 @@ body.r-lavender .r-hero-v2::after {
 body.r-lavender #homeBgCanvas {
   filter: hue-rotate(188deg) saturate(1.15) brightness(1.05) !important;
 }
+/* Dark mode: canvas en z-index:2 (flota sobre la interfaz, ver regla mobile).
+   Opacidad moderada -> particulas claramente visibles sobre el fondo oscuro sin
+   tapar el texto. */
 body.r-dark.r-lavender #homeBgCanvas {
-  opacity: .92 !important;
+  opacity: .58 !important;
 }
-
-/* Dark mode: particulas claramente visibles. El canvas esta en z-index base
-   (detras del contenido, ver app-premium.html), asi que aunque suba fuerte la
-   opacidad NO manchan las tarjetas glass — solo brillan en los huecos del fondo.
-   Las tarjetas oscuras ocultan el poco sangrado que pase. */
 body.r-dark #homeBgCanvas {
-  opacity: .92 !important;
+  opacity: .58 !important;
 }
 
 /* Card de registro (el grande verde oscuro) → índigo oscuro */
