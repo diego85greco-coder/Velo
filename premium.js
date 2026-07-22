@@ -22873,8 +22873,9 @@ async function _storyOpenActivity(vibeId){
   ov.style.cssText = 'position:fixed;inset:0;z-index:10040;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
   var _close = function(){ var o=document.getElementById('storyActivityOv'); if(o) o.remove(); if(_storyState) _storyResume(); };
   ov.onclick = function(e){ if(e.target===ov) _close(); };
-  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.35);border-radius:22px 22px 0 0;max-height:82vh;display:flex;flex-direction:column">'
+  ov.innerHTML = '<div class="p-sheet" style="position:relative;max-width:560px;width:100%;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.35);border-radius:22px 22px 0 0;max-height:82vh;display:flex;flex-direction:column">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
+    + '<button onclick="var o=document.getElementById(\'storyActivityOv\');if(o)o.remove();try{if(_storyState)_storyResume();}catch(_){}" aria-label="Cerrar" style="position:absolute;top:12px;right:12px;width:34px;height:34px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:50%;color:#fff;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:3">✕</button>'
     + '<div style="text-align:center;padding:4px 0 12px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">💚 Quién te acompañó</div><div style="font-size:11.5px;color:rgba(180,220,195,.7);font-family:Jost,sans-serif;margin-top:2px">Las personas que pasaron por tu momento.</div></div>'
     + '<div id="storyActivityList" style="flex:1;overflow-y:auto;min-height:80px">Cargando…</div>'
     + '<button id="storyActivityClose" style="margin-top:12px;padding:11px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.2);border-radius:12px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Cerrar</button>'
@@ -38230,7 +38231,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1573;
+    var _BUILT_V = 1574;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
