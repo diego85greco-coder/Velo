@@ -14912,7 +14912,7 @@ async function _runGlobalSearch(q){
           htmlParts.push(bt.data.map(function(p){
             var preview = String(p.contenido||'').replace(/[\n\r]+/g,' ').slice(0,120);
             var senderName = p.is_anon ? 'Anónimo/a' : (p.user_name || 'Usuario');
-            return '<div onclick="document.getElementById(\'veloSearchOv\').remove();if(typeof _btOpenDetail===\'function\')_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-left:3px solid '+(catCol[p.categoria]||'#95d5b2')+';border-radius:0 12px 12px 0;padding:10px 14px;margin-bottom:8px;cursor:pointer"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:12px;font-weight:800;color:rgba(255,255,255,.85);font-family:Jost,sans-serif">'+_escHtml(senderName)+'</span><span style="font-size:10px;color:rgba(255,255,255,.40);text-transform:uppercase;letter-spacing:.8px">· '+(p.categoria||'apoyo')+'</span></div>'+(p.titulo?'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:rgba(255,255,255,.94);line-height:1.25;margin-bottom:2px">'+_escHtml(p.titulo)+'</div>':'')+'<div style="font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_escHtml(preview)+'</div></div>';
+            return '<div onclick="document.getElementById(\'veloSearchOv\').remove();if(typeof _btOpenDetail===\'function\')_btOpenDetail('+_jsAttr(p.id)+')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-left:3px solid '+(catCol[p.categoria]||'#95d5b2')+';border-radius:0 12px 12px 0;padding:10px 14px;margin-bottom:8px;cursor:pointer"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:12px;font-weight:800;color:rgba(255,255,255,.85);font-family:Jost,sans-serif">'+_escHtml(senderName)+'</span><span style="font-size:10px;color:rgba(255,255,255,.40);text-transform:uppercase;letter-spacing:.8px">· '+(p.categoria||'apoyo')+'</span></div>'+(p.titulo?'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:rgba(255,255,255,.94);line-height:1.25;margin-bottom:2px">'+_escHtml(p.titulo)+'</div>':'')+'<div style="font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_escHtml(preview)+'</div></div>';
           }).join(''));
         }
       }catch(e){ console.warn('[search-bt]', e); }
@@ -19804,7 +19804,7 @@ function _avInline(av, px){
   var s = (px||40)+'px';
   if(av.startsWith('data:') || av.startsWith('http'))
     return '<img src="'+_escHtml(av)+'" style="width:'+s+';height:'+s+';object-fit:cover;border-radius:50%;display:block;margin:0 auto;flex-shrink:0" alt="">';
-  return av;
+  return _escHtml(av); // rama emoji/texto: escapar por si alguna vez el avatar es texto libre (XSS latente)
 }
 
 function pShowAvatarPicker(){
@@ -20165,7 +20165,7 @@ function pLoadProfile(){
           var _pc=_btCleanContenido(p.contenido); var prev=_pc.slice(0,90)+(_pc.length>90?'…':'');
           var dateStr='';
           try{ var d=new Date(p.created_at); dateStr=d.toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
-          return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+          return '<div onclick="_btOpenDetail('+_jsAttr(p.id)+')" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
             +(p.titulo?'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
             +'<div style="font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
             +'<div style="display:flex;align-items:center;justify-content:space-between">'
@@ -20410,7 +20410,7 @@ async function pShowPublicProfile(){
           var col=_btCatColor[p.categoria]||'rgba(116,198,157,.70)';
           var lbl=_btCatLabel[p.categoria]||p.categoria||'';
           var _pc=_btCleanContenido(p.contenido); var prev=_pc.slice(0,90)+(_pc.length>90?'…':'');
-          return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'publicProfileOv\').remove()" '
+          return '<div onclick="_btOpenDetail('+_jsAttr(p.id)+');document.getElementById(\'publicProfileOv\').remove()" '
             +'style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
             +(p.titulo?'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
             +'<div style="font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
@@ -21444,7 +21444,7 @@ async function _renderHomeVibesCard(){
       var opa = isSeen ? '.72' : '1';
       var filt = isSeen ? 'grayscale(.8)' : 'none';
       var badge = isPrivate ? '<span style="position:absolute;bottom:-1px;right:-1px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:#8a68d8;border:2px solid '+_ringInner+';color:#fff;font-size:9px;border-radius:50%;z-index:3">🔒</span>' : '';
-      var onclickAction = t.isInstant ? ('pPlayInstant(\''+_escHtml(t.coverVibeId)+'\')') : ('pPlayVibeGroup(\''+_escHtml(t.id)+'\')');
+      var onclickAction = t.isInstant ? ('pPlayInstant('+_jsAttr(t.coverVibeId)+')') : ('pPlayVibeGroup('+_jsAttr(t.id)+')');
       var visual;
       if(hasCover && _vibeIsVideoUrl(t.coverUrl)){
         // v1502: póster JPG del video (frame 0) — antes se bajaba el video entero
@@ -21596,7 +21596,7 @@ async function pRenderVibesHome(){
         var isSeen = !!_seen[v.id];
         var brd = isSeen ? 'rgba(140,140,140,.55)' : (isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)');
         var opa = isSeen ? '.55' : '1';
-        return '<button onclick="pPlayInstant(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+(isSeen?'grayscale(.85)':'none')+'"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="240" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
+        return '<button onclick="pPlayInstant('+_jsAttr(v.id)+')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+(isSeen?'grayscale(.85)':'none')+'"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" data-vibe-w="240" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
       }).join('');
       instantHtml = '<div style="margin-bottom:22px">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,220,120,.85);margin-bottom:4px">✨ INSTANTÁNEOS</div>'
@@ -21709,7 +21709,7 @@ function _vibeGroupCard(gr, count){
   var joinHint = isOfficial
     ? '👉 Sumá tu momento a este grupo'
     : (isPrivate ? '👉 Compartí con tu círculo' : '👉 Sumate y compartí');
-  return '<button onclick="pPlayVibeGroup(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:'+accentBg+';border:1.5px solid '+accentBrd+';border-radius:18px;margin-bottom:8px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 4px 18px '+accentGlow+'">'
+  return '<button onclick="pPlayVibeGroup('+_jsAttr(gr.id)+')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:'+accentBg+';border:1.5px solid '+accentBrd+';border-radius:18px;margin-bottom:8px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 4px 18px '+accentGlow+'">'
     + '<div style="width:52px;height:52px;border-radius:14px;background:'+emojiBoxBg+';border:1.5px solid '+accentBrd+';display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;line-height:1">'+_escHtml(groupEmoji)+'</div>'
     + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:15px;font-weight:800;color:'+titleCol+';display:flex;align-items:center;flex-wrap:wrap">'+_escHtml(gr.title||'')+verifiedBadge+privateBadge+'</div>'
@@ -21744,7 +21744,7 @@ async function pCreateVibeMenu(){
   ov.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
   var officialItems = official.map(function(gr){
-    return '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.32);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px;flex-shrink:0">'+_escHtml(gr.emoji||'🌊')+'</span><span style="flex:1;font-size:13.5px;font-weight:700">'+_escHtml(gr.title||'')+'</span><span style="font-size:9.5px;color:#4dd988;font-weight:800;letter-spacing:1px">✓ VELO</span></button>';
+    return '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe('+_jsAttr(gr.id)+')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.32);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px;flex-shrink:0">'+_escHtml(gr.emoji||'🌊')+'</span><span style="flex:1;font-size:13.5px;font-weight:700">'+_escHtml(gr.title||'')+'</span><span style="font-size:9.5px;color:#4dd988;font-weight:800;letter-spacing:1px">✓ VELO</span></button>';
   }).join('');
   ov.innerHTML = '<div class="p-sheet" style="position:relative;max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:88vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
@@ -22796,7 +22796,7 @@ function _storyFooterHtml(s){
   var cap = (s.caption && !_btRef && !_vibeTextBg(s.media_url)) ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-style:italic;color:#fff;line-height:1.5;margin-bottom:12px;text-shadow:0 1px 6px rgba(0,0,0,.8);max-height:22vh;overflow-y:auto">“'+_escHtml(s.caption)+'”</div>' : '';
   if(_btRef){
     var _fc = _btColors[_vibeBitacoraCat(s.media_url)] || _btColors.apoyo;
-    cap = '<button onclick="event.stopPropagation();_closeStoryPlayer();try{pGoTo(\'bitacora\');setTimeout(function(){try{_btOpenDetail(\''+_escHtml(_btRef)+'\')}catch(_){}},350)}catch(_){}" style="width:100%;padding:13px;margin-bottom:10px;background:'+_fc.badge+';border:1.5px solid '+_fc.border+';border-radius:100px;color:'+_fc.label+';font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px;backdrop-filter:blur(4px)">📖 Leer el post →</button>' + cap;
+    cap = '<button onclick="event.stopPropagation();_closeStoryPlayer();try{pGoTo(\'bitacora\');setTimeout(function(){try{_btOpenDetail('+_jsAttr(_btRef)+')}catch(_){}},350)}catch(_){}" style="width:100%;padding:13px;margin-bottom:10px;background:'+_fc.badge+';border:1.5px solid '+_fc.border+';border-radius:100px;color:'+_fc.label+';font-family:Jost,sans-serif;font-size:14px;font-weight:900;cursor:pointer;letter-spacing:.3px;backdrop-filter:blur(4px)">📖 Leer el post →</button>' + cap;
   }
   var isMine = _storyIsMine(s);
   if(isMine){
@@ -23289,7 +23289,7 @@ async function pOpenVibeGroup(groupId){
   var _grMenuBtn = (gr && gr.kind === 'private')
     ? '<button onclick="pVibeGroupManage(\''+groupId+'\','+(_grIsOwner?'true':'false')+')" aria-label="Opciones del grupo" style="background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;width:38px;height:38px;padding:0;font-size:18px;cursor:pointer;font-weight:800;flex-shrink:0;line-height:1">⋯</button>'
     : '';
-  var header = '<div style="display:flex;align-items:center;gap:10px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div>'+_grMenuBtn+'<button class="vibe-hdr-upload" onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" aria-label="Subir tu momento" style="background:linear-gradient(135deg,#63d99a,#3aa06a);border:2px solid #ffffff;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;height:40px;padding:0 15px 0 12px;border-radius:100px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 16px rgba(60,180,120,.60);display:inline-flex;align-items:center;gap:5px;line-height:1;letter-spacing:.3px"><span style="font-size:20px;font-weight:900;line-height:1">+</span>Subir</button></div>';
+  var header = '<div style="display:flex;align-items:center;gap:10px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div>'+_grMenuBtn+'<button class="vibe-hdr-upload" onclick="_closeVibeGroup();pStartCreateVibe('+_jsAttr(groupId)+')" title="Publicar tu momento en este grupo" aria-label="Subir tu momento" style="background:linear-gradient(135deg,#63d99a,#3aa06a);border:2px solid #ffffff;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;height:40px;padding:0 15px 0 12px;border-radius:100px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 16px rgba(60,180,120,.60);display:inline-flex;align-items:center;gap:5px;line-height:1;letter-spacing:.3px"><span style="font-size:20px;font-weight:900;line-height:1">+</span>Subir</button></div>';
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
@@ -23316,7 +23316,7 @@ async function pOpenVibeGroup(groupId){
           + '<div style="font-size:17px;font-weight:800;color:#eafff2">Todavía sin historias</div>'
           + '<div style="font-size:13px;margin-top:6px;line-height:1.55;color:rgba(206,240,222,.82)">Sé el primero en compartir un momento acá</div>'
           + '</div>'
-          + '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-top:8px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.98));border:none;border-radius:18px;color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 8px 26px rgba(80,180,120,.35),0 2px 8px rgba(60,140,90,.25);line-height:1.35">👉 Sumate al momento<br><span style="font-size:12px;font-weight:700;color:rgba(20,50,32,.78);letter-spacing:.3px">Tocá acá para subir tu historia</span></button>';
+          + '<button onclick="pStartCreateVibe('+_jsAttr(groupId)+')" style="width:100%;margin-top:8px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.98));border:none;border-radius:18px;color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 8px 26px rgba(80,180,120,.35),0 2px 8px rgba(60,140,90,.25);line-height:1.35">👉 Sumate al momento<br><span style="font-size:12px;font-weight:700;color:rgba(20,50,32,.78);letter-spacing:.3px">Tocá acá para subir tu historia</span></button>';
       }
       list.style.display = 'none';
       var dotsEmpty = document.getElementById('vibeGroupDots');
@@ -23340,7 +23340,7 @@ async function pOpenVibeGroup(groupId){
       }
     }catch(e){}
     // Zona fija arriba: CTA "¿Querés participar?" + banner "hay nuevos"
-    var ctaHtml = '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-bottom:10px;padding:11px 14px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.3">👉 ¿Querés participar? · Tocá para subir tu momento</button>';
+    var ctaHtml = '<button onclick="pStartCreateVibe('+_jsAttr(groupId)+')" style="width:100%;margin-bottom:10px;padding:11px 14px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.3">👉 ¿Querés participar? · Tocá para subir tu momento</button>';
     // "Existen momentos nuevos"
     var _lsKey = _vibesLastSeenKey(groupId);
     var lastSeen = 0;
@@ -25158,7 +25158,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
         var col = _btCatColor[p.categoria]||'rgba(116,198,157,.70)';
         var lbl = _btCatLabel[p.categoria]||p.categoria||'';
         var _pc2=_btCleanContenido(p.contenido); var prev = _pc2.slice(0,90)+(_pc2.length>90?'…':'');
-        return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'quickProfileOv\').remove()" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+        return '<div onclick="_btOpenDetail('+_jsAttr(p.id)+');document.getElementById(\'quickProfileOv\').remove()" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
           +(p.titulo?'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
           +'<div style="font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
           +'<span style="font-size:11px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
@@ -29494,7 +29494,7 @@ async function _adminTabModeracion(panel){
             +'<div style="font-size:12px;color:rgba(255,255,255,.25)">'+t+(ruid?' · reportante uid:'+ruid.slice(0,8):'')+(cid?' · post:'+cid.slice(0,8):'')+'</div>'
             +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
             +(isBtRep
-              ? (r._bt_is_post&&cid?'<button onclick="_btOpenDetail(\''+cid+'\')" style="font-size:12px;padding:5px 10px;background:rgba(100,170,230,.12);border:1px solid rgba(100,170,230,.30);border-radius:7px;color:rgba(120,185,245,.90);cursor:pointer;font-weight:700">👁️ Ver post</button>':'')
+              ? (r._bt_is_post&&cid?'<button onclick="_btOpenDetail('+_jsAttr(cid)+')" style="font-size:12px;padding:5px 10px;background:rgba(100,170,230,.12);border:1px solid rgba(100,170,230,.30);border-radius:7px;color:rgba(120,185,245,.90);cursor:pointer;font-weight:700">👁️ Ver post</button>':'')
               +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'valido\')" style="font-size:12px;padding:5px 10px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(255,120,100,.95);cursor:pointer;font-weight:700">✓ Reporte válido — remover</button>':'')
               +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'invalido\')" style="font-size:12px;padding:5px 10px;background:rgba(116,198,157,.13);border:1px solid rgba(116,198,157,.30);border-radius:7px;color:rgba(116,198,157,.90);cursor:pointer;font-weight:700">✗ No válido</button>':'')
               : '<button onclick="pAdminResolveReport(\''+r.id+'\',\''+rsrc+'\')" style="font-size:12px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
@@ -37246,7 +37246,7 @@ function _btCard(p,idx,uid){
       +'</div>'
     +'</div>';
   }
-  return '<div class="bt-card" id="btCard_'+_escHtml(String(p.id))+'" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')"'
+  return '<div class="bt-card" id="btCard_'+_escHtml(String(p.id))+'" onclick="_btOpenDetail('+_jsAttr(p.id)+')"'
     +' style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';border-left:3px solid '+c.border+';box-shadow:0 3px 18px '+c.glow+';border-radius:16px;padding:14px 16px;cursor:pointer">'
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
       +(_btCanClick ? '<div onclick="'+_btProfileClick+'" style="cursor:pointer;flex-shrink:0">'+avHtml+'</div>' : '<div style="flex-shrink:0">'+avHtml+'</div>')
@@ -37260,7 +37260,7 @@ function _btCard(p,idx,uid){
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
         +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
 +(function(){ var _isSaved=_btSavedIds.indexOf(String(p.id))>=0; return '<button id="btSave-'+_escHtml(String(p.id))+'" onclick="_btToggleSave(\''+_escHtml(String(p.id))+'\',event)" style="'+(_isSaved?'background:rgba(80,110,230,.85);color:#fff;border:none;':'background:transparent;color:rgba(80,110,230,.9);border:1.5px solid rgba(80,110,230,.5);')+'border-radius:20px;padding:4px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:Jost,sans-serif">'+(_isSaved?'✓ Siguiendo':'+ Seguir')+'</button>'; })()
-        +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
+        +'<button onclick="event.stopPropagation();_btOpenDetail('+_jsAttr(p.id)+')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
         +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.22);color:rgba(255,100,100,.75);font-size:12px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
       +'</div>'
     +'</div>'
@@ -38162,7 +38162,7 @@ function _renderHomeBitacoraWidget(){
     var _pc3=_btCleanContenido(p.contenido); var prev=_pc3.slice(0,80)+(_pc3.length>80?'…':'');
     var _catLabels={apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
     var _catBadge=_catLabels[p.categoria]||'';
-    return '<div class="home-mc home-bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer;box-shadow:0 2px 10px '+c.glow+'">'
+    return '<div class="home-mc home-bt-card" onclick="_btOpenDetail('+_jsAttr(p.id)+')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer;box-shadow:0 2px 10px '+c.glow+'">'
       +(_catBadge?'<div style="margin-bottom:7px"><span style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.strip+';border-radius:20px;padding:3px 9px">'+_catBadge+'</span></div>':'')
       +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
         +'<span style="font-size:14px">'+c.emoji+'</span>'

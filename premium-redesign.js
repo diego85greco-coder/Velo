@@ -45,6 +45,7 @@
     if (code <= 2)                                return isNight ? 'moon-cloud'  : 'sun-cloud';
     if (code === 3 || code === 45 || code === 48) return 'overcast';
     if (code >= 71 && code <= 77)                 return 'snow';
+    if (code === 85 || code === 86)               return 'snow'; // chubascos de nieve
     if (code >= 95)                               return 'storm';
     if (code >= 51 && code <= 82)                 return 'rain';
     return isNight ? 'clear-night' : 'clear-day';
@@ -433,15 +434,12 @@
 
   function pickTimeIcon() {
     var h = new Date().getHours();
-    var isNight = (h >= 20 || h < 6);
     if (_weatherIconType) {
-      var effectiveType = _weatherIconType;
-      if (isNight) {
-        if (effectiveType === 'clear-day')  effectiveType = 'clear-night';
-        else if (effectiveType === 'sun-cloud') effectiveType = 'moon-cloud';
-      }
-      var wr = _weatherEmoji(effectiveType);
-      if (wr) return Object.assign({}, wr, { type: effectiveType });
+      // _weatherIconType ya trae el día/noche de la CIUDAD elegida (se calcula con
+      // is_day de la API en _wmoToType). NO lo pisamos con la hora del dispositivo:
+      // antes mostraba 🌙 para una ciudad que estaba de día (y no corregía al revés).
+      var wr = _weatherEmoji(_weatherIconType);
+      if (wr) return Object.assign({}, wr, { type: _weatherIconType });
     }
     if (h >= 6 && h < 12)  return { emoji: '☀️', period: 'morning',   type: 'clear-day' };
     if (h >= 12 && h < 20) return { emoji: '☀️', period: 'afternoon',  type: 'clear-day' };

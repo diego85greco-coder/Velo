@@ -60,6 +60,28 @@ function localHour(tz) {
   } catch { return -1; }
 }
 
+// Fecha LOCAL del usuario "YYYY-MM-DD" (en-CA da ese formato). Para dedup estable.
+function localDateKey(tz) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz }).format(new Date());
+  } catch { return new Date().toISOString().slice(0, 10); }
+}
+
+// Clave de dedup por slot basada en la fecha LOCAL del usuario. Para 'night', las
+// horas 0-3 pertenecen a la noche que EMPEZÓ el día local anterior → así los dos
+// cron hits de la noche (p.ej. 23:00 y 02:00 local) comparten la misma clave y no
+// se manda dos veces. Antes se usaba la fecha UTC y la noche cruza medianoche UTC,
+// por lo que los usuarios de Europa recibían dos "buenas noches".
+function slotDayKey(tz, slot) {
+  let key = localDateKey(tz);
+  if (slot === 'night' && localHour(tz) <= 3) {
+    const d = new Date(key + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() - 1);
+    key = d.toISOString().slice(0, 10);
+  }
+  return key;
+}
+
 const FORCE_SEND = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
 
 // Slot elegido por HORA LOCAL del usuario (no UTC).
@@ -1118,8 +1140,6 @@ async function main() {
   const slotUsers = { morning: [], afternoon: [], night: [] };
   let skipped = 0;
 
-  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-
   for (const user of (users || [])) {
     let rawSub, tz, parsedFull;
     try {
@@ -1133,8 +1153,8 @@ async function main() {
     const pubMatch = parsedFull.clientPubKey === VAPID_PUBLIC_KEY;
     console.log(`  user ${user.id}: tz=${tz} h=${localHour(tz)} slot=${slot||'none'} buildV=${buildV} clientPub=${clientPub}... match=${pubMatch}`);
     if (!slot) { skipped++; continue; }
-    // Dedup: skip if this slot was already sent today
-    if (parsedFull.lastSent && parsedFull.lastSent[slot] === today) {
+    // Dedup: skip if this slot was already sent (clave por fecha LOCAL del usuario)
+    if (parsedFull.lastSent && parsedFull.lastSent[slot] === slotDayKey(tz, slot)) {
       console.log(`  user ${user.id}: already sent ${slot} today — skipping`);
       skipped++;
       continue;
@@ -1183,8 +1203,8 @@ async function main() {
         }
         await webpush.sendNotification(sub, JSON.stringify(payload));
         sent++;
-        // Record that this slot was sent today to prevent duplicate sends
-        const updatedSub = { ...parsedFull, lastSent: { ...(parsedFull.lastSent || {}), [slot]: today } };
+        // Record that this slot was sent (clave por fecha LOCAL del usuario)
+        const updatedSub = { ...parsedFull, lastSent: { ...(parsedFull.lastSent || {}), [slot]: slotDayKey(tz, slot) } };
         await supabase.from('profiles').update({ push_subscription: JSON.stringify(updatedSub) }).eq('id', id);
       } catch (err) {
         const body = (err.body || err.message || '').toString();
