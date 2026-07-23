@@ -1,26 +1,16 @@
 -- ============================================================================
--- VELO_NOTIFICATIONS — cerrar el INSERT abierto (spoofing/spam de notifs)  (2026-07-23)
+-- VELO_NOTIFICATIONS — cerrar el INSERT abierto (spoofing de notifs) (2026-07-23)
+-- APLICADA en prod vía MCP (migrations: velo_notifications_insert_via_rpc +
+-- velo_create_notif_revoke_anon).
 --
--- Problema: la política de INSERT estaba abierta ("insert_all") porque las
--- notificaciones in-app se crean para OTRO usuario (cuando comentás/reaccionás
--- a su contenido), y una RLS owner-only rompería esa mecánica. Pero abierto así,
--- cualquiera podía insertar filas con user_id y contenido arbitrarios → entregar
--- notificaciones falsas que parecen del sistema.
+-- Antes: la policy insert_all (WITH CHECK true) dejaba insertar filas con
+-- user_id/contenido arbitrarios → notificaciones falsas que parecían del sistema.
+-- Ahora: insert directo revocado; se crea vía RPC security-definer que exige auth,
+-- no permite auto-notificarse, registra el remitente real (sender_id) y sanea
+-- campos. El service_role sigue insertando notifs del sistema (bypassa RLS/grants).
 --
--- Fix: se revoca el INSERT directo para roles públicos y se crea un RPC
--- security-definer velo_create_notif() que:
---   • exige usuario autenticado (auth.uid() no nulo),
---   • no permite auto-notificarse,
---   • registra el remitente REAL (sender_id = auth.uid()) → trazabilidad/moderación,
---   • sanea/acorta los campos.
--- Esto no elimina del todo el spam entre usuarios autenticados, pero lo hace
--- atribuible (sender_id) y elimina el insert anónimo/forjado de user_id arbitrario.
--- El service_role (notifs del sistema) sigue insertando porque bypassa RLS/grants.
---
--- El cliente (v1590) llama al RPC y cae al insert directo sólo si el RPC aún no
--- está desplegado, así el rollout es sin cortes.
---
--- Idempotente.
+-- El cliente (v1590+) llama al RPC y cae al insert directo sólo si el RPC aún no
+-- existe (rollout sin cortes).
 -- ============================================================================
 
 alter table public.velo_notifications add column if not exists sender_id uuid;
@@ -37,8 +27,8 @@ security definer
 set search_path = public
 as $$
 begin
-  if auth.uid() is null then return; end if;              -- sólo autenticados
-  if p_recipient is null or p_recipient = auth.uid() then return; end if;  -- no self / no nulo
+  if auth.uid() is null then return; end if;                             -- sólo autenticados
+  if p_recipient is null or p_recipient = auth.uid() then return; end if; -- no self / no nulo
   insert into public.velo_notifications
     (user_id, sender_id, type, title, body, related_id, is_read, created_at)
   values (
@@ -54,8 +44,12 @@ begin
 end;
 $$;
 
-grant execute on function public.velo_create_notif(uuid, text, text, text, text) to authenticated;
+-- Sólo authenticated puede ejecutar el RPC (se revoca el EXECUTE por defecto de
+-- public/anon; igual el cuerpo hace return si auth.uid() es null).
+revoke execute on function public.velo_create_notif(uuid, text, text, text, text) from public;
+revoke execute on function public.velo_create_notif(uuid, text, text, text, text) from anon;
+grant  execute on function public.velo_create_notif(uuid, text, text, text, text) to authenticated;
 
--- Quitar el insert directo (era el vector de spoofing). service_role no se ve
--- afectado (bypassa RLS/grants) → las notifs del sistema siguen funcionando.
+-- Quitar el insert directo (vector de spoofing)
+drop policy if exists insert_all on public.velo_notifications;
 revoke insert on public.velo_notifications from anon, authenticated;
