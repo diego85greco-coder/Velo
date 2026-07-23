@@ -59,14 +59,52 @@ serve(async (req: Request): Promise<Response> => {
     return new Response("no target", { status: 200 });
   }
 
-  console.log(`[send-dm-push] invocación: from=${rec.from_id} to=${rec.to_id}`);
-
   if (!VAPID_PRIVATE) {
     console.error("[send-dm-push] vapid not configured");
     return new Response("vapid not configured", { status: 200 });
   }
 
-  const txt = String(rec.text || "");
+  // v1588 (SEGURIDAD): este endpoint está deployado --no-verify-jwt, así que NO
+  // se puede confiar en el body. Antes cualquiera con la anon key (pública) podía
+  // POSTear un `record` inventado y disparar un push con remitente/nombre/texto
+  // FALSOS a cualquier usuario (phishing/acoso). Ahora re-verificamos el mensaje
+  // contra la DB con el service role: sólo mandamos push si existe un
+  // direct_message REAL con ese id, y usamos SIEMPRE los valores de la fila
+  // (from_id/to_id/text). Para disparar un push hay que haber insertado un DM real,
+  // y la RLS de direct_messages obliga a hacerlo como uno mismo → no hay spoofing.
+  if (!rec.id) {
+    console.log("[send-dm-push] rechazado: payload sin id de mensaje");
+    return new Response("no id", { status: 200 });
+  }
+  const verifyUrl = `${SUPABASE_URL}/rest/v1/direct_messages?id=eq.${encodeURIComponent(String(rec.id))}&select=id,from_id,to_id,text&limit=1`;
+  const verifyRes = await fetch(verifyUrl, {
+    headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` }
+  });
+  const verifyRows = await verifyRes.json().catch(() => []);
+  const dbMsg = Array.isArray(verifyRows) ? verifyRows[0] : null;
+  if (!dbMsg || !dbMsg.from_id || !dbMsg.to_id) {
+    console.log(`[send-dm-push] rechazado: no existe direct_message id=${rec.id} (posible spoof)`);
+    return new Response("not found", { status: 200 });
+  }
+  // A partir de acá, valores AUTORITATIVOS desde la DB (nunca del body)
+  const fromId = String(dbMsg.from_id);
+  const toId = String(dbMsg.to_id);
+  const txt = String(dbMsg.text || "");
+
+  console.log(`[send-dm-push] invocación verificada: from=${fromId} to=${toId}`);
+
+  // Nombre del remitente: SIEMPRE desde profiles (no del body), para que no se
+  // pueda falsificar el "de quién" del aviso.
+  let fromName = "Alguien";
+  try {
+    const nameRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(fromId)}&select=nombre&limit=1`,
+      { headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } }
+    );
+    const nameRows = await nameRes.json().catch(() => []);
+    const nm = Array.isArray(nameRows) && nameRows[0] ? String(nameRows[0].nombre || "").trim() : "";
+    if (nm) fromName = nm;
+  } catch (_) {}
 
   // v1400: los pedidos de chat SÍ generan push (guardián con la app cerrada
   // se entera de que alguien necesita acompañamiento; lo mismo un pedido de
@@ -75,14 +113,14 @@ serve(async (req: Request): Promise<Response> => {
   if (txt.startsWith("__velo_guardian_req__")) {
     sentinelPush = {
       title: "🛡️ Alguien necesita acompañamiento",
-      body: `${rec.from_name || "Alguien"} te pide un chat de apoyo. Entrá a Velo para aceptar — si no podés ahora, se le avisa que no estás disponible.`,
+      body: `${fromName} te pide un chat de apoyo. Entrá a Velo para aceptar — si no podés ahora, se le avisa que no estás disponible.`,
       tag: "velo-guardian-req",
     };
   } else if (txt === "__velo_chat_req__") {
     sentinelPush = {
-      title: `${rec.from_name || "Alguien"} quiere chatear 💬`,
+      title: `${fromName} quiere chatear 💬`,
       body: "Te llegó una solicitud de chat. Entrá a Velo para aceptarla o rechazarla.",
-      tag: `velo-dm-${rec.from_id}`,
+      tag: `velo-dm-${fromId}`,
     };
   } else if (txt === "__velo_accompany_req__") {
     sentinelPush = {
@@ -98,14 +136,14 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   // Sacar la push_subscription del destinatario
-  const url = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${rec.to_id}&select=push_subscription,nombre`;
+  const url = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(toId)}&select=push_subscription,nombre`;
   const profRes = await fetch(url, {
     headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` }
   });
   const rows = await profRes.json().catch(() => []);
   const row = Array.isArray(rows) ? rows[0] : null;
   if (!row || !row.push_subscription) {
-    console.log(`[send-dm-push] NO SUB — el destinatario ${rec.to_id} no tiene push_subscription guardada (no instaló la PWA / no dio permiso de notificaciones)`);
+    console.log(`[send-dm-push] NO SUB — el destinatario ${toId} no tiene push_subscription guardada (no instaló la PWA / no dio permiso de notificaciones)`);
     return new Response("no sub", { status: 200 });
   }
 
@@ -136,22 +174,22 @@ serve(async (req: Request): Promise<Response> => {
       { action: "later", title: "Ahora no" }
     ]
   } : {
-    title: `${rec.from_name || "Alguien"} 💬`,
+    title: `${fromName} 💬`,
     body,
     icon: "/assets/icon-192.png",
     badge: "/assets/icon-72.png",
-    tag: `velo-dm-${rec.from_id}`,
-    url: `/?open=dm&peer=${encodeURIComponent(rec.from_id || "")}`,
+    tag: `velo-dm-${fromId}`,
+    url: `/?open=dm&peer=${encodeURIComponent(fromId)}`,
     // Custom actions para deep-link — el service worker las procesa
     actions: [
-      { action: "open-dm", title: "💬 Ver mensaje", url: `/?open=dm&peer=${encodeURIComponent(rec.from_id || "")}` },
+      { action: "open-dm", title: "💬 Ver mensaje", url: `/?open=dm&peer=${encodeURIComponent(fromId)}` },
       { action: "later", title: "Después" }
     ]
   });
 
   try {
     await webPush.sendNotification(rawSub, notifPayload, { TTL: 60 * 60 * 24 });
-    console.log(`[send-dm-push] ✅ SENT — push entregado al servicio para ${rec.to_id}`);
+    console.log(`[send-dm-push] ✅ SENT — push entregado al servicio para ${toId}`);
     return new Response("sent", { status: 200 });
   } catch (e: any) {
     const errBody = String(e?.body || e?.message || "");
@@ -163,7 +201,7 @@ serve(async (req: Request): Promise<Response> => {
     const isVapidMismatch = e?.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(errBody);
     if (isExpired || isVapidMismatch) {
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${rec.to_id}`, {
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(toId)}`, {
           method: "PATCH",
           headers: {
             apikey: SERVICE_ROLE,
@@ -173,7 +211,7 @@ serve(async (req: Request): Promise<Response> => {
           },
           body: JSON.stringify({ push_subscription: null })
         });
-        console.log(`[send-dm-push] cleared stale sub for ${rec.to_id} (${isExpired ? "expired" : "vapid-mismatch"})`);
+        console.log(`[send-dm-push] cleared stale sub for ${toId} (${isExpired ? "expired" : "vapid-mismatch"})`);
       } catch (_) {}
     }
     // devolver 200 igual (no queremos reintentos)

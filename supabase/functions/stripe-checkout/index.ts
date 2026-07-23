@@ -1,9 +1,31 @@
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
   apiVersion: '2024-06-20',
   httpClient: Stripe.createFetchHttpClient(),
 })
+
+// Resuelve el email VERIFICADO del que llama a partir del JWT de Supabase Auth
+// del header Authorization. Devuelve null si no hay sesión válida (p.ej. si sólo
+// vino la anon key). Se usa para que cancel_plus opere SOLO sobre la propia cuenta.
+async function _verifiedEmail(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('Authorization') || ''
+  const jwt = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (!jwt) return null
+  try {
+    const supa = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: `Bearer ${jwt}` } }, auth: { persistSession: false } },
+    )
+    const { data, error } = await supa.auth.getUser()
+    if (error || !data || !data.user || !data.user.email) return null
+    return String(data.user.email).trim().toLowerCase()
+  } catch (_) {
+    return null
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,8 +53,11 @@ Deno.serve(async (req) => {
     // del período que ya pagó, y no se le cobra de nuevo. El webhook baja el
     // perfil a gratis cuando llega el fin del período (customer.subscription.deleted).
     if (sessionType === 'cancel_plus') {
-      const email = String(veloEmail || '').trim().toLowerCase()
-      if (!email) return json({ error: 'Falta el email' }, 400)
+      // v1588 (SEGURIDAD): el email a cancelar se toma del JWT VERIFICADO del que
+      // llama, NO del body. Antes cualquiera podía cancelar el Plus de otra persona
+      // POSTeando { sessionType:'cancel_plus', veloEmail:'victima@…' }.
+      const email = await _verifiedEmail(req)
+      if (!email) return json({ error: 'No autenticado' }, 401)
       const customers = await stripe.customers.list({ email, limit: 10 })
       let cancelled = 0
       for (const c of customers.data) {
