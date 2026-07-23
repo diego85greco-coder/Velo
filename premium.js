@@ -38202,7 +38202,11 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1586;
+    // ⚠️ IMPORTANTE: _BUILT_V DEBE coincidir SIEMPRE con version.json. Es la versión
+    // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
+    // este número queda por debajo del de version.json, la app entra en LOOP de
+    // recarga infinita. Al bumpear version.json, bumpear también acá.
+    var _BUILT_V = 1593;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
