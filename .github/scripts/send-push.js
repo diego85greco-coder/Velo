@@ -756,7 +756,10 @@ async function sendMonthlyWrapped(users) {
 // Corre en la ventana morning (12 UTC) para no acumular con las otras notifs.
 async function sendBuddyLowMoodAlerts(users) {
   const utcH = new Date().getUTCHours();
-  if (utcH !== 12) return { sent: 0 };
+  // v1594: ventana amplia (11-15 UTC) en vez de hora exacta — GitHub retrasa los
+  // crons 1-3h y con `=== 12` la alerta del día se saltaba entera. Solo el slot de
+  // las 12 cae en esta ventana (7 y 17 quedan afuera), así corre una vez al día.
+  if (utcH < 11 || utcH > 15) return { sent: 0 };
 
   // Emojis considerados "bajo" (score <= 2.5)
   const LOW = new Set(['🥺', '😞', '😔', '😰', '😤', '😢']);
@@ -808,15 +811,30 @@ async function sendBuddyLowMoodAlerts(users) {
         continue;
       }
 
-      // Insertar broadcast al buddy (siempre — para que quede en la campana)
+      // Insertar broadcast al buddy (para que quede en la campana).
+      // v1594: DEDUP por existencia — antes se re-insertaba TODOS los días mientras
+      // el user dejaba de registrar (la condición de "inicio de racha" seguía true),
+      // llenando la campana del buddy. Acotamos por sent_at >= d0 (fecha del ánimo
+      // bajo más reciente): mientras dure esa racha no se duplica; una racha nueva
+      // (d0 posterior) sí vuelve a avisar.
       const alertKey = `${p.id}:${d0}`;
       const buddyName = nameMap[p.id] || 'Tu compañero/a';
+      let _buddyAlreadyAlerted = false;
+      try {
+        const { data: exBuddy } = await supabase.from('broadcasts')
+          .select('id').eq('target', `user:${p.buddy_id}`)
+          .eq('subject', '🕊️ Un mensaje puede ayudar')
+          .gte('sent_at', d0 + 'T00:00:00Z').limit(1);
+        _buddyAlreadyAlerted = !!(exBuddy && exBuddy.length);
+      } catch (e) {}
+      if (_buddyAlreadyAlerted) continue;
       await supabase.from('broadcasts').insert({
         target: `user:${p.buddy_id}`,
         subject: '🕊️ Un mensaje puede ayudar',
         body: `${buddyName} viene con días difíciles. Nada urgente — solo por si querés escribirle algo cálido 💚`,
         icon: '🕊️',
         sender: 'Velo — Compañeros de bienestar',
+        sent_at: new Date().toISOString(),
       });
 
       // Push notification al buddy si tiene sub — respeta hora local del buddy (morning only)

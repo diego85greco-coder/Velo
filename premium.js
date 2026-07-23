@@ -345,7 +345,10 @@ function safeLS(action, key, val){
   try{
     if(action==='get') return localStorage.getItem(key);
     if(action==='set') localStorage.setItem(key, val);
-    if(action==='del') localStorage.removeItem(key);
+    // v1594: 'remove' era un no-op (solo se manejaba 'del') → 3 call sites que
+    // limpiaban la push_subscription vieja no hacían nada y dejaban a la app
+    // creyendo que las notis ya estaban activas. Ahora 'remove' == 'del'.
+    if(action==='del' || action==='remove') localStorage.removeItem(key);
   }catch(e){ return null; }
 }
 
@@ -2817,12 +2820,15 @@ async function _checkStreakRecovery(){
   banner.innerHTML = '<div style="background:linear-gradient(140deg,rgba(255,178,80,.22),rgba(220,140,50,.16));border:1.5px solid rgba(255,178,80,.55);border-radius:18px;padding:14px 16px;position:relative;box-shadow:0 4px 22px rgba(255,178,80,.18)"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px;line-height:1;flex-shrink:0" class="velo-flicker-fire">🔥</div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:rgba(255,240,220,.98);font-family:Jost,sans-serif;line-height:1.25;margin-bottom:2px">Ayer no registraste tu ánimo</div><div style="font-size:11.5px;color:rgba(255,220,180,.78);font-family:Jost,sans-serif;line-height:1.35">Tenés '+streak+' días de racha. Marcá cómo estuviste ayer para que no se corte 🌿</div></div><button onclick="pRecoverStreak(\''+_escHtml(yestKey)+'\');document.getElementById(\'streakRecoveryBanner\').remove()" style="flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,rgba(255,178,80,.90),rgba(220,140,50,.95));border:none;border-radius:100px;color:#331808;font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px;box-shadow:0 3px 10px rgba(255,178,80,.35)">Recuperar</button><button onclick="safeLS(\'set\',\''+weekKey+'\',\'1\');var b=document.getElementById(\'streakRecoveryBanner\');if(b)b.remove()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.35);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1">×</button></div></div>';
   host.insertAdjacentElement('afterbegin', banner);
 }
-// Abre el sheet de ánimo forzando ese date_key en el LS
+// v1594: "recuperar racha" ahora funciona de verdad. Antes seteaba
+// _recoveryTargetDate (que nadie leía) y abría un calendario de solo-lectura →
+// no hacía nada. Ahora marca la fecha objetivo (con ts para expirar) y lleva a
+// las caritas de la home; la próxima carita que toques registra AYER (ver
+// _homeMoodQuick), preservando la racha.
 function pRecoverStreak(dateKey){
-  window._recoveryTargetDate = dateKey;
-  if(typeof pOpenMoodQuickView === 'function') pOpenMoodQuickView();
-  else if(typeof pOpenQuickMood === 'function') pOpenQuickMood();
-  pToast('🔥','Registrá cómo estuvo el día de ayer');
+  window._recoveryTargetDate = { date: dateKey, ts: Date.now() };
+  try{ var el = document.querySelector('.r-hero-left'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+  pToast('🔥','Tocá una carita abajo para registrar cómo estuvo AYER 🌿');
 }
 
 // ── ACHIEVEMENTS SYSTEM ────────────────────────────────────────────
@@ -3454,7 +3460,10 @@ async function pOpenAnnualWrapped(){
     var _dk = year+'-'+String(_dt.getMonth()+1).padStart(2,'0')+'-'+String(_dt.getDate()).padStart(2,'0');
     var st = safeLS('get','velo_mood_'+_dk);
     if(st){ try{ var ms=JSON.parse(st); if(ms && ms.emoji){
-      moodByMonth[_dt.getMonth()].push(ms);
+      // v1594: guardar date_key para que el dedup con Supabase (abajo, por
+      // date_key) funcione — antes las entradas de LS no lo tenían y cada día
+      // presente en LS+Supabase se contaba DOS veces en el Wrapped anual.
+      moodByMonth[_dt.getMonth()].push({...ms, date_key:_dk});
       allMoods.push({...ms, monthIdx:_dt.getMonth(), dateKey:_dk});
       moodByDayOfWeek[_dt.getDay()]++;
       if(ms.ts){ var h = new Date(parseInt(ms.ts)).getHours(); moodByHour[h] = (moodByHour[h]||0)+1; }
@@ -3472,7 +3481,9 @@ async function pOpenAnnualWrapped(){
           if(!already){
             moodByMonth[_mo].push(e);
             allMoods.push({...e, monthIdx:_mo, dateKey:e.date_key});
-            try{ var _dj = new Date(e.date_key); moodByDayOfWeek[_dj.getDay()]++; }catch(_){}
+            // v1594: parsear como mediodía LOCAL (no UTC-midnight) — 'new Date("2026-07-15")'
+            // es UTC y en husos negativos devuelve el día ANTERIOR, corriendo el histograma.
+            try{ var _dj = new Date(e.date_key+'T12:00:00'); moodByDayOfWeek[_dj.getDay()]++; }catch(_){}
             if(e.note) notes.push(String(e.note));
           }
         });
@@ -5149,10 +5160,17 @@ async function _pushMissingMoodsToSb(){
           safeLS('del','velo_mood_'+_lk); // purge stale local entry
           continue;
         }
-        // If a cleared_at timestamp exists, skip moods from before the clear
-        if(_clearedAt && new Date(_lk).getTime() < _clearedAt){
-          safeLS('del','velo_mood_'+_lk);
-          continue;
+        // If a cleared_at timestamp exists, skip moods from before the clear.
+        // v1594: comparar por el timestamp REAL de registro (o el FIN del día local
+        // como fallback), no por new Date(_lk) que es UTC-midnight — en husos
+        // negativos eso hacía que el ánimo de HOY quedara "antes" del clear y se
+        // borrara. Además, nunca purgar el día de hoy.
+        if(_clearedAt && _lk !== _todayKey){
+          var _mt = _lm.ts ? parseInt(_lm.ts) : new Date(_lk+'T23:59:59').getTime();
+          if(_mt < _clearedAt){
+            safeLS('del','velo_mood_'+_lk);
+            continue;
+          }
         }
         localMoods[_lk] = _lm;
       }
@@ -7706,9 +7724,17 @@ var _HOME_MOODS = [
 ];
 var _homeMoodForcePick = false;
 function _homeMoodQuick(emoji, label){
-  var today = (typeof _dateKey==='function') ? _dateKey() : '';
+  // v1594: soporte REAL de "recuperar racha". Si hay una fecha objetivo reciente
+  // (banner "ayer no registraste"), se guarda en ESA fecha, no en hoy. Antes
+  // window._recoveryTargetDate se seteaba pero NUNCA se leía → el botón
+  // "Recuperar" no hacía nada. Se auto-expira a los 2 min para no desviar un
+  // registro de hoy por accidente.
+  var _recov = window._recoveryTargetDate;
+  var _recovDate = (_recov && _recov.date && (Date.now() - (_recov.ts||0)) < 120000) ? _recov.date : null;
+  window._recoveryTargetDate = null;
+  var today = _recovDate || ((typeof _dateKey==='function') ? _dateKey() : '');
   if(!today) return;
-  var moodObj = { emoji:emoji, label:label||'', note:'', ts:Date.now() };
+  var moodObj = { emoji:emoji, label:label||'', note:'', ts: _recovDate ? new Date(_recovDate+'T12:00:00').getTime() : Date.now() };
   try{ safeLS('set','velo_mood_'+today, JSON.stringify(moodObj)); }catch(_){}
   try{ var log=JSON.parse(safeLS('get','velo_mood_log')||'[]'); log=log.filter(function(m){ return m.dateKey !== today; }); log.unshift(Object.assign({},moodObj,{dateKey:today})); safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90))); }catch(_){}
   try{ if(typeof sbSaveMoodEntry==='function') sbSaveMoodEntry(today, emoji, label||'', ''); }catch(_){}
@@ -7717,7 +7743,7 @@ function _homeMoodQuick(emoji, label){
   try{ if(typeof _updateTopbarMoodBadge==='function') _updateTopbarMoodBadge(); }catch(_){}
   try{ if(typeof _loadTodayMoodHome==='function') _loadTodayMoodHome(); }catch(_){}
   try{ if(typeof _renderHomeWeekMoodGraph==='function') _renderHomeWeekMoodGraph().catch(function(){}); }catch(_){}
-  try{ pToast(emoji, 'Ánimo guardado 💚'); }catch(_){}
+  try{ pToast(emoji, _recovDate ? 'Ánimo de ayer registrado 💚 ¡racha a salvo! 🔥' : 'Ánimo guardado 💚'); }catch(_){}
   try{ if(typeof _showStreakCelebration==='function') _showStreakCelebration(); }catch(_){}
 }
 function _updateMoodChip(){
@@ -8798,7 +8824,9 @@ async function _loadCommunityPulse(){
     return;
   }
   try{
-    var res = await sbClient.from('daily_responses').select('mood_emoji').eq('question_date',today);
+    // v1594: leer la vista enmascarada (la tabla cruda quedó owner-only por RLS;
+    // si leyéramos la cruda, el conteo comunitario mostraría solo la propia fila).
+    var res = await sbClient.from('daily_responses_feed').select('mood_emoji').eq('question_date',today);
     var rows = res.data || [];
     var total = rows.length;
     var counts = {};
@@ -8854,7 +8882,8 @@ async function _showPulseDetail(){
   }
   try{
     var today = _dateKey();
-    var res = await sbClient.from('daily_responses').select('mood_emoji').eq('question_date', today);
+    // v1594: vista enmascarada (ver nota en _loadCommunityPulse)
+    var res = await sbClient.from('daily_responses_feed').select('mood_emoji').eq('question_date', today);
     var rows = res.data || [];
     var total = rows.length;
     var counts = {};
@@ -18122,7 +18151,7 @@ function _circleCardHtml(c, memberCounts){
   // de cupo — el listado deja de ser verde uniforme y se siente vivo.
   var col = document.body.classList.contains('r-dark') ? _dqEmojiColor(c.emoji||'☮️') : _dqEmojiColorLight(c.emoji||'☮️');
   var imgHtml = c.foto
-    ? '<img src="'+c.foto+'" alt="" style="width:52px;height:52px;border-radius:18px;object-fit:cover;flex-shrink:0">'
+    ? '<img src="'+_escHtml(c.foto)+'" alt="" style="width:52px;height:52px;border-radius:18px;object-fit:cover;flex-shrink:0">'
     : '<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:'+col.badge+';border:1.5px solid '+col.border+';box-shadow:0 2px 12px '+col.glow+';display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
       +c.emoji
       +(c.official ? '<span style="position:absolute;bottom:-4px;right:-4px;font-size:14px;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)" title="Sala oficial Velo">🛡️</span>' : '')
@@ -27491,7 +27520,12 @@ function _startGlobalDMListener(){
       if(curId === 'pg-guardian-chat' && _gcPeer && _gcPeer.id === m.from_id) return; // already in guardian chat
       if(curId === 'pg-help-chat' && _curHelpPost && _curHelpPost.userId === m.from_id) return; // already in help chat
       // Show floating notification
-      _showDMToast(m.from_id, m.from_name||'Usuario', m.from_av||'🧑', m.text||'');
+      // v1594: mapear sentinels de foto/audio a texto amistoso — antes el cartel
+      // mostraba el base64 crudo (__velo_dm_image__:v=1|iVBOR...).
+      var _toastTxt = m.text || '';
+      if(_toastTxt.indexOf('__velo_dm_image__') === 0) _toastTxt = '📷 Foto';
+      else if(_toastTxt.indexOf('__velo_dm_audio__') === 0) _toastTxt = '🎙️ Nota de voz';
+      _showDMToast(m.from_id, m.from_name||'Usuario', m.from_av||'🧑', _toastTxt);
       // System notification si la tab está oculta (funciona en PWA background —
       // no cuando la PWA está cerrada, para eso se necesita push del servidor)
       _dmMaybeShowSystemNotif(m);
@@ -37726,7 +37760,7 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
     var avIsUrl=avUrl&&(avUrl.startsWith('http')||avUrl.startsWith('data:'));
     var avEmoji=!avIsUrl&&avUrl?avUrl:(cm.is_anon?'🕊️':'🌿');
     var avHtml=avIsUrl
-      ?'<img src="'+_jsAttr(avUrl)+'" '+avClickAttr+' style="'+ringStyle+'object-fit:cover;" />'
+      ?'<img src="'+_escHtml(avUrl)+'" '+avClickAttr+' style="'+ringStyle+'object-fit:cover;" />'
       :'<div '+avClickAttr+' style="'+ringStyle+'background:rgba(116,198,157,.20);display:flex;align-items:center;justify-content:center;font-size:20px">'+avEmoji+'</div>';
     // Name + @username clickable cuando no es anon
     var unameLine = (canClick && uname)
@@ -38206,7 +38240,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1593;
+    var _BUILT_V = 1594;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

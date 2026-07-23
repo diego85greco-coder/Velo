@@ -35,11 +35,10 @@ async function _sha256Hex16(s: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
 }
 if (VAPID_PRIVATE) {
+  // v1594: NO logear prefijos/sufijos de la private key ni embeberla en un warning
+  // (era un leak del secret en el código fuente). Solo un fingerprint hash opaco.
   const _hash = await _sha256Hex16(VAPID_PRIVATE);
-  console.log(`[vapid] pub_prefix=${VAPID_PUBLIC.slice(0,12)}... priv_len=${VAPID_PRIVATE.length} priv_prefix=${VAPID_PRIVATE.slice(0,8)} priv_tail=${VAPID_PRIVATE.slice(-4)} priv_hash=${_hash}`);
-  if (_hash !== "9b488d2f053ab8d1") {
-    console.warn("[vapid] ⚠️ PRIVATE KEY MISMATCH — el secret VAPID_PRIVATE_KEY de este Edge Function NO es RYeGjvT...rZWg. Correr: supabase secrets set VAPID_PRIVATE_KEY=RYeGjvTCv_ozjj54pSlTS_Qra_oD9363jIChSR-rZWg");
-  }
+  console.log(`[vapid] pub_prefix=${VAPID_PUBLIC.slice(0,12)}... priv_len=${VAPID_PRIVATE.length} priv_hash=${_hash}`);
   webPush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 } else {
   console.error("[vapid] VAPID_PRIVATE_KEY no está seteada como secret de este Edge Function");
