@@ -7373,7 +7373,9 @@ async function _fetchDailyCount(){
   if(!sbClient) return;
   var today = _dateKey();
   try{
-    var res = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('question_date',today);
+    // v1590: cuenta comunitaria vía la vista enmascarada (la tabla cruda queda
+    // owner-only por RLS; la vista security-definer devuelve todas las filas).
+    var res = await sbClient.from('daily_responses_feed').select('id',{count:'exact',head:true}).eq('question_date',today);
     var n = res.count || 0;
     var t = n === 0 ? 'Sé el primero en responder ✨' : n+(n===1?' persona respondió hoy':' personas respondieron hoy');
     var countEl = document.getElementById('homeDailyQCount');
@@ -7385,7 +7387,7 @@ async function _fetchDailyCount(){
     if(tz){
       if(n > 0){
         try{
-          var pv = await sbClient.from('daily_responses').select('mood_emoji,response_text,user_name')
+          var pv = await sbClient.from('daily_responses_feed').select('mood_emoji,response_text,user_name')
             .eq('question_date',today).neq('response_text','').order('created_at',{ascending:false}).limit(2);
           var rows = ((pv && pv.data)||[]).filter(function(x){ return x.response_text && x.response_text.trim(); });
           if(rows.length){
@@ -8322,7 +8324,16 @@ function _createVeloNotif(recipientId,type,title,body,relatedId){
   if(!recipientId||recipientId===myUid) return;
   _initSupabase(); if(!sbClient) return;
   var data={user_id:recipientId,type:type,title:title,body:body||null,related_id:relatedId?String(relatedId):null,is_read:false,created_at:new Date().toISOString()};
-  sbClient.from('velo_notifications').insert(data).then(function(){}).catch(function(){});
+  // v1590 (SEGURIDAD): preferimos el RPC security-definer velo_create_notif, que
+  // registra el remitente verificado (sender_id) y evita el spoofing por insert
+  // directo. Si el RPC todavía no está desplegado (rollout), caemos al insert.
+  function _fallbackInsert(){ try{ sbClient.from('velo_notifications').insert(data).then(function(){}).catch(function(){}); }catch(_){} }
+  try{
+    sbClient.rpc('velo_create_notif',{
+      p_recipient:recipientId, p_type:type, p_title:title,
+      p_body:body||null, p_related:relatedId?String(relatedId):null
+    }).then(function(r){ if(r && r.error) _fallbackInsert(); }).catch(_fallbackInsert);
+  }catch(_){ _fallbackInsert(); }
 }
 
 async function _loadVeloNotifs(){
