@@ -27756,16 +27756,18 @@ async function pCancelStripePlus(){
   if(!uid){ pToast('⚠️','No pudimos identificar tu cuenta'); return; }
   try{ pToast('⏳','Procesando tu cancelación…'); }catch(_){}
   try{
-    // v1588 (SEGURIDAD): mandamos el JWT del usuario — el server toma el email a
-    // cancelar del token verificado, no del body (antes se podía cancelar el Plus
-    // de otra persona conociendo su email).
+    // v1588 (SEGURIDAD): mandamos el JWT del usuario — el server NUEVO toma el
+    // email a cancelar del token verificado (antes se podía cancelar el Plus de
+    // otra persona conociendo su email). Seguimos mandando veloEmail/veloUserId en
+    // el body por COMPATIBILIDAD: el server viejo (aún desplegado) los usa; el
+    // nuevo los ignora. Así el cliente es seguro de publicar en cualquier orden.
+    var email = safeLS('get','velo_user_email') || '';
     var _tok = '';
     try{ var _s = await sbClient.auth.getSession(); if(_s && _s.data && _s.data.session && _s.data.session.access_token) _tok = _s.data.session.access_token; }catch(_){}
-    if(!_tok){ pToast('⚠️','Iniciá sesión para cancelar tu suscripción 🌿'); return; }
     var resp = await fetch(SUPABASE_URL + '/functions/v1/stripe-checkout', {
       method:'POST',
-      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+_tok },
-      body: JSON.stringify({ sessionType:'cancel_plus' })
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+(_tok||SUPABASE_ANON) },
+      body: JSON.stringify({ sessionType:'cancel_plus', veloUserId: uid, veloEmail: email })
     });
     var data = await resp.json().catch(function(){ return {}; });
     var ov = document.getElementById('plusManageOv'); if(ov) ov.remove();
