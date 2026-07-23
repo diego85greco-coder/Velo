@@ -317,8 +317,10 @@ async function sendAnnualWrapped(users) {
   const now = new Date();
   if (now.getUTCMonth() !== 11 || now.getUTCDate() !== 20) return { sent: 0 };
   const utcH = now.getUTCHours();
-  // Solo en las 2 ventanas de mañana (7 UTC EU / 12 UTC LATAM)
-  if (utcH !== 7 && utcH !== 12) return { sent: 0 };
+  // Ventana AMPLIA (6-15 UTC) en vez de hora exacta: GitHub retrasa los crons
+  // rutinariamente 1-3h y con `utcH === 7/12` el Wrapped anual se perdía. El
+  // broadcast se dedup por existencia (abajo) y el push por `lastAnnualWrapped`.
+  if (utcH < 6 || utcH > 15) return { sent: 0 };
 
   const year = now.getUTCFullYear();
   const yearStart = new Date(Date.UTC(year, 0, 1)).toISOString();
@@ -340,20 +342,36 @@ async function sendAnnualWrapped(users) {
   const title = `🎊 Tu Wrapped anual ${year} está listo`;
   const body = `Un resumen completo del año — evolución mes a mes, tu día favorito, tu personalidad emocional analizada por IA. Deslizá para verlo ✨`;
 
-  const brRows = activeIds.map(uid => ({
-    target: `user:${uid}`,
-    subject: title,
-    body: `${body}\n\nAbrí Velo y andá al menú → "Mi Wrapped anual" 🌿`,
-    icon: '🎊',
-    sender: 'Velo — Wrapped anual',
-  }));
+  // Broadcast al inbox con DEDUP por existencia: si un run previo de hoy ya
+  // insertó los Wrapped de este año, no re-insertamos (evita duplicados al
+  // ampliar la ventana). El subject incluye el año → sin colisión entre años.
+  let brCount = 0;
+  let _annualBroadcasted = false;
   try {
-    for (let i = 0; i < brRows.length; i += 100) {
-      const chunk = brRows.slice(i, i + 100);
-      const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
-      if (brErr) console.warn('[wrapped-annual] broadcast batch err:', brErr);
-    }
-  } catch (e) { console.warn('[wrapped-annual] broadcast err:', e.message); }
+    const { data: exA } = await supabase.from('broadcasts')
+      .select('id').eq('subject', title).limit(1);
+    _annualBroadcasted = !!(exA && exA.length);
+  } catch { }
+  if (_annualBroadcasted) {
+    console.log(`[wrapped-annual] broadcasts de ${year} ya existían — skip insert`);
+  } else {
+    const brRows = activeIds.map(uid => ({
+      target: `user:${uid}`,
+      subject: title,
+      body: `${body}\n\nAbrí Velo y andá al menú → "Mi Wrapped anual" 🌿`,
+      icon: '🎊',
+      sender: 'Velo — Wrapped anual',
+      sent_at: new Date().toISOString(),
+    }));
+    brCount = brRows.length;
+    try {
+      for (let i = 0; i < brRows.length; i += 100) {
+        const chunk = brRows.slice(i, i + 100);
+        const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
+        if (brErr) console.warn('[wrapped-annual] broadcast batch err:', brErr);
+      }
+    } catch (e) { console.warn('[wrapped-annual] broadcast err:', e.message); }
+  }
 
   // Push notif con dedup por año
   let sent = 0, failed = 0;
@@ -396,7 +414,7 @@ async function sendAnnualWrapped(users) {
       failed++;
     }
   }));
-  console.log(`[wrapped-annual] broadcasts=${brRows.length}, push_sent=${sent}, push_failed=${failed}`);
+  console.log(`[wrapped-annual] broadcasts=${brCount}, push_sent=${sent}, push_failed=${failed}`);
   return { sent };
 }
 
@@ -511,11 +529,12 @@ async function sendWeeklySummary(users) {
 async function sendMonthlyWrapped(users) {
   const now = new Date();
   if (now.getUTCDate() !== 1) return { sent: 0 };
-  // Corremos en las 2 ventanas de "mañana" globales (7 UTC = EU mañana, 12 UTC = LATAM mañana).
-  // El filtro por hora local del usuario + dedup por mes garantiza que cada persona reciba
-  // la notif en su mañana local, una sola vez.
+  // Ventana AMPLIA (6-15 UTC) en vez de hora exacta: GitHub retrasa los crons
+  // rutinariamente 1-3h y con `utcH === 7/12` el Wrapped mensual se perdía. El
+  // broadcast se dedup por existencia (abajo) y el push por `lastWrapped`, así
+  // cualquier run del día 1 lo entrega una sola vez en la mañana local del usuario.
   const utcH = now.getUTCHours();
-  if (utcH !== 7 && utcH !== 12) return { sent: 0 };
+  if (utcH < 6 || utcH > 15) return { sent: 0 };
 
   // Mes anterior
   const prev = new Date(now); prev.setUTCMonth(prev.getUTCMonth() - 1);
@@ -542,21 +561,38 @@ async function sendMonthlyWrapped(users) {
   const body = `Descubrí cómo fue tu mes emocional. Deslizá para ver tu resumen ✨`;
 
   // 1) Broadcast al inbox (uno por usuario para que quede en la campana)
-  const brRows = activeIds.map(uid => ({
-    target: `user:${uid}`,
-    subject: title,
-    body: `${body}\n\nAbrí Velo y andá al menú → "Mi Wrapped mensual" 🌿`,
-    icon: '🌸',
-    sender: 'Velo — Wrapped mensual',
-  }));
+  //    DEDUP por existencia: si un run previo del día 1 ya insertó los Wrapped de
+  //    este mes, no re-insertamos (evita duplicados al ampliar la ventana). El
+  //    subject repite nombre de mes cada año → acotamos por sent_at de este mes.
+  const monthStartIso = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  let brCount = 0;
+  let _monthBroadcasted = false;
   try {
-    // insert en batches de 100 para no romper el payload
-    for (let i = 0; i < brRows.length; i += 100) {
-      const chunk = brRows.slice(i, i + 100);
-      const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
-      if (brErr) console.warn('[wrapped] broadcast batch err:', brErr);
-    }
-  } catch (e) { console.warn('[wrapped] broadcast err:', e.message); }
+    const { data: exM } = await supabase.from('broadcasts')
+      .select('id').eq('subject', title).gte('sent_at', monthStartIso).limit(1);
+    _monthBroadcasted = !!(exM && exM.length);
+  } catch { }
+  if (_monthBroadcasted) {
+    console.log(`[wrapped] broadcasts de ${monthKey} ya existían — skip insert`);
+  } else {
+    const brRows = activeIds.map(uid => ({
+      target: `user:${uid}`,
+      subject: title,
+      body: `${body}\n\nAbrí Velo y andá al menú → "Mi Wrapped mensual" 🌿`,
+      icon: '🌸',
+      sender: 'Velo — Wrapped mensual',
+      sent_at: new Date().toISOString(),
+    }));
+    brCount = brRows.length;
+    try {
+      // insert en batches de 100 para no romper el payload
+      for (let i = 0; i < brRows.length; i += 100) {
+        const chunk = brRows.slice(i, i + 100);
+        const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
+        if (brErr) console.warn('[wrapped] broadcast batch err:', brErr);
+      }
+    } catch (e) { console.warn('[wrapped] broadcast err:', e.message); }
+  }
 
   // 2) Push notif — solo a los que tienen push_subscription y no recibieron este mes
   let sent = 0, failed = 0;
@@ -601,7 +637,7 @@ async function sendMonthlyWrapped(users) {
       failed++;
     }
   }));
-  console.log(`[wrapped] broadcasts=${brRows.length}, push_sent=${sent}, push_failed=${failed}`);
+  console.log(`[wrapped] broadcasts=${brCount}, push_sent=${sent}, push_failed=${failed}`);
 
   // ── Cohorte "no completaron el mes" ────────────────────────────────
   // Usuarios con push que NO registraron ningún ánimo el mes pasado. En vez de
@@ -623,22 +659,34 @@ async function sendMonthlyWrapped(users) {
   const invTitle = `🌱 Tu Wrapped te espera`;
   const invBody = `No llegaste a registrar ${monthLabel}, ¡pero este mes es una nueva oportunidad! Registrá cómo te sentís en ${curMonthLabel} y el 1° de ${nextMonthLabel} vas a tener tu Wrapped completo ✨`;
 
-  // 1) Broadcast al inbox
+  // 1) Broadcast al inbox — DEDUP por existencia (subject constante → acotamos
+  //    por sent_at de este mes) para no duplicar al ampliar la ventana horaria.
+  let _inviteBroadcasted = false;
   try {
-    const invRows = inviteUsers.map(u => ({
-      target: `user:${u.id}`,
-      subject: invTitle,
-      body: invBody,
-      icon: '🌱',
-      sender: 'Velo — Tu mes emocional',
-    }));
-    for (let i = 0; i < invRows.length; i += 100) {
-      const chunk = invRows.slice(i, i + 100);
-      if (!chunk.length) break;
-      const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
-      if (brErr) console.warn('[wrapped-invite] broadcast batch err:', brErr);
-    }
-  } catch (e) { console.warn('[wrapped-invite] broadcast err:', e.message); }
+    const { data: exI } = await supabase.from('broadcasts')
+      .select('id').eq('subject', invTitle).gte('sent_at', monthStartIso).limit(1);
+    _inviteBroadcasted = !!(exI && exI.length);
+  } catch { }
+  if (_inviteBroadcasted) {
+    console.log(`[wrapped-invite] broadcasts de ${monthKey} ya existían — skip insert`);
+  } else {
+    try {
+      const invRows = inviteUsers.map(u => ({
+        target: `user:${u.id}`,
+        subject: invTitle,
+        body: invBody,
+        icon: '🌱',
+        sender: 'Velo — Tu mes emocional',
+        sent_at: new Date().toISOString(),
+      }));
+      for (let i = 0; i < invRows.length; i += 100) {
+        const chunk = invRows.slice(i, i + 100);
+        if (!chunk.length) break;
+        const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
+        if (brErr) console.warn('[wrapped-invite] broadcast batch err:', brErr);
+      }
+    } catch (e) { console.warn('[wrapped-invite] broadcast err:', e.message); }
+  }
 
   // 2) Push (mañana local + dedup por mes con clave propia)
   let invSent = 0, invFailed = 0;

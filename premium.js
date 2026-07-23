@@ -21508,7 +21508,7 @@ async function pRenderVibesHome(){
     body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;font-size:13px">Cargando…</div>';
   }
   try{
-    var g = await sbClient.from('vibe_groups').select('id,kind,slug,title,emoji,description,owner_id,expires_at,created_at').order('created_at',{ascending:false}).limit(200);
+    var g = await sbClient.from('vibe_groups').select('id,kind,slug,title,emoji,description,owner_id,member_ids,expires_at,created_at').order('created_at',{ascending:false}).limit(200);
     if(!g || !g.data){ body.innerHTML = '<div style="text-align:center;padding:50px 20px;color:rgba(220,120,120,.65)">Error cargando grupos</div>'; return; }
     _vibesGroupsCache = g.data;
     // Contar vibes activas por grupo
@@ -33737,11 +33737,19 @@ function _weekActivityText(a){
 }
 
 // ── WEEKLY SUMMARY ────────────────────────────────────────────
+var _weeklySummaryInFlight = '';
 async function _checkWeeklySummary(){
   var lastKey = safeLS('get','velo_last_weekly_summary')||'';
   var today = new Date();
   var todayKey = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   if(lastKey === todayKey) return;
+  // v1588: guard de re-entrada SINCRÓNICO — evita doble corrida en la misma
+  // sesión mientras corren los awaits, sin persistir el flag ANTES de escribir.
+  // Antes se marcaba `velo_last_weekly_summary` al inicio y el item real del buzón
+  // se creaba en un setTimeout(3000): si la app se cerraba en <3s el resumen se
+  // perdía y ya no reintentaba ese día. Ahora el flag se persiste sólo tras escribir.
+  if(_weeklySummaryInFlight === todayKey) return;
+  _weeklySummaryInFlight = todayKey;
   var isSunday = today.getDay() === 0;
   // Only run on Sundays — the 7-day fallback caused unexpected mid-week overlays
   if(!isSunday) return;
@@ -33778,8 +33786,6 @@ async function _checkWeeklySummary(){
   var weekDiary = diary.filter(function(e){ return e.ts && (Date.now()-e.ts)<7*86400000; });
   // Use mood-registration streak (account-scoped) — visit-day count can be stale
   var streak = _getMoodStreak ? _getMoodStreak() : weekMoods.length;
-
-  safeLS('set','velo_last_weekly_summary', todayKey);
 
   // Build full 7-day timeline (ordered Mon→Sun, with nulls for missing days)
   var dayNamesShort = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
@@ -33850,6 +33856,8 @@ async function _checkWeeklySummary(){
       safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
       if(typeof _updateInboxDot==='function') _updateInboxDot();
     }
+    // v1588: recién ahora marcamos la semana como hecha (la escritura ya ocurrió)
+    safeLS('set','velo_last_weekly_summary', todayKey);
     return;
   }
 
@@ -33898,8 +33906,11 @@ async function _checkWeeklySummary(){
     var _isRecord = streak>0 && streak>=_bestStreak;
     if(streak>_bestStreak) safeLS('set','velo_best_streak', String(streak));
 
-    if(!alreadySent){
-      var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
+    var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
+    // v1588: re-chequeo FRESCO de existencia (el `alreadySent` de arriba es de
+    // hace 3s y no cubre otra pestaña que haya escrito mientras tanto) → idempotente.
+    var _wAlready = _inbox2.find(function(m){ return m.id==='weekly-'+todayKey; }) || _syncedReadIds['weekly-'+todayKey];
+    if(!_wAlready){
       var _wqB = _pickWeeklyQuote(dominantMood);
       var _moodCat = (dominantMood==='😄'||dominantMood==='😊') ? 'feliz' : (dominantMood==='😞'||dominantMood==='😢') ? 'dificil' : 'neutral';
       var _mediaRec = _pickWeeklyMedia(_moodCat);
@@ -33941,6 +33952,9 @@ async function _checkWeeklySummary(){
       safeLS('set','velo_inbox',JSON.stringify(_inbox2.slice(0,100)));
       if(typeof _updateInboxDot==='function') _updateInboxDot();
     }
+    // v1588: persistir el flag SÓLO tras completar la escritura diferida — si la
+    // app se cierra antes, la semana NO queda marcada y se reintenta al reabrir.
+    safeLS('set','velo_last_weekly_summary', todayKey);
   }, 3000);
 }
 
