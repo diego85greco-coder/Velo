@@ -21674,12 +21674,18 @@ function _vibeGroupCard(gr, count){
   var groupEmoji = (gr.emoji || '').trim();
   if(!groupEmoji && gr.slug && _VIBE_SLUG_EMOJIS[gr.slug]) groupEmoji = _VIBE_SLUG_EMOJIS[gr.slug];
   if(!groupEmoji) groupEmoji = isPrivate ? '🔒' : isOfficial ? '🌱' : '🌊';
-  var accentBrd  = isPrivate ? 'rgba(155,120,220,.60)' : isOfficial ? 'rgba(116,198,157,.55)' : 'rgba(200,180,80,.50)';
-  var accentBg   = isPrivate ? 'rgba(80,50,150,.16)'   : isOfficial ? 'rgba(60,140,95,.16)'    : 'rgba(180,150,50,.14)';
-  var accentGlow = isPrivate ? 'rgba(155,120,220,.28)' : isOfficial ? 'rgba(116,198,157,.28)'  : 'rgba(200,180,80,.24)';
-  // v1586: colores theme-aware. En modo CLARO los textos claros (blanco/verde
-  // palido) quedaban ilegibles sobre las tarjetas claras -> se oscurecen.
+  // v1586: colores theme-aware para borders, backgrounds y glows
   var _isDk = document.body.classList.contains('r-dark');
+  var accentBrd, accentBg, accentGlow;
+  if(_isDk){
+    accentBrd  = isPrivate ? 'rgba(155,120,220,.60)' : isOfficial ? 'rgba(116,198,157,.55)' : 'rgba(200,180,80,.50)';
+    accentBg   = isPrivate ? 'rgba(80,50,150,.16)'   : isOfficial ? 'rgba(60,140,95,.16)'    : 'rgba(180,150,50,.14)';
+    accentGlow = isPrivate ? 'rgba(155,120,220,.28)' : isOfficial ? 'rgba(116,198,157,.28)'  : 'rgba(200,180,80,.24)';
+  } else {
+    accentBrd  = isPrivate ? 'rgba(110,70,180,.50)' : isOfficial ? 'rgba(30,120,75,.60)' : 'rgba(130,90,10,.55)';
+    accentBg   = isPrivate ? 'rgba(220,200,255,.08)' : isOfficial ? 'rgba(180,230,210,.12)' : 'rgba(240,220,180,.10)';
+    accentGlow = isPrivate ? 'rgba(110,70,180,.10)' : isOfficial ? 'rgba(30,120,75,.10)' : 'rgba(130,90,10,.08)';
+  }
   var accentText = _isDk
     ? (isPrivate ? 'rgba(215,200,255,.85)' : isOfficial ? 'rgba(180,230,200,.85)' : 'rgba(230,215,140,.85)')
     : (isPrivate ? 'rgba(95,55,175,.95)'  : isOfficial ? 'rgba(30,120,78,.95)'    : 'rgba(140,105,15,.95)');
