@@ -154,10 +154,18 @@ serve(async (req: Request): Promise<Response> => {
   // desenvolver si viene en ese formato envuelto.
   const rawSub = sub && sub.sub && sub.sub.endpoint ? sub.sub : sub;
 
-  // Cuerpo preview
+  // Cuerpo preview. v1596: si el mensaje es una RESPUESTA con cita, el texto viene
+  // como `↩ "..."\n<contenido>`, así que el sentinel de foto/audio ya no está al
+  // inicio. Quitamos el prefijo de cita antes de detectarlo — antes se mandaba el
+  // base64 crudo como preview del push al citar una foto/nota de voz.
+  let _content = txt;
+  if (_content.startsWith("↩")) {
+    const _nl = _content.indexOf("\n");
+    if (_nl >= 0) _content = _content.slice(_nl + 1);
+  }
   let body = txt;
-  if (txt.startsWith("__velo_dm_audio__")) body = "🎙️ Te envió una nota de voz";
-  else if (txt.startsWith("__velo_dm_image__")) body = "📷 Te envió una foto";
+  if (_content.startsWith("__velo_dm_audio__")) body = "🎙️ Te envió una nota de voz";
+  else if (_content.startsWith("__velo_dm_image__")) body = "📷 Te envió una foto";
   else if (txt.length > 100) body = txt.slice(0, 100) + "…";
 
   const notifPayload = JSON.stringify(sentinelPush ? {
