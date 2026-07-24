@@ -38268,7 +38268,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1596;
+    var _BUILT_V = 1597;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
@@ -38283,6 +38283,16 @@ window.addEventListener('load', function(){
       });
       // When a new SW takes control, reload to get fresh assets
       navigator.serviceWorker.addEventListener('controllerchange', function(){
+        // v1597 CORTA-LOOPS: máx 2 recargas por controllerchange en una ventana de
+        // 60s — si el SW se re-activa en bucle, dejamos de recargar (evita thrashing).
+        try{
+          var _now = Date.now();
+          var _t = parseInt(sessionStorage.getItem('velo_cc_t')||'0')||0;
+          var _n = (_now - _t > 60000) ? 0 : (parseInt(sessionStorage.getItem('velo_cc_n')||'0')||0);
+          if(_n >= 2) return;
+          sessionStorage.setItem('velo_cc_n', String(_n+1));
+          sessionStorage.setItem('velo_cc_t', String(_now));
+        }catch(_){}
         window.location.reload();
       });
     }
@@ -38312,7 +38322,18 @@ window.addEventListener('load', function(){
         .then(function(r){ return r.json(); })
         .then(function(d){
           var v = d && d.v;
-          if(v && v > _BUILT_V){ _forceFreshReload(); }
+          if(v && v > _BUILT_V){
+            // v1597 CORTA-LOOPS: recargar UNA sola vez por transición (build actual
+            // → versión del server). Si tras recargar el código servido SIGUE siendo
+            // este mismo build viejo (típico en PWA iOS que retiene el shell cacheado),
+            // NO recargar de nuevo → corta cualquier loop de recarga. Cuando el build
+            // sí se actualice, _BUILT_V cambia y se re-habilita para la próxima versión.
+            var _ftok = _BUILT_V + '>' + v, _prev = '';
+            try{ _prev = localStorage.getItem('velo_forced_reload') || ''; }catch(_){}
+            if(_prev === _ftok) return; // ya intentamos esta transición y seguimos viejos
+            try{ localStorage.setItem('velo_forced_reload', _ftok); }catch(_){}
+            _forceFreshReload();
+          }
         }).catch(function(){});
     }
     // Chequear también cada vez que la app vuelve a primer plano — el
