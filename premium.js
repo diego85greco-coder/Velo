@@ -5046,25 +5046,32 @@ async function _saveNameFromBanner(){
   if(!uid){ pToast('✅','Nombre guardado en este dispositivo'); var b2=document.getElementById('homeNameBanner'); if(b2)b2.remove(); _updateSidebarUser(); return; }
   var email = safeLS('get','velo_user_email')||'';
   try{
-    // Always UPSERT — UPDATE on missing row returns no error but saves nothing
-    var r = await sbClient.from('profiles').upsert({id:uid, nombre:newName, email:email},{onConflict:'id'});
+    // Always UPSERT — UPDATE on missing row returns no error but saves nothing.
+    // v1598: NO incluir email si está vacío en LS (cross-device) — si no, el upsert
+    // pisaría el email real del perfil con '' y rompería el mapeo de Plus/admin.
+    var _profUpd = { id:uid, nombre:newName };
+    if(email) _profUpd.email = email;
+    var r = await sbClient.from('profiles').upsert(_profUpd,{onConflict:'id'});
     if(r && r.error){ pToast('⚠️','Error al guardar: '+r.error.message); return; }
     pToast('✅','¡Nombre guardado! Ya se verá en todos tus dispositivos 🌿');
     var banner = document.getElementById('homeNameBanner');
     if(banner) banner.remove();
     _updateSidebarUser();
-    // Push other profile fields in background
+    // Push other profile fields in background.
+    // v1598: incluir SOLO los campos que tenemos localmente. Antes se mandaban
+    // todos con ||'' → si guardabas el nombre en un dispositivo sin esos valores
+    // en LS (los pusiste en otro), el upsert pisaba avatar/motto/estados del server
+    // con '' (pérdida de datos). Solo sincronizamos lo que existe.
     try{
       var av = safeLS('get','velo_user_av')||'';
       if(av.length > 8000) av = '';
-      sbClient.from('profiles').upsert({
-        id: uid, avatar: av,
-        motto:  safeLS('get','velo_user_motto')||'',
-        status_music:  safeLS('get','velo_status_music')||'',
-        status_book:   safeLS('get','velo_status_book')||'',
-        status_phrase: safeLS('get','velo_status_phrase')||'',
-        status_film:   safeLS('get','velo_status_film')||''
-      },{onConflict:'id'}).then(function(){}).catch(function(){});
+      var _sUpd = { id: uid };
+      if(av) _sUpd.avatar = av;
+      var _sf = { motto:'velo_user_motto', status_music:'velo_status_music', status_book:'velo_status_book', status_phrase:'velo_status_phrase', status_film:'velo_status_film' };
+      Object.keys(_sf).forEach(function(k){ var _v = safeLS('get', _sf[k])||''; if(_v) _sUpd[k] = _v; });
+      if(Object.keys(_sUpd).length > 1){
+        sbClient.from('profiles').upsert(_sUpd,{onConflict:'id'}).then(function(){}).catch(function(){});
+      }
     }catch(e2){}
   }catch(e){ pToast('⚠️','Error de conexión'); }
 }
@@ -38268,7 +38275,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1598;
+    var _BUILT_V = 1599;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
