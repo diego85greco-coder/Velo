@@ -27724,7 +27724,7 @@ async function pSendContact(){
   }
 
   // Notify admin via email (fire-and-forget)
-  fetch('/api/send-email', { method:'POST', headers:{'Content-Type':'application/json'},
+  fetch('/api/send-email', { method:'POST', headers:_aiHeaders(),
     body:JSON.stringify({ email:_ADMIN_EMAIL, name:name, type:'new-contact', topic:topic, message:text })
   }).catch(function(){});
 
@@ -31670,7 +31670,7 @@ async function pAdminSendReply(){
   if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
   try{
     var r = await fetch('/api/send-email',{
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ email:toEmail, name:toName, type:'admin-reply',
         topic:_adminReplyTarget.topic||'Consulta', reply:txt.value.trim(), allowReply:!!(toggle&&toggle.checked) })
     });
@@ -35871,7 +35871,7 @@ function _activatePlusLocal(source){
   var _name  = safeLS('get','velo_user_name') || '';
   if(_email){
     fetch(SEND_EMAIL_PROXY, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ email:_email, name:_name, type:'plus' })
     }).catch(function(){});
   }
@@ -38268,7 +38268,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1597;
+    var _BUILT_V = 1598;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

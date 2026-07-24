@@ -1,8 +1,27 @@
 // Vercel serverless function — sends emails via Resend HTTP API (no npm package needed)
+// v1597 (SEGURIDAD): antes era un endpoint ABIERTO (CORS *, sin auth) → cualquiera
+// podía hacer que Velo enviara emails desde noreply@heyvelo.app a cualquier
+// dirección con contenido arbitrario (phishing/suplantación + quema de la cuota de
+// Resend). Ahora exige un JWT de Supabase válido; y 'admin-reply' exige ser admin.
+const _SUPA_URL   = process.env.SUPABASE_URL || 'https://yuravtnjvvztsxdtggod.supabase.co';
+const _SUPA_ANON  = process.env.SUPABASE_ANON_KEY || 'sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C';
+const _ADMIN_MAILS = ['consultas@heyvelo.app', 'wearevelo.app@gmail.com'];
+async function _veloUser(req) {
+  try {
+    const auth = req.headers.authorization || req.headers.Authorization || '';
+    const jwt = String(auth).replace(/^Bearer\s+/i, '').trim();
+    if (!jwt || jwt === _SUPA_ANON) return null;
+    const r = await fetch(`${_SUPA_URL}/auth/v1/user`, { headers: { apikey: _SUPA_ANON, Authorization: `Bearer ${jwt}` } });
+    if (!r.ok) return null;
+    const u = await r.json().catch(() => null);
+    return (u && u.id) ? u : null;
+  } catch (_) { return null; }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -11,6 +30,14 @@ module.exports = async function handler(req, res) {
 
   const { email, name, type, amount, topic, reply, allowReply, message } = req.body || {};
   if (!email || !type) return res.status(400).json({ error: 'Missing email or type' });
+
+  // Auth: exigir usuario autenticado. 'admin-reply' (asunto+cuerpo arbitrarios
+  // enviados como Velo) exige además ser admin.
+  const _u = await _veloUser(req);
+  if (!_u) return res.status(401).json({ error: 'No autenticado' });
+  if (type === 'admin-reply' && _ADMIN_MAILS.indexOf(String(_u.email || '').trim().toLowerCase()) < 0) {
+    return res.status(403).json({ error: 'Solo admin' });
+  }
 
   const displayName = name || 'amigo/a';
   const APP_URL = 'https://heyvelo.app';
