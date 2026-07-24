@@ -119,6 +119,14 @@ var GEMINI_URLS   = [
 var GEMINI_PROXY      = '/api/gemini';     // Gemini 2.5 Flash proxy (Google AI, grounding enabled)
 var GROQ_PROXY        = '/api/groq';       // Groq proxy — llama-3.3-70b, same response shape as Gemini
 var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
+// v1594: JWT del usuario cacheado (se setea en _syncRealtimeAuth). Los proxies de
+// IA exigen un token válido → corta el abuso anónimo que quemaba la API key.
+var _veloAccessToken = '';
+function _aiHeaders(){
+  var h = {'Content-Type':'application/json'};
+  if(_veloAccessToken) h['Authorization'] = 'Bearer ' + _veloAccessToken;
+  return h;
+}
 var _geminiUrlIdx = 0;
 
 // ── COMMUNITY REAL-TIME STATE ─────────────────────────────────
@@ -191,7 +199,7 @@ async function _moderateImage(dataUrl){
     var mime = (dataUrl.match(/^data:([^;]+);/)||[])[1] || 'image/jpeg';
     var res = await fetch(GEMINI_PROXY, {
       method:'POST', cache:'no-store',
-      headers:{'Content-Type':'application/json'},
+      headers:_aiHeaders(),
       body: JSON.stringify({ type:'vision', image:base64, mimeType:mime,
         prompt:'¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado para una app de bienestar emocional? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' })
     });
@@ -226,7 +234,7 @@ async function _sendContentWarning(userId, reason){
 async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
   var sources = [
-    function(){ return fetch(GEMINI_PROXY, { method:'POST', cache:'no-store', headers:{'Content-Type':'application/json'},
+    function(){ return fetch(GEMINI_PROXY, { method:'POST', cache:'no-store', headers:_aiHeaders(),
       body: JSON.stringify({ type:'grounded', prompt:prompt, cfg:Object.assign({ temperature:0.9 }, cfg||{}) }) }); },
     function(){ return fetch(GEMINI_URLS[0] + GEMINI_KEY, { method:'POST', cache:'no-store', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ contents:[{ parts:[{ text:prompt }] }], tools:[{ google_search:{} }],
@@ -262,14 +270,14 @@ function _gText(json){
 async function _geminiCall(prompt, cfg){
   // 1. Gemini proxy
   try{
-    var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+    var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ prompt:prompt, cfg:cfg||{} }) });
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
     else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini proxy',pr.status, e1.error||''); }
   }catch(e){ console.warn('[Velo] Gemini proxy fetch error:', e.message); }
   // 2. Groq proxy fallback (Llama 3.3-70b — returns Gemini-compatible shape)
   try{
-    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ prompt:prompt, cfg:cfg||{} }) });
     if(gr.ok){ var t2 = _gText(await gr.json()); if(t2) return t2; }
   }catch(e){}
@@ -314,6 +322,7 @@ function _initSupabase(){
     // NO recibe filas -> las actualizaciones solo llegaban al recargar/cambiar de
     // sección (el REST sí manda el JWT). Pasarle el token al websocket lo arregla.
     function _syncRealtimeAuth(tok){
+      if(tok) _veloAccessToken = tok; // v1594: cachear el JWT para autenticar los proxies de IA
       try{ if(tok && sbClient.realtime && sbClient.realtime.setAuth) sbClient.realtime.setAuth(tok); }catch(_){}
     }
     try{ sbClient.auth.getSession().then(function(r){ var s=r&&r.data&&r.data.session; if(s&&s.access_token) _syncRealtimeAuth(s.access_token); }).catch(function(){}); }catch(_){}
@@ -323,6 +332,7 @@ function _initSupabase(){
       var _storedUid = safeLS('get','velo_user_id') || '';
       if(!_storedUid) return; // no stored user yet — still setting up
       if(event === 'SIGNED_OUT'){
+        _veloAccessToken = '';
         _clearSession();
         _authenticated = false;
         if(typeof pGoTo === 'function') pGoTo('landing');
@@ -13219,14 +13229,14 @@ function _calmAIAddMsg(text, isUser){
 async function _geminiChat(systemPrompt, msgs, cfg){
   // 1. Gemini proxy — primary (multi-turn chat)
   try{
-    var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+    var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
     else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini chat',pr.status,e1.error||''); }
   }catch(e){ console.warn('[Velo] Gemini chat error:',e.message); }
   // 2. Groq proxy — fallback multi-turn chat (llama-3.3-70b)
   try{
-    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
     if(gr.ok){ var t2 = _gText(await gr.json()); if(t2) return t2; }
   }catch(e){}
@@ -32674,7 +32684,7 @@ async function _doGenerateBcastImage(desc){
     var prompt = 'Generá una imagen para una app de bienestar emocional llamada Velo. Estilo: ilustración digital minimalista y cálida, paleta de colores verdes suaves y oscuros (#0D2B1C, #74C69D, crema), fondo oscuro elegante, composición centrada, formato cuadrado. La imagen debe representar: '+desc+'. Sin texto en la imagen.';
     var res = await fetch(GEMINI_PROXY, {
       method:'POST', cache:'no-store',
-      headers:{'Content-Type':'application/json'},
+      headers:_aiHeaders(),
       body: JSON.stringify({ type:'image-gen', prompt: prompt })
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -38240,7 +38250,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1594;
+    var _BUILT_V = 1595;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

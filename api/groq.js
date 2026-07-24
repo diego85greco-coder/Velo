@@ -1,11 +1,29 @@
 // Vercel serverless — proxies Groq API, keeping the key server-side
 // Compatible with the same request/response shape as api/gemini.js
+// v1594 (SEGURIDAD): exige JWT de Supabase válido antes de gastar la API key
+// (antes era abierto → abuso anónimo / bypass del límite de IA y de Plus).
+const _SUPA_URL  = process.env.SUPABASE_URL || 'https://yuravtnjvvztsxdtggod.supabase.co';
+const _SUPA_ANON = process.env.SUPABASE_ANON_KEY || 'sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C';
+async function _veloAuthed(req) {
+  try {
+    const auth = req.headers.authorization || req.headers.Authorization || '';
+    const jwt = String(auth).replace(/^Bearer\s+/i, '').trim();
+    if (!jwt || jwt === _SUPA_ANON) return false;
+    const r = await fetch(`${_SUPA_URL}/auth/v1/user`, { headers: { apikey: _SUPA_ANON, Authorization: `Bearer ${jwt}` } });
+    if (!r.ok) return false;
+    const u = await r.json().catch(() => null);
+    return !!(u && u.id);
+  } catch (_) { return false; }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  if (!(await _veloAuthed(req))) return res.status(401).json({ error: 'No autenticado' });
 
   const GROQ_KEY = process.env.GROQ_API_KEY || process.env.GROQ_KEY;
   if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
