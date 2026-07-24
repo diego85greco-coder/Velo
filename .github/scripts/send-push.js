@@ -886,7 +886,9 @@ async function sendBuddyLowMoodAlerts(users) {
 // (profiles tiene A→B y B→A), así que ambos lados reciben su propio aviso.
 async function sendBuddyWeeklyCheckin(users) {
   const utcH = new Date().getUTCHours();
-  if (utcH !== 12) return { sent: 0 }; // ventana mañana LATAM, 1 vez al día
+  // v1595: ventana amplia (retrasos del cron). Solo el slot de las 12 cae en 11-15;
+  // el dedup por semana (lastBuddyCheckin) evita doble envío si corriera dos veces.
+  if (utcH < 11 || utcH > 15) return { sent: 0 };
 
   const { data: pairs, error } = await supabase
     .from('profiles')
@@ -982,7 +984,7 @@ async function sendBuddyWeeklyCheckin(users) {
 // así que las parejas renovadas nunca llegan a 30.
 async function buddyCycleMaintenance() {
   const utcH = new Date().getUTCHours();
-  if (utcH !== 12) return { expired: 0, reminded: 0 };
+  if (utcH < 11 || utcH > 15) return { expired: 0, reminded: 0 }; // v1595: ventana amplia (retrasos del cron)
   const { data: pairs, error } = await supabase
     .from('profiles')
     .select('id, buddy_id, buddy_name, buddy_started_at')
@@ -1012,14 +1014,27 @@ async function buddyCycleMaintenance() {
         }
         expired++;
       } else if (days === 28) {
-        // Cada fila cubre a su propio dueño (hay una fila por lado de la pareja)
-        await supabase.from('broadcasts').insert({
-          target: `user:${p.id}`,
-          subject: '⏰ Tu ciclo de compañeros termina en 2 días',
-          body: `El acompañamiento con ${p.buddy_name || 'tu compañero/a'} cumple 30 días en 2 días. Si quieren seguir, entrá a Compañer@ y tocá "Renovar 30 días más" — si no, se cierra solo al día 30.`,
-          icon: '⏰', sender: 'Velo — Compañeros de bienestar',
-        });
-        reminded++;
+        // Cada fila cubre a su propio dueño (hay una fila por lado de la pareja).
+        // v1595: dedup por existencia (subject constante → acotado a los últimos 2
+        // días) para no duplicar el recordatorio si el cron corriera 2 veces.
+        let _remExists = false;
+        try {
+          const { data: exRem } = await supabase.from('broadcasts')
+            .select('id').eq('target', `user:${p.id}`)
+            .eq('subject', '⏰ Tu ciclo de compañeros termina en 2 días')
+            .gte('sent_at', new Date(now - 2 * 86400000).toISOString()).limit(1);
+          _remExists = !!(exRem && exRem.length);
+        } catch (e) {}
+        if (!_remExists) {
+          await supabase.from('broadcasts').insert({
+            target: `user:${p.id}`,
+            subject: '⏰ Tu ciclo de compañeros termina en 2 días',
+            body: `El acompañamiento con ${p.buddy_name || 'tu compañero/a'} cumple 30 días en 2 días. Si quieren seguir, entrá a Compañer@ y tocá "Renovar 30 días más" — si no, se cierra solo al día 30.`,
+            icon: '⏰', sender: 'Velo — Compañeros de bienestar',
+            sent_at: new Date().toISOString(),
+          });
+          reminded++;
+        }
       }
     } catch (e) { console.warn('[buddy-cycle] pair err:', e.message); }
   }
@@ -1036,7 +1051,7 @@ async function buddyCycleMaintenance() {
 // en la fila; si la fila con esa URL sigue viva, la salteamos).
 async function cleanupVibesStorage() {
   const utcH = new Date().getUTCHours();
-  if (utcH !== 2) return { deleted: 0 }; // corre en el cron de las 2 UTC (antes era 3, que no existe en el schedule → nunca corría)
+  if (utcH < 1 || utcH > 5) return { deleted: 0 }; // v1595: ventana amplia (2 UTC + retrasos); cleanup idempotente
   const cutoff = Date.now() - 48 * 3600 * 1000;
   let deleted = 0;
   try {
@@ -1096,7 +1111,7 @@ async function _cloudinaryDestroy(publicId) {
 // y elimina la fila. Los archivados (guardados en historial) se conservan.
 async function cleanupCloudinaryVideos() {
   const utcH = new Date().getUTCHours();
-  if (utcH !== 2) return { deleted: 0 }; // corre en el cron de las 2 UTC (noche)
+  if (utcH < 1 || utcH > 5) return { deleted: 0 }; // v1595: ventana amplia (2 UTC + retrasos); cleanup idempotente
   if (!CLOUDINARY_KEY || !CLOUDINARY_SECRET) { console.log('[cloudinary-cleanup] sin credenciales (agregá CLOUDINARY_API_KEY/SECRET) — skip'); return { deleted: 0 }; }
   let deleted = 0;
   try {

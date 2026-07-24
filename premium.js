@@ -27404,6 +27404,16 @@ function _startGlobalDMListener(){
 
   function _handleDMPayload(m, myId){
       if(m.to_id !== myId) return;
+      // v1595: dedup por id de mensaje. El realtime y el poll de 15s entregan el
+      // MISMO mensaje, lo que duplicaba el badge de no-leídos y re-mostraba popups
+      // ya descartados (ej. "X quiere chatear" reaparecía). Procesar cada id 1 vez.
+      if(m.id){
+        if(!window._dmSeenIds) window._dmSeenIds = {};
+        if(window._dmSeenIds[m.id]) return;
+        window._dmSeenIds[m.id] = Date.now();
+        var _dsk = Object.keys(window._dmSeenIds);
+        if(_dsk.length > 800){ _dsk.sort(function(a,b){ return window._dmSeenIds[a]-window._dmSeenIds[b]; }); for(var _dp=0; _dp<_dsk.length-400; _dp++) delete window._dmSeenIds[_dsk[_dp]]; }
+      }
       var curPage = document.querySelector('.p-page.active');
       var curId = curPage ? curPage.id : '';
       // v1440: sentinel de oferta de acompañamiento — solo sirve para disparar el
@@ -27545,12 +27555,16 @@ function _startGlobalDMListener(){
       safeLS('set','velo_dm_unread', JSON.stringify(unread));
       _updateFavBadge();
       try{ _refreshChatBadges(); }catch(_){}
-      // Actualizar cache "último mensaje" para el hub de mensajes tipo IG
-      if(m.text && String(m.text).indexOf('__velo_') !== 0){
-        var _prevText = String(m.text);
-        var _cachePrev = _prevText.indexOf('__velo_dm_audio__')===0 ? '🎙️ Nota de voz'
-                       : _prevText.indexOf('__velo_dm_image__')===0 ? '📷 Foto'
-                       : _prevText;
+      // Actualizar cache "último mensaje" para el hub de mensajes tipo IG.
+      // v1595: dejar pasar los sentinels de foto/audio (empiezan con __velo_ pero
+      // SÍ son mensajes reales) — antes el guard los excluía y el hub mostraba el
+      // preview viejo hasta recargar. Los de control (chat_req/bye/typing…) siguen fuera.
+      var _mt = String(m.text||'');
+      var _isMediaMsg = _mt.indexOf('__velo_dm_audio__')===0 || _mt.indexOf('__velo_dm_image__')===0;
+      if(m.text && (_mt.indexOf('__velo_') !== 0 || _isMediaMsg)){
+        var _cachePrev = _mt.indexOf('__velo_dm_audio__')===0 ? '🎙️ Nota de voz'
+                       : _mt.indexOf('__velo_dm_image__')===0 ? '📷 Foto'
+                       : _mt;
         _dmCacheSet(m.from_id, _cachePrev, false, m.created_at ? new Date(m.created_at).getTime() : Date.now());
       }
   }
@@ -27563,7 +27577,11 @@ function _startGlobalDMListener(){
       var curId = document.querySelector('.p-page.active');
       curId = curId ? curId.id : '';
       var isInThisChat = curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id;
-      if(!document.hidden && isInThisChat) return;
+      // v1595: si la app está VISIBLE (primer plano), el cartel flotante ya avisa —
+      // no disparar además una notif del SO (antes salían las dos si estabas en
+      // otra página). La notif del SO es solo para cuando la app está en background.
+      if(!document.hidden) return;
+      if(isInThisChat) return;
       var body = '';
       var raw = String(m.text||'');
       if(raw.indexOf('__velo_dm_audio__')===0) body = '🎙️ Te envió una nota de voz';
@@ -38250,7 +38268,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1595;
+    var _BUILT_V = 1596;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
