@@ -36761,13 +36761,32 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       var _imgData = _imgPipe >= 0 ? text.slice(_imgPipe+1) : '';
       if(_imgData){
         isImageAttach = true;
-        // Convertimos data URL → blob URL (iOS Safari)
+        // Convertimos data URL → blob URL (iOS Safari).
+        // v1599: CACHÉ por mensaje. El chat se re-renderiza entero en cada cambio
+        // de reacción; antes eso creaba un blob NUEVO por cada imagen en cada
+        // render sin liberar los viejos → fuga de memoria que crecía en chats con
+        // fotos. Ahora se reutiliza el blob ya creado para ese mensaje.
         var _iBlobUrl = '';
         try{
-          var _ia = _imgData.split(','); var _im = _ia[0].match(/:(.*?);/); var _imime = _im?_im[1]:'image/jpeg';
-          var _ib = atob(_ia[1]||''); var _iu8 = new Uint8Array(_ib.length);
-          for(var _ii=0;_ii<_ib.length;_ii++) _iu8[_ii] = _ib.charCodeAt(_ii);
-          _iBlobUrl = URL.createObjectURL(new Blob([_iu8],{type:_imime}));
+          if(!window._dmImgBlobCache) window._dmImgBlobCache = {};
+          var _ikey = sbId || (id ? String(id) : '') || _imgData.slice(-64);
+          if(window._dmImgBlobCache[_ikey]){
+            _iBlobUrl = window._dmImgBlobCache[_ikey];
+          } else {
+            var _ia = _imgData.split(','); var _im = _ia[0].match(/:(.*?);/); var _imime = _im?_im[1]:'image/jpeg';
+            var _ib = atob(_ia[1]||''); var _iu8 = new Uint8Array(_ib.length);
+            for(var _ii=0;_ii<_ib.length;_ii++) _iu8[_ii] = _ib.charCodeAt(_ii);
+            _iBlobUrl = URL.createObjectURL(new Blob([_iu8],{type:_imime}));
+            window._dmImgBlobCache[_ikey] = _iBlobUrl;
+            // Tope del caché: liberar los más viejos para no crecer sin límite
+            var _ick = Object.keys(window._dmImgBlobCache);
+            if(_ick.length > 60){
+              for(var _ic=0; _ic<_ick.length-40; _ic++){
+                try{ URL.revokeObjectURL(window._dmImgBlobCache[_ick[_ic]]); }catch(_){}
+                delete window._dmImgBlobCache[_ick[_ic]];
+              }
+            }
+          }
         }catch(e){}
         attachHtml = '<div class="dm-attach dm-attach--img"><img src="'+_escHtml(_iBlobUrl || _imgData)+'" onclick="pOpenImageLightbox(this.src)" style="max-width:220px;max-height:280px;border-radius:12px;display:block;cursor:zoom-in;border:1.5px solid rgba(180,155,240,.45)"></div>';
       }
@@ -38275,7 +38294,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1599;
+    var _BUILT_V = 1600;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
