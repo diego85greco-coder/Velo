@@ -26065,6 +26065,20 @@ function _enterDMChat(toId, toName, toAv){
   _inActiveChat = true;
   _updateGuardianPresence('ocupado');
   _dmPeer = { id:toId, name:toName||'Usuario', av:toAv||'🧑' };
+  // v1602 (PRIVACIDAD): descartar cualquier adjunto pendiente del chat ANTERIOR.
+  // _dmPendingImage/_dmRecordedBlob son globales por tipo de chat, no por peer, y
+  // ni pLeaveDM ni esta función los limpiaban: una foto adjuntada para A (y no
+  // enviada) quedaba en el compositor y se enviaba a B al abrir su chat.
+  try{
+    if(_dmRec && _dmRec.state !== 'inactive'){ try{ _dmRec.stop(); }catch(_){} }
+    if(_dmRecStream){ try{ _dmRecStream.getTracks().forEach(function(t){ t.stop(); }); }catch(_){} _dmRecStream = null; }
+    if(_dmRecTimerHandle){ clearTimeout(_dmRecTimerHandle); _dmRecTimerHandle = null; }
+    _dmPendingImage = null;
+    _dmRecordedBlob = null;
+    var _pv = document.getElementById('dmVoicePreview'); if(_pv) _pv.remove();
+    var _pi = document.getElementById('dmImgPreview');   if(_pi) _pi.remove();
+    try{ _dmSetMicBtnState(false); }catch(_){}
+  }catch(_){}
   _dmLastMsgId    = null;
   _dmReactHash    = '';
   _dmSessionStart = new Date().toISOString(); // only show messages from this session onward
@@ -38312,7 +38326,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1601;
+    var _BUILT_V = 1602;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

@@ -1068,6 +1068,13 @@ async function cleanupVibesStorage() {
       for (const f of files) {
         const ts = f.created_at ? new Date(f.created_at).getTime() : 0;
         if (!ts || ts > cutoff) continue;
+        // v1602 (PÉRDIDA DE DATOS): NUNCA borrar las notas de voz de los chats.
+        // _chatUploadAudioToStorage las sube a ESTE bucket como '<uid>/audio-*',
+        // pero se referencian desde direct_messages/circle_messages.text — no desde
+        // la tabla `vibes`. Como el set de "referenciados" se arma solo con
+        // vibes.media_url, TODA nota de voz quedaba huérfana y se borraba a las 48h:
+        // el mensaje seguía en el chat pero al reproducirlo daba 404 para siempre.
+        if (/^audio-/i.test(f.name)) continue;
         const path = folder.name + '/' + f.name;
         // ¿Alguna fila viva referencia este archivo? (URL pública termina en el path)
         let referenced = false;
