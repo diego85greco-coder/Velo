@@ -33,7 +33,18 @@ async function setPlan(veloUserId: string, email: string, plan: 'plus' | 'user')
   if (veloUserId && /^[0-9a-fA-F-]{20,}$/.test(veloUserId)) {
     filter = `id=eq.${encodeURIComponent(veloUserId)}`
   } else if (email) {
-    filter = `email=ilike.${encodeURIComponent(email.trim().toLowerCase())}`
+    // SEGURIDAD: usar `eq`, no `ilike`. El email viene de la metadata del checkout,
+    // que a su vez sale del body sin verificar; en `ilike` los caracteres `%` y `_`
+    // son comodines (y `_` es válido en un email), así que un `____@gmail.com`
+    // hacía coincidir MUCHOS perfiles y un solo evento de cancelación bajaba a
+    // `user` a todos ellos (o les regalaba Plus en la dirección contraria).
+    const _mail = email.trim().toLowerCase()
+    // Sanidad mínima: un email real, sin comodines ni comas (PostgREST separa por comas).
+    if (!/^[^\s,%*()]+@[^\s,%*()]+\.[^\s,%*()]+$/.test(_mail)) {
+      console.warn('[stripe-webhook] email con formato inesperado — ignorado')
+      return
+    }
+    filter = `email=eq.${encodeURIComponent(_mail)}`
   }
   if (!filter) { console.warn('[stripe-webhook] sin clave para mapear — ignorado'); return }
 

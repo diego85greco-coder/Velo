@@ -6847,6 +6847,9 @@ function _subKeyMatchesCurrent(sub){
 async function _syncPushSubOnStartup(){
   var _uid = safeLS('get','velo_user_id');
   if(!_uid) return;
+  // v1605: si el usuario apagó las notificaciones a propósito, NO re-registrar la
+  // suscripción al arrancar (era lo que las reactivaba solas).
+  if(safeLS('get','velo_push_optout') === '1') return;
   if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try{
     var _reg = await navigator.serviceWorker.ready;
@@ -20693,6 +20696,12 @@ function _updateEditPushUI(){
     var btn    = document.getElementById(prefix+'PushBtn');
     var status = document.getElementById(prefix+'PushStatus');
     if(!btn || !status) return;
+    // v1605: restaurar SIEMPRE el handler por defecto. La rama 'granted && !hasSub'
+    // asigna btn.onclick = _tryRecoverPushSub y ninguna otra lo reponía; como la
+    // asignación por propiedad pisa el onclick inline del HTML, el botón quedaba
+    // secuestrado: al pasar a "Desactivar" seguía llamando a _tryRecoverPushSub,
+    // así que tocarlo RE-SUSCRIBÍA en vez de apagar. Era imposible desactivarlas.
+    btn.onclick = function(){ pTogglePushNotifications(); };
     if(perm === 'unavailable'){
       status.textContent = 'Agregá Velo a tu pantalla de inicio para activar notificaciones';
       btn.textContent = '¿Cómo?'; btn.disabled = false;
@@ -20849,8 +20858,18 @@ async function pTogglePushNotifications(){
   var perm   = Notification.permission;
   if(perm === 'denied'){ pToast('🔕','Bloqueadas — activálas en Configuración > Safari/Notificaciones'); return; }
   if(hasSub){
+    // v1605: DESUSCRIBIR de verdad en el navegador. Antes sólo se borraba la copia
+    // local y la del perfil, pero la suscripción del PushManager seguía viva: al
+    // siguiente arranque _syncPushSubOnStartup la encontraba y la volvía a guardar
+    // en Supabase → las notificaciones se reactivaban solas y era imposible apagarlas.
+    try{
+      var _reg0 = await navigator.serviceWorker.ready;
+      var _curSub = await _reg0.pushManager.getSubscription();
+      if(_curSub) await _curSub.unsubscribe();
+    }catch(_){}
     safeLS('del','velo_push_sub');
     safeLS('del','velo_push_granted');
+    safeLS('set','velo_push_optout','1'); // el usuario las apagó a propósito
     var _uid = safeLS('get','velo_user_id');
     if(sbClient && _uid){
       try{ await _ensureSbSession(); }catch(e){}
@@ -20859,6 +20878,7 @@ async function pTogglePushNotifications(){
     pToast('🔕','Notificaciones desactivadas');
     _updateEditPushUI(); return;
   }
+  safeLS('del','velo_push_optout'); // vuelve a activarlas → limpiar el opt-out
   if(perm === 'default'){
     if(isIOS && isStandalone){
       // On iOS PWA, request permission directly without the Android pre-permission modal
@@ -36302,7 +36322,10 @@ async function _execDeleteAccount(reason){
           await _del(sbClient.from('happy_posts').delete().eq('user_id', uid));
           await _del(sbClient.from('daily_responses').delete().eq('user_id', uid));
           await _del(sbClient.from('mood_entries').delete().eq('user_id', uid));
-          await _del(sbClient.from('bitacora_entries').delete().eq('user_id', uid));
+          await _del(sbClient.from('bitacora_posts').delete().eq('user_id', uid)); // v1605: era 'bitacora_entries' — tabla inexistente, no borraba nada
+          await _del(sbClient.from('bottles').delete().eq('user_id', uid));
+          await _del(sbClient.from('circle_messages').delete().eq('user_id', uid));
+          await _del(sbClient.from('diary_entries').delete().eq('user_id', uid));
           await _del(sbClient.from('bitacora_comments').delete().eq('user_id', uid));
           await _del(sbClient.from('bitacora_comment_reactions').delete().eq('user_id', uid));
           await _del(sbClient.from('dq_reactions').delete().eq('user_id', uid));
@@ -36310,6 +36333,7 @@ async function _execDeleteAccount(reason){
             nombre:'[eliminado]', avatar:'🌿', motto:'', bio:'',
             push_subscription:null, helped_count:0, received_count:0
           }).eq('id', uid));
+          window._veloDeletePartial = true; // v1605: el borrado server-side no corrió
         }
       }
     }
@@ -36318,7 +36342,15 @@ async function _execDeleteAccount(reason){
   try{ if(sbClient) await sbClient.auth.signOut(); }catch(e){}
   try{ _clearAllLocalData(); }catch(e){}
   try{ _authenticated = false; _favsList = null; }catch(e){}
-  pToast('👋','Tu cuenta fue eliminada 🌿');
+  // v1605: no afirmar que la cuenta se eliminó si el borrado server-side falló.
+  // Antes se mostraba "Tu cuenta fue eliminada 🌿" SIEMPRE, incluso cuando el RPC
+  // y la Edge Function fallaban y sólo corría el fallback parcial: la persona
+  // creía que su cuenta ya no existía cuando en realidad seguía pudiendo entrar.
+  if(window._veloDeletePartial){
+    pToast('⚠️','Cerramos tu sesión y borramos los datos de este dispositivo, pero no pudimos completar el borrado en el servidor. Escribinos a consultas@heyvelo.app para terminarlo.');
+  } else {
+    pToast('👋','Tu cuenta fue eliminada 🌿');
+  }
   setTimeout(function(){
     try{ window.location.replace(window.location.href.split('?')[0].split('#')[0]); }
     catch(e){ try{ window.location.reload(); }catch(e2){} }
@@ -38356,7 +38388,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1604;
+    var _BUILT_V = 1605;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
