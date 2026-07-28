@@ -34283,12 +34283,20 @@ function pShowWeeklySummary(data){
   var moodColors = {'😄':'#74c69d','😊':'#95d5b2','😐':'#e9b949','😞':'#e07a5f','😢':'#d45b5b'};
   var moodBgs    = {'😄':'rgba(116,198,157,.22)','😊':'rgba(149,213,178,.18)','😐':'rgba(233,185,73,.18)','😞':'rgba(224,122,95,.15)','😢':'rgba(212,91,91,.18)'};
   var timelineHtml = (data.timeline||[]).map(function(d){
-    var col = d.mood ? (moodColors[d.mood.emoji]||'#74c69d') : 'rgba(200,200,200,.3)';
-    var bg  = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.15)') : 'transparent';
+    // v1606: los días SIN registro dibujaban un '·' de 8px al 30% de opacidad —
+    // invisible en pantalla, así que la tira se veía como 7 círculos vacíos y
+    // rotos. Ahora el día vacío muestra un guion legible con borde punteado, que
+    // se lee como "sin registro" en vez de como un error de carga.
+    var col = d.mood ? (moodColors[d.mood.emoji]||'#74c69d') : 'rgba(255,255,255,.28)';
+    var bg  = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.15)') : 'rgba(255,255,255,.04)';
     var ring = d.isToday ? 'box-shadow:0 0 0 2.5px '+col+',0 0 12px '+col+'55;' : '';
+    var brdStyle = d.mood ? 'solid' : 'dashed';
+    var inner = d.mood
+      ? d.mood.emoji
+      : '<span style="font-size:15px;font-weight:700;color:rgba(255,255,255,.42);line-height:1">–</span>';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">'
-      +'<div style="width:36px;height:36px;border-radius:50%;border:2px solid '+col+';background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'18':'8')+'px;'+ring+'">'+(d.mood?d.mood.emoji:'·')+'</div>'
-      +'<span style="font-size:10px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.5)">'+d.dayName+'</span>'
+      +'<div style="width:36px;height:36px;border-radius:50%;border:2px '+brdStyle+' '+col+';background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:18px;'+ring+'">'+inner+'</div>'
+      +'<span style="font-size:10px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,'+(d.mood?'.62':'.38')+')">'+d.dayName+'</span>'
       +'</div>';
   }).join('');
 
@@ -34300,7 +34308,12 @@ function pShowWeeklySummary(data){
   var avg = function(arr){ return arr.length?arr.reduce(function(a,b){return a+b;},0)/arr.length:0; };
   var trend = filled.length<2?'→':avg(secondHalf)>avg(firstHalf)+0.3?'↗':avg(firstHalf)>avg(secondHalf)+0.3?'↘':'→';
   var trendColor = trend==='↗'?'#74c69d':trend==='↘'?'#e07a5f':'#e9b949';
-  var trendLabel = trend==='↗'?'Semana en mejora':trend==='↘'?'Semana desafiante':'Semana estable';
+  // v1606: sin registros no hay tendencia que mostrar. Antes decía "Semana
+  // estable" con 0 datos, que se lee como una conclusión inventada.
+  var trendLabel = filled.length===0 ? 'Sin registros esta semana'
+                 : filled.length<2   ? 'Poca información esta semana'
+                 : trend==='↗'?'Semana en mejora':trend==='↘'?'Semana desafiante':'Semana estable';
+  if(filled.length<2) trendColor = 'rgba(255,255,255,.45)';
 
   // AI text or fallback (data.aiText puede venir como string o como objeto)
   var _aiNarr = (data.aiText && typeof data.aiText==='object') ? (data.aiText.narrative||'') : (data.aiText||'');
@@ -38388,7 +38401,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1605;
+    var _BUILT_V = 1606;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
