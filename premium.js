@@ -704,7 +704,7 @@ async function _sbSyncProfileInner(userId){
   // Each tier drops more optional columns; _profileSelectTier is cached so we skip
   // known-failing queries on every subsequent call (avoids 400 flood in console).
   var _selTiers = [
-    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at,visit_days,dark_mode,helped_count,received_count',
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at,visit_days,dark_mode,helped_count,received_count,created_at',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes',
     'nombre,avatar,motto,role,username,username_changes',
@@ -904,6 +904,12 @@ async function _sbSyncProfileInner(userId){
       });
       if(dirty) safeLS('set','velo_blocked', JSON.stringify(_bl));
     }).catch(function(){});
+  // v1602: guardar la fecha REAL de creación de la cuenta (servidor, inmutable).
+  // El buzón la usa para decidir si un resumen semanal/mensual es anterior al alta.
+  // Antes eso se deducía sólo de velo_visit_days (localStorage), que se pierde al
+  // reinstalar la PWA o limpiar datos → la app creía que el alta era "hoy" y
+  // suprimía PARA SIEMPRE los resúmenes recientes legítimos.
+  if(p.created_at){ try{ safeLS('set','velo_account_created', String(p.created_at).slice(0,10)); }catch(_){} }
   // visit_days: sync with Supabase, but use SB as authoritative when local has
   // far more days — that indicates stale data from a previous/deleted account.
   if(p.visit_days && Array.isArray(p.visit_days) && p.visit_days.length){
@@ -24504,11 +24510,20 @@ function pRenderInbox(){
 
     // First-visit date — used to suppress monthly/weekly reports that cover periods BEFORE user existed
     var _firstVisitDay = (function(){
+      // v1602: tomar el DÍA MÁS TEMPRANO entre la fecha real de alta (servidor,
+      // inmutable) y el primer día de visita local. Antes se usaba sólo
+      // velo_visit_days (localStorage): al reinstalar la PWA o limpiar datos esa
+      // lista arranca de cero, la app deducía que el alta fue "hoy" y descartaba
+      // PARA SIEMPRE los resúmenes semanales/mensuales recientes — el usuario
+      // nunca los veía y no había forma de recuperarlos.
+      var _cands = [];
+      try{ var _ac = safeLS('get','velo_account_created'); if(_ac) _cands.push(_ac); }catch(e){}
       try{
         var dl = JSON.parse(safeLS('get','velo_visit_days')||'[]');
-        if(!dl.length) return null;
-        return dl.slice().sort()[0]; // earliest YYYY-MM-DD
-      }catch(e){ return null; }
+        if(dl.length) _cands.push(dl.slice().sort()[0]);
+      }catch(e){}
+      if(!_cands.length) return null;
+      return _cands.sort()[0]; // el más antiguo gana
     })();
     function _reportCoversBeforeSignup(b){
       // Monthly report body: __MONTHLY_REPORT__YYYY-MM
@@ -38326,7 +38341,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1602;
+    var _BUILT_V = 1603;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
