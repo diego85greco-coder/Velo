@@ -24558,10 +24558,20 @@ function pRenderInbox(){
       }
       return false;
     }
+    // v1603: los RESÚMENES (semanal/mensual) siguen visibles después de leerlos.
+    // Antes, abrir el resumen lo marcaba como leído y en la siguiente entrada al
+    // buzón este filtro lo descartaba por completo: el mensaje desaparecía para
+    // siempre y no había forma de volver a abrirlo. La tarjeta ya sabe dibujarse
+    // como leída (isAlreadyRead), así que sólo hay que dejarla pasar.
+    function _isReportBc(b){
+      return !!(b.body && (b.body.indexOf('__WEEKLY_REPORT__') === 0 || b.body.indexOf('__MONTHLY_REPORT__') === 0));
+    }
     newBcs = newBcs.filter(function(b){
-      if(_del2.indexOf('bc_'+b.id) >= 0) return false;
-      if(safeLS('get','velo_bcast_read_'+b.id)) return false;
-      if(_syncedReadIds[b.id]) return false;
+      if(_del2.indexOf('bc_'+b.id) >= 0) return false; // borrado explícito por el usuario
+      if(!_isReportBc(b)){
+        if(safeLS('get','velo_bcast_read_'+b.id)) return false;
+        if(_syncedReadIds[b.id]) return false;
+      }
       if(_clearedAt && b.sent_at && new Date(b.sent_at).getTime() <= _clearedAt) return false;
       if(_reportCoversBeforeSignup(b)) return false; // new user → no resúmenes de periodos previos
       if(_reportIsPremature(b)) return false;        // resumen de un mes que aún no terminó
@@ -24661,6 +24671,11 @@ function pRenderInbox(){
     }).join('');
     // Prepend broadcasts before existing inbox items, after contact banner
     var banner = el2.querySelector('div[onclick*="contact"]');
+    // v1603: quitar el cartel "Tu buzón está vacío" antes de insertar. El empty
+    // state se dibuja sincrónicamente cuando el buzón LOCAL está vacío, y los
+    // broadcasts llegan después (async) y se anteponían al mismo HTML → se veía la
+    // tarjeta del resumen Y "Tu buzón está vacío" juntos.
+    try{ var _emptyEl = el2.querySelector('.p-empty'); if(_emptyEl) _emptyEl.remove(); }catch(_){}
     if(banner){ banner.insertAdjacentHTML('afterend', bcMsgs); }
     else { el2.innerHTML = bcMsgs + el2.innerHTML; }
     // Clear unread broadcast IDs that are now rendered (inbox is open, user sees them)
@@ -38341,7 +38356,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1603;
+    var _BUILT_V = 1604;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
