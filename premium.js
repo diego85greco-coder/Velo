@@ -2457,10 +2457,16 @@ var _inAppPollTimer = null;
 function _startInAppNotifPolling(){
   if(_inAppPollTimer) return; // ya arranco
   _lastBcCheckAt = new Date().toISOString();
-  // Track última interacción del usuario para E (digital wellbeing)
-  ['click','touchstart','keydown'].forEach(function(evt){
-    document.addEventListener(evt, function(){ window._lastInteract = Date.now(); }, {passive:true});
-  });
+  // Track última interacción del usuario para E (digital wellbeing).
+  // v1601: registrar los listeners UNA sola vez por sesión de página. El guard de
+  // arriba es el timer, que se limpia al cerrar sesión — así, en cada ciclo
+  // login→logout→login se sumaban 3 listeners más a document (fuga acotada).
+  if(!window._veloInteractBound){
+    window._veloInteractBound = true;
+    ['click','touchstart','keydown'].forEach(function(evt){
+      document.addEventListener(evt, function(){ window._lastInteract = Date.now(); }, {passive:true});
+    });
+  }
   _inAppPollTimer = setInterval(_pollInAppBroadcasts, 45000);
   setTimeout(_pollInAppBroadcasts, 8000);
 }
@@ -7486,6 +7492,10 @@ async function _fetchDailyFeed(qId){
       // Handle INSERT (payload.new), UPDATE (payload.new) and DELETE (payload.old)
       var _evDate = (payload.new && payload.new.question_date) || (payload.old && payload.old.question_date);
       if(_evDate !== _dqToday) return;
+      // v1601: la Pregunta del Día vive en el home. Si ya no estás ahí, NO re-fetchear:
+      // _fetchDailyFeed re-instala los polls (feed 15s, reacciones 20s) y el listener
+      // de visibilidad, resucitando lo que _onPageEnter había frenado al salir (v1515).
+      if(_curPage !== 'home') return;
       // Re-fetch feed (renders new card), pulse count, and community pulse bar in parallel
       _fetchDailyFeed(qId);
       try{ _fetchDailyCount(); }catch(e){}
@@ -18258,6 +18268,10 @@ function pOpenCircle(id, circleData){
       // Do NOT skip UPDATE events (reactions) even if the message belongs to the current user.
       var isInsert = payload.eventType === 'INSERT' || !payload.eventType;
       if(isInsert && payload.new.user_id && payload.new.user_id === _circleMyId && payload.new.type !== 'system') return;
+      // v1601: si ya no estás en el círculo, no re-renderizar. El canal seguía vivo
+      // toda la sesión y cada mensaje del círculo disparaba una consulta de 100 filas
+      // + rebuild del feed desde cualquier otra pantalla (datos/batería/scroll).
+      if(_curPage !== 'feed') return;
       _circleLastDbMsgId = null; // force re-render to pick up reaction changes
       _renderCircleMessages();
     });
@@ -36405,6 +36419,10 @@ function _onPageEnter(id){
       // Always re-subscribe so a stale/dropped channel doesn't silently miss re-activation events.
       if(_guardianRtCh){ _sbUnsub(_guardianRtCh); _guardianRtCh = null; }
       if(sbClient) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(){
+        // v1601: no re-renderizar si ya no estás en la sección (el canal sigue vivo
+        // toda la sesión) — antes consultaba la DB y reconstruía la lista desde
+        // cualquier otra pantalla, gastando datos/batería y reseteando el scroll.
+        if(_curPage !== 'guardians') return;
         pRenderGuardians();
       });
       // Re-create broadcast channel if it was CLOSED/nulled (e.g. WebSocket drop).
@@ -36422,7 +36440,7 @@ function _onPageEnter(id){
       // v1434: SIEMPRE re-suscribir (un canal viejo/caído dejaba de traer los
       // pedidos nuevos en vivo → solo aparecían al refrescar).
       if(_helpRtCh){ _sbUnsub(_helpRtCh); _helpRtCh = null; }
-      if(sbClient) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ pRenderHelp(); });
+      if(sbClient) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ if(_curPage !== 'help') return; pRenderHelp(); }); // v1601: guard de sección
       // Re-suscribir al seeker a SU pedido pendiente para recibir ofertas de
       // guardián en vivo aunque haya navegado y vuelto (incluye pedidos anónimos).
       // v1441: suscribir SIEMPRE (por seeker_id) — así recibís ofertas de guardián
@@ -36438,7 +36456,7 @@ function _onPageEnter(id){
       // v1450: SIEMPRE re-suscribir — un canal viejo/caído dejaba de traer
       // botellas nuevas en vivo (solo aparecían al refrescar).
       if(_bottleRtCh){ _sbUnsub(_bottleRtCh); _bottleRtCh = null; }
-      if(sbClient) _bottleRtCh = _sbSub('velo:bottles', 'bottles', function(){ pRenderBottle(); });
+      if(sbClient) _bottleRtCh = _sbSub('velo:bottles', 'bottles', function(){ if(_curPage !== 'bottle') return; pRenderBottle(); }); // v1601: guard de sección
       pRenderBottle();
       try{ setTimeout(function(){ _maybeShowFeatureHints('bottle'); }, 1400); }catch(e){}
       break;
@@ -36455,7 +36473,7 @@ function _onPageEnter(id){
       _initSupabase();
       // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer posts en vivo).
       if(_happyRtCh){ _sbUnsub(_happyRtCh); _happyRtCh = null; }
-      if(sbClient) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ pRenderHappy(); });
+      if(sbClient) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ if(_curPage !== 'happy') return; pRenderHappy(); }); // v1601: guard de sección
       pRenderHappy();
       break;
     case 'profile':
@@ -37040,7 +37058,7 @@ function pInitBitacora(){
   // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer posts nuevos en vivo).
   if(_btRtCh){ _sbUnsub(_btRtCh); _btRtCh = null; }
   if(sbClient){
-    _btRtCh = _sbSub('velo:bitacora','bitacora_posts',function(){ _btLoadTab(_btCurrentTab,true); });
+    _btRtCh = _sbSub('velo:bitacora','bitacora_posts',function(){ if(_curPage !== 'bitacora') return; _btLoadTab(_btCurrentTab,true); }); // v1601: guard de sección
   }
   // Load globally-hidden post IDs (reported but not yet resolved)
   if(sbClient){
@@ -38294,7 +38312,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1600;
+    var _BUILT_V = 1601;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
