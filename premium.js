@@ -1357,6 +1357,12 @@ function _clearSession(){
   try{
     Object.keys(localStorage).filter(function(k){
       if(k.startsWith('velo_prov_')) return false;
+      // v1608: preservar la cola de sincronización del diario. Contiene entradas
+      // escritas SIN señal que todavía no llegaron al servidor; al borrarla en
+      // cada logout/login esas entradas (con su nota de voz y foto) se perdían
+      // para siempre. Cada ítem lleva el uid de su dueño y _retryDiarySync sólo
+      // sube los de la cuenta activa, así que no hay filtración entre cuentas.
+      if(k === 'velo_diary_sync_q') return false;
       return k.startsWith('velo_') || k.startsWith('velo-r-');
     }).forEach(function(k){ localStorage.removeItem(k); });
   }catch(e){}
@@ -3089,8 +3095,11 @@ async function pOpenMonthlyWrapped(){
   // terminó, mostrar sus stats a mitad de mes es un resumen incompleto y
   // engañoso). Coincide con la notificación del día 1 en send-push.js,
   // que también arma el Wrapped del mes anterior.
-  var target = new Date(now);
-  target.setMonth(target.getMonth()-1);
+  // v1608: anclar al día 1 ANTES de restar el mes. `setMonth(getMonth()-1)`
+  // conserva el día actual, así que un 31 de julio pedía "31 de junio", que no
+  // existe y JS desborda a julio → el Wrapped mostraba el MES EN CURSO (justo lo
+  // que este bloque existe para evitar). Pasaba los días 29, 30 y 31.
+  var target = new Date(now.getFullYear(), now.getMonth()-1, 1);
   var yr = target.getFullYear(), mo = target.getMonth();
   var mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var daysInMonth = new Date(yr, mo+1, 0).getDate();
@@ -20946,15 +20955,19 @@ async function pSaveProfile(){
       _uploadAvatarToStorage(null, _rawAv, function(pub){ if(pub){ safeLS('set','velo_user_av', pub); _syncAvatarToSb(pub); } });
     }
     var email = safeLS('get','velo_user_email') || '';
-    // Upsert with full fields; on 400 (missing column) retry with core fields only
-    var _fullRow = {
-      id:uid, nombre:name, avatar:av, motto:motto, email:email,
-      status_music:  safeLS('get','velo_status_music')||'',
-      status_book:   safeLS('get','velo_status_book')||'',
-      status_phrase: safeLS('get','velo_status_phrase')||'',
-      status_film:   safeLS('get','velo_status_film')||''
-    };
-    var _coreRow = { id:uid, nombre:name, avatar:av, motto:motto };
+    // v1608: NO pisar con vacío lo que no se editó en este formulario. Antes se
+    // mandaban siempre avatar/email/status_* leídos de localStorage: si esos
+    // valores no estaban en ESTE dispositivo (los cargaste en otro, o el avatar
+    // pesaba >8000 y quedaba en ''), el upsert los borraba en el servidor y en
+    // todos tus dispositivos. Sólo nombre y motto son campos de este formulario;
+    // el resto se incluye únicamente si tenemos un valor real que sincronizar.
+    var _fullRow = { id:uid, nombre:name, motto:motto };
+    if(av)    _fullRow.avatar = av;   // '' = oversize o no cargado acá → no tocar el del servidor
+    if(email) _fullRow.email  = email;
+    var _sFields = { status_music:'velo_status_music', status_book:'velo_status_book', status_phrase:'velo_status_phrase', status_film:'velo_status_film' };
+    Object.keys(_sFields).forEach(function(k){ var _v = safeLS('get', _sFields[k])||''; if(_v) _fullRow[k] = _v; });
+    var _coreRow = { id:uid, nombre:name, motto:motto };
+    if(av) _coreRow.avatar = av;
     sbClient.from('profiles').upsert(_fullRow,{ onConflict:'id' })
     .then(function(r){
       if(r && r.error){
@@ -32993,7 +33006,11 @@ function _queueDiarySync(entry){
   // Incluir audio/image: antes se descartaban al encolar, así una entrada guardada
   // offline sincronizaba SIN su nota de voz/foto -> se perdía el blob en otros
   // dispositivos. Ahora el blob viaja en la cola y sube en el reintento.
-  q.push({text:entry.text,dateLabel:entry.dateLabel,ts:entry.ts,title:entry.title||'',audio:entry.audio||null,image:entry.image||null});
+  // v1608: guardar el uid DUEÑO de la entrada. La cola ahora sobrevive al cierre
+  // de sesión (antes se borraba y las entradas escritas sin señal se perdían para
+  // siempre), así que hay que garantizar que sólo se sincronicen en la cuenta que
+  // las escribió — si no, el diario de una persona terminaría en la cuenta de otra.
+  q.push({uid:safeLS('get','velo_user_id')||'',text:entry.text,dateLabel:entry.dateLabel,ts:entry.ts,title:entry.title||'',audio:entry.audio||null,image:entry.image||null});
   safeLS('set','velo_diary_sync_q', JSON.stringify(q.slice(0,50)));
 }
 
@@ -33006,6 +33023,11 @@ async function _retryDiarySync(){
   var remaining=[];
   for(var i=0;i<q.length;i++){
     var e=q[i];
+    // v1608: sólo sincronizar lo que escribió ESTA cuenta. Las entradas de otro
+    // usuario quedan intactas en la cola, esperando a que vuelva a entrar —
+    // nunca se escriben en la cuenta equivocada. (Sin uid = cola vieja, anterior
+    // a este cambio: sólo pudo haberla creado la sesión actual.)
+    if(e.uid && e.uid !== uid){ remaining.push(e); continue; }
     try{
       var _rrow={user_id:uid,text:e.text,date_label:e.dateLabel,ts:e.ts,title:e.title||''};
       if(e.audio) _rrow.audio=e.audio;
@@ -33608,6 +33630,11 @@ async function _renderHomeWeekMoodGraph(){
     if(!loggedCount){
       return '<div style="text-align:center;padding:6px 0 2px;font-size:12px;color:var(--ink4);font-family:Jost,sans-serif;font-style:italic;opacity:.72">Registrá cómo te sentís para ver tu historial</div>';
     }
+    // v1608: usar la racha CANÓNICA (_getMoodStreak, sin tope). La de arriba se
+    // calcula dentro de la ventana de 7 días, así que se topaba en 7 pero el texto
+    // la afirma como absoluta: con 30 días seguidos el chip de arriba decía "🔥 30"
+    // y esta tarjeta, en la misma pantalla, "🔥 7 días seguidos".
+    try{ if(typeof _getMoodStreak === 'function'){ var _cs = _getMoodStreak(); if(_cs > streak) streak = _cs; } }catch(_){}
     var streakMsg = streak >= 5 ? '🔥 '+streak+' días seguidos — ¡imparable!'
                   : streak >= 3 ? '🔥 '+streak+' días seguidos'
                   : streak >= 2 ? '✨ '+streak+' días seguidos esta semana'
@@ -38426,7 +38453,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1607;
+    var _BUILT_V = 1608;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
