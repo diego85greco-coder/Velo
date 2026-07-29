@@ -1,6 +1,6 @@
 # Checklist para lanzar Velo públicamente
 
-Estado verificado contra el código el **24/07/2026** (v1613).
+Estado verificado contra el código y la base el **24/07/2026** (v1617).
 Velo = **red social de ayuda mutua**. No es servicio de salud.
 
 > ⚠️ **No es asesoramiento legal.** Es una lista técnica de huecos detectados
@@ -31,44 +31,36 @@ Velo = **red social de ayuda mutua**. No es servicio de salud.
 
 ## 🔴 BLOQUEANTES — resolver antes de abrir
 
-### 1. Los analytics cargan ANTES del consentimiento
-`app-premium.html:202,205` carga Vercel Insights y Speed Insights en el `<head>`,
-sin esperar al banner. El banner además afirma *"No usamos cookies de rastreo"*.
+### ~~1. Los analytics cargan ANTES del consentimiento~~ ✅ RESUELTO (v1614)
+Los scripts de Vercel ya no se cargan en el `<head>`: se inyectan por JS sólo si
+el consentimiento guardado es `all`. Con "Solo esenciales" no se cargan nunca.
+Texto del banner corregido.
 
-**Por qué importa:** el banner registra la respuesta en `velo_cookie_consent`
-pero **no bloquea nada** — es decorativo. Cualquier medición que no sea
-estrictamente necesaria requiere consentimiento previo (ePrivacy + RGPD).
+### ~~2. No hay verificación de edad~~ ✅ RESUELTO (v1614)
+Casilla obligatoria de 16+ con validación en `pSignUp`. Se registra la constancia
+(`age_confirmed_at`) y la versión de términos aceptada (`terms_version`) —
+columnas aplicadas en la base el 24/07.
 
-**Arreglo:** cargar esos scripts sólo tras aceptar, o quitarlos. Si se quitan,
-el banner pasa a ser correcto tal como está redactado.
+### 3. Registro de Actividades de Tratamiento (art. 30) — 📄 BORRADOR LISTO
+Ver `LEGAL-registro-tratamiento.md`: las 9 actividades documentadas desde el
+código. Falta que el responsable complete los campos `[COMPLETAR]` (datos
+societarios y plazos de conservación).
 
-### 2. No hay verificación de edad
-Los Términos dicen 16 años (correcto para Portugal), pero **el registro no lo
-comprueba**: no hay casilla ni fecha de nacimiento.
+### 4. Faltan los DPA firmados con los proveedores — ⬜ ACCIÓN DEL TITULAR
+6 proveedores: Supabase, Vercel, Stripe, Google (Gemini), Cloudinary y Resend.
+Instrucciones de dónde aceptar cada uno en `LEGAL-dpa-y-dpia.md`.
 
-**Arreglo:** casilla obligatoria "Declaro tener 16 años o más" junto a la de
-términos, guardando la marca temporal.
-
-### 3. Falta el Registro de Actividades de Tratamiento (art. 30)
-Documento **interno** obligatorio: qué datos tratás, con qué base legal, cuánto
-los conservás, con quién los compartís y a qué países.
-
-**Arreglo:** documento aparte (no va en la app). La Política de Privacidad ya
-tiene casi toda la información — hay que volcarla al formato del art. 30.
-
-### 4. Faltan los DPA firmados con los proveedores
-Hay un modal que los menciona, pero hacen falta los **acuerdos reales** con:
-Supabase, Vercel, Google (Gemini), Cloudinary, Resend y Stripe.
-
-**Arreglo:** casi todos publican un DPA estándar que se acepta desde el panel de
-la cuenta. Es trámite, pero hay que hacerlo y guardar la constancia.
+⚠️ **Revisar primero el de Google:** si Gemini está en el tier gratuito, el
+contenido enviado puede usarse para entrenar modelos. Con datos de ánimo y
+conversaciones personales eso hay que descartarlo antes de abrir.
 
 ### 5. Evaluación de Impacto (DPIA, art. 35) — muy probablemente obligatoria
 Se dispara por combinar: **datos de categoría especial** (ánimo), a escala, con
 **perfilado por IA** (resúmenes) y usuarios en situación vulnerable.
 
-**Arreglo:** es el punto que más conviene hacer con el abogado. Si el criterio es
-que no aplica, hay que dejar constancia escrita del razonamiento.
+**Arreglo:** borrador con la matriz de riesgos en `LEGAL-dpa-y-dpia.md`. La
+decisión y la firma son del responsable con su abogado. Si el criterio es que no
+aplica, hay que dejar constancia escrita del razonamiento.
 
 ---
 
@@ -82,11 +74,10 @@ procedimiento escrito ni forma de saber a quién avisar.
 La política dice "los mínimos exigidos legalmente". Debería decir cuántos años y
 para qué (ej.: logs 12 meses; registro de aceptación de términos 5 años).
 
-### 8. Re-consentimiento al cambiar los términos
-Se guarda `terms_accepted_at`, pero no **qué versión** se aceptó. Si cambiás los
-términos no hay forma de pedir la aceptación nueva.
-
-**Arreglo:** guardar número de versión y volver a pedir aceptación al cambiarla.
+### ~~8. Re-consentimiento al cambiar los términos~~ ✅ RESUELTO (v1614)
+Se guarda `terms_version` además de la fecha. Al publicar textos nuevos, basta
+subir `VELO_TERMS_VERSION` en `premium.js` para poder identificar quién aceptó
+qué versión. *(Falta implementar el aviso de re-aceptación en sí.)*
 
 ### 9. Sin límite de uso en los endpoints de IA y email
 Ya exigen sesión (arreglado hoy), pero un usuario autenticado puede llamarlos en
@@ -105,19 +96,31 @@ Ya existe el sistema de reportes — falta el circuito de respuesta.
 - **Backups y recuperación:** verificar que Supabase los tenga activos y probar
   una restauración. Hoy nadie lo comprobó.
 - **Rotar el VAPID key:** estuvo en el repositorio (queda en el historial de git).
-- **De-anonimización pendiente:** en Sala de Ayuda, Muro y Bitácora, un usuario
+- 🔴 **De-anonimización pendiente:** en Sala de Ayuda, Muro y Bitácora, un usuario
   logueado todavía puede leer la tabla cruda y ligar publicaciones "anónimas" a
-  su autor. Es el hueco de privacidad más relevante que queda abierto.
+  su autor. **Es el hueco de privacidad más relevante que queda abierto** y va a
+  aparecer en la DPIA.
 - **Página de estado / aviso de caídas.**
 - **Accesibilidad** (contraste, lectores de pantalla) — exigible a servicios
   digitales en la UE desde 2025.
 
 ---
 
-## Orden sugerido
+## Qué queda, por responsable
 
-1. **Analytics + consentimiento** y **casilla de edad** → son código, salen rápido
-2. **DPA con proveedores** → trámite, se puede hacer en paralelo
-3. **Registro de tratamiento + DPIA + brechas** → con el abogado
-4. **De-anonimización** y **límites de uso** → deuda técnica de seguridad
-5. Lo recomendable, después del lanzamiento
+**Del titular (no requiere código):**
+1. Aceptar los 6 DPA — empezando por Google/Gemini (ver aviso arriba)
+2. Completar los `[COMPLETAR]` del registro de tratamiento
+3. Consulta con abogado: DPIA, base legal de los datos de ánimo, postura ante
+   crisis (las 5 preguntas están en `LEGAL-dpa-y-dpia.md`)
+
+**Técnico pendiente:**
+4. 🔴 De-anonimización en Sala de Ayuda / Muro / Bitácora
+5. Límites de uso por usuario en los endpoints de IA y correo
+6. Procedimiento de brechas (art. 33) y plazos de conservación concretos
+7. Verificar backups y probar una restauración
+
+**Ya cerrado el 24/07:** encuadre de la app, textos legales, transparencia de IA,
+consentimiento de analytics, edad mínima, constancia de consentimiento,
+procedimiento de crisis, eliminación de Groq, y el cierre de las policies de
+escritura de diario/ánimos y de moderación en la base.

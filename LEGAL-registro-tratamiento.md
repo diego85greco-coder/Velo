@@ -112,7 +112,7 @@ categoría especial a escala, conviene evaluarlo (art. 37).
 
 | Proveedor | Función | Ubicación | DPA firmado |
 |---|---|---|---|
-| Supabase | Base de datos, auth, storage | UE | ⬜ **[PENDIENTE]** |
+| Supabase | Base de datos, auth, storage | UE | ⬜ pendiente |
 | Vercel | Hosting, funciones, analítica | EE. UU. | ⬜ **[PENDIENTE]** |
 | Stripe | Pagos | EE. UU./UE | ⬜ **[PENDIENTE]** |
 | Google (Gemini) | IA: chatbot, moderación de contenido y resúmenes | EE. UU. | ⬜ **[PENDIENTE]** |
