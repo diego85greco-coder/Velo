@@ -46,8 +46,20 @@ que las autoridades europeas usan para decidirlo — y con dos ya suele bastar:
    salud emocional (art. 9), aunque Velo no sea un servicio sanitario.
 2. **Evaluación o puntuación:** los resúmenes semanales y mensuales analizan la
    actividad y producen una lectura del período, con IA de por medio.
-3. **Interesados vulnerables:** el público objetivo son personas atravesando
-   momentos difíciles, y se admite desde los 16 años.
+3. **Posible presencia de personas en situación de vulnerabilidad:**
+   Velo **no** está dirigida a personas vulnerables, **no** ofrece asistencia,
+   acompañamiento profesional ni servicio de salud de ningún tipo, y **no** se
+   presenta como tal. No obstante, al ser una red social abierta donde las
+   personas comparten experiencias personales, es previsible que algunas
+   atraviesen momentos difíciles. Por eso la plataforma incorpora, como medida
+   preventiva propia, detección de señales de crisis y derivación automática a
+   líneas de ayuda operadas por terceros.
+   El servicio admite personas desde los 16 años.
+
+   > **Nota para la evaluación:** este criterio se valora por los hechos del
+   > tratamiento, no por la descripción comercial del servicio. Declararlo y
+   > documentar las medidas ya adoptadas es más favorable que omitirlo: las
+   > funciones de detección y derivación son evidencia de diligencia.
 
 Se suma que el tratamiento es **a escala** (una app pública) e implica
 **transferencias fuera de la UE**.
@@ -69,7 +81,8 @@ Se suma que el tratamiento es **a escala** (una app pública) e implica
 | Fuga por proveedor externo | Alto | Proveedores con certificaciones | DPA firmados (punto 4) |
 | Contenido dañino entre usuarios | Alto — daño emocional real | Moderación por IA + reportes | Circuito de respuesta y apelación |
 | La IA responde mal a alguien en crisis | Muy alto | Prompt corregido el 24/07: sin encuadre clínico y con derivación obligatoria a líneas de ayuda | Pruebas periódicas del comportamiento en crisis |
-| Menores accediendo al servicio | Medio | Casilla de 16+ desde el 24/07 | Sólo es una declaración, no verificación |
+| Una persona expresa ideación suicida o autolesión en la plataforma | Muy alto | **Medidas ya implementadas:** detector de expresiones de crisis (`premium.js:12285`); clasificador de urgencia por IA; directorio SOS con líneas de prevención por país (135 AR, 024 ES, 0800 0767 UY, 112 UE); derivación obligatoria de la IA ante señales de riesgo | Registrar qué se hace tras la detección y con qué plazo; revisar periódicamente que el detector siga funcionando |
+| Menores accediendo al servicio | Medio | Casilla de 16+ desde el 24/07, con constancia (`age_confirmed_at`) | Sólo es una declaración, no verificación |
 | Pérdida de datos | Medio | Backups del proveedor | Verificar que estén activos y probar una restauración |
 
 ## Decisión
