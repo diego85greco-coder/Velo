@@ -1151,6 +1151,38 @@ function _sbUnsub(ch){
   if(ch && sbClient){ try{ sbClient.removeChannel(ch); }catch(e){} }
 }
 
+/* v1618 — Refresco de respaldo para los feeds comunitarios.
+   Desde v1618 las publicaciones anónimas dejaron de ser legibles en la tabla
+   cruda por el resto de la gente (para que no se puedan ligar a su autor). El
+   websocket de Postgres respeta esa misma regla, así que un pedido o momento
+   ANÓNIMO ajeno ya no dispara el evento en vivo. Este poll pregunta sólo por el
+   CONTEO de la vista enmascarada y re-renderiza cuando cambia, de modo que las
+   publicaciones anónimas sigan apareciendo sin recargar. Coste: 1 count/45s
+   mientras la sección está abierta. */
+var _feedPollTmr = null, _feedPollLast = null;
+function _stopFeedPoll(){
+  if(_feedPollTmr){ clearInterval(_feedPollTmr); _feedPollTmr = null; }
+  _feedPollLast = null;
+}
+function _startFeedPoll(page, view, render){
+  _stopFeedPoll();
+  _initSupabase();
+  if(!sbClient) return;
+  _feedPollTmr = setInterval(function(){
+    if(_curPage !== page){ _stopFeedPoll(); return; }
+    var since = new Date(Date.now() - 48*3600000).toISOString();
+    try{
+      sbClient.from(view).select('id',{count:'exact',head:true}).gte('created_at', since)
+        .then(function(r){
+          if(!r || r.error || r.count == null) return;
+          if(_curPage !== page) return;
+          if(_feedPollLast !== null && r.count !== _feedPollLast){ try{ render(); }catch(_){} }
+          _feedPollLast = r.count;
+        }).catch(function(){});
+    }catch(e){}
+  }, 45000);
+}
+
 // Replacement for confirm() — works on iOS Safari PWA where confirm() is silently blocked
 function _pConfirm(msg, onYes){
   var ov = document.createElement('div');
@@ -2826,7 +2858,7 @@ async function _renderCommunityPulseBanner(){
     var since = new Date(Date.now() - 24*3600000).toISOString();
     var results = await Promise.all([
       sbClient.from('mood_entries').select('id',{count:'exact',head:true}).gte('created_at', since),
-      sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).gte('created_at', since),
+      sbClient.from('bitacora_posts_full').select('id',{count:'exact',head:true}).gte('created_at', since), // v1618: vista — el crudo ya no lista los anónimos ajenos
       sbClient.from('bottles').select('id',{count:'exact',head:true}).gte('created_at', since),
     ]);
     var m = (results[0] && results[0].count != null) ? results[0].count : 0;
@@ -8438,6 +8470,30 @@ function _createVeloNotif(recipientId,type,title,body,relatedId){
   }catch(_){ _fallbackInsert(); }
 }
 
+/* v1618 (PRIVACIDAD) — avisar al autor de un post de Bitácora sin conocer su identidad.
+   Antes se hacía `select('user_id').eq('id',postId)` sobre bitacora_posts para
+   saber a quién notificar: eso devolvía el user_id REAL incluso de un post
+   publicado como ANÓNIMO, y bastaba comentar cualquier post para des-anonimizar
+   a su autor. Ahora lo resuelve el servidor: el RPC busca al autor, crea la
+   notificación y no devuelve nunca el identificador.
+   Fallback al camino viejo sólo mientras el RPC no esté desplegado. */
+function _notifyPostAuthor(postId, type, title, body){
+  if(!postId) return;
+  _initSupabase(); if(!sbClient) return;
+  function _legacy(){
+    try{
+      sbClient.from('bitacora_posts').select('user_id').eq('id',postId).maybeSingle().then(function(pw){
+        if(pw && pw.data && pw.data.user_id) _createVeloNotif(pw.data.user_id, type, title, body, postId);
+      }).catch(function(){});
+    }catch(_){}
+  }
+  try{
+    sbClient.rpc('velo_notify_bitacora_author',{
+      p_post_id:String(postId), p_type:type, p_title:title, p_body:body||null
+    }).then(function(r){ if(r && r.error) _legacy(); }).catch(_legacy);
+  }catch(_){ _legacy(); }
+}
+
 async function _loadVeloNotifs(){
   _initSupabase(); if(!sbClient) return [];
   var uid=safeLS('get','velo_user_id'); if(!uid) return [];
@@ -14036,8 +14092,9 @@ async function _loadGuardianStats(){
   if(!el || !sbClient) return;
   try{
     var [r1, r2] = await Promise.all([
-      sbClient.from('help_posts').select('id', {count:'exact',head:true}),
-      sbClient.from('help_posts').select('id', {count:'exact',head:true}).eq('taken',true)
+      // v1618: vistas enmascaradas — la tabla cruda ya no lista los pedidos anónimos ajenos
+      sbClient.from('help_posts_feed').select('id', {count:'exact',head:true}),
+      sbClient.from('help_posts_feed').select('id', {count:'exact',head:true}).eq('taken',true)
     ]);
     var total  = (r1 && r1.count != null) ? r1.count : '—';
     var helped = (r2 && r2.count != null) ? r2.count : '—';
@@ -29143,7 +29200,7 @@ async function _renderAdmin(){
       if(!bRep.error) bottlesReplied = bRep.count || 0;
     }catch(e){}
     try{
-      var hpRes = await sbClient.from('help_posts').select('id',{count:'exact',head:true});
+      var hpRes = await sbClient.from('help_posts_feed').select('id',{count:'exact',head:true}); // v1618: vista enmascarada
       if(!hpRes.error) helpRequests = hpRes.count || 0;
     }catch(e){}
     try{
@@ -35618,7 +35675,7 @@ async function _updateFeedTabCounts(){
     if(cntM) cntM.textContent = nM > 0 ? nM+(nM===1?' momento hoy':' momentos hoy') : '';
   }catch(e){}
   try{
-    var rH = await sbClient.from('happy_posts').select('id',{count:'exact',head:true}).gte('created_at',cutoff);
+    var rH = await sbClient.from('happy_posts_full').select('id',{count:'exact',head:true}).gte('created_at',cutoff); // v1618: vista enmascarada
     var nH = rH.count || 0;
     var cntH = document.getElementById('hfTab-happy-cnt');
     if(cntH) cntH.textContent = nH > 0 ? nH+(nH===1?' momento hoy':' momentos hoy') : '';
@@ -36668,6 +36725,9 @@ function _onPageEnter(id){
       // pedidos nuevos en vivo → solo aparecían al refrescar).
       if(_helpRtCh){ _sbUnsub(_helpRtCh); _helpRtCh = null; }
       if(sbClient) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ if(_curPage !== 'help') return; pRenderHelp(); }); // v1601: guard de sección
+      // v1618: los pedidos anónimos ajenos no llegan por websocket (ya no son
+      // legibles en la tabla cruda) → refresco por conteo de la vista.
+      _startFeedPoll('help', 'help_posts_feed', function(){ pRenderHelp(); });
       // Re-suscribir al seeker a SU pedido pendiente para recibir ofertas de
       // guardián en vivo aunque haya navegado y vuelto (incluye pedidos anónimos).
       // v1441: suscribir SIEMPRE (por seeker_id) — así recibís ofertas de guardián
@@ -36701,6 +36761,8 @@ function _onPageEnter(id){
       // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer posts en vivo).
       if(_happyRtCh){ _sbUnsub(_happyRtCh); _happyRtCh = null; }
       if(sbClient) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ if(_curPage !== 'happy') return; pRenderHappy(); }); // v1601: guard de sección
+      // v1618: ídem Sala de Ayuda — los momentos anónimos ajenos no llegan por websocket.
+      _startFeedPoll('happy', 'happy_posts_full', function(){ pRenderHappy(); });
       pRenderHappy();
       break;
     case 'profile':
@@ -37286,6 +37348,9 @@ function pInitBitacora(){
   if(_btRtCh){ _sbUnsub(_btRtCh); _btRtCh = null; }
   if(sbClient){
     _btRtCh = _sbSub('velo:bitacora','bitacora_posts',function(){ if(_curPage !== 'bitacora') return; _btLoadTab(_btCurrentTab,true); }); // v1601: guard de sección
+    // v1618: los posts anónimos ajenos no llegan por websocket (ya no son
+    // legibles en la tabla cruda) → refresco por conteo de la vista enmascarada.
+    _startFeedPoll('bitacora', 'bitacora_posts_full', function(){ _btLoadTab(_btCurrentTab, true); });
   }
   // Load globally-hidden post IDs (reported but not yet resolved)
   if(sbClient){
@@ -37724,8 +37789,13 @@ function _btSharePost(id,ev){
 function _btDeletePost(id,type){
   _pConfirm('¿Eliminar esta publicación?',function(){
     if(!sbClient){ pToast('Conectando...'); return; }
-    sbClient.from('bitacora_posts').delete().eq('id',id).then(function(res){
+    // v1618: `.select('id')` devuelve las filas realmente borradas. Desde v1618 el
+    // borrado es del autor (o moderación) en la base; sin esto, un borrado
+    // bloqueado por RLS devolvía "ok" con 0 filas y la publicación reaparecía al
+    // refrescar sin ningún aviso.
+    sbClient.from('bitacora_posts').delete().eq('id',id).select('id').then(function(res){
       if(res.error){ pToast('Error al eliminar'); return; }
+      if(!res.data || !res.data.length){ pToast('🔒','Sólo podés borrar tus propias publicaciones'); return; }
       pToast('Publicación eliminada');
       ['apoyo','superacion','debate','mio'].forEach(function(t){
         _btPosts[t]=(_btPosts[t]||[]).filter(function(p){ return String(p.id)!==String(id); });
@@ -37965,9 +38035,11 @@ function _btOpenDetail(id){
   ov.addEventListener('click',function(e){ if(e.target===ov){ if(ov.__detachProgress) try{ov.__detachProgress();}catch(_){}; ov.remove(); if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e2){}_btDetailChannel=null;} } });
   _btSubscribeDetail(id);
   _btLoadComments(post.id);
-  // For debate: async-fetch fresh posturas from base table (bypasses stale view/schema cache)
+  // For debate: async-fetch fresh posturas.
+  // v1618: por la vista enmascarada — la tabla cruda ya no devuelve los posts
+  // anónimos ajenos (antes se leía el crudo para saltear la caché de esquema).
   if(post.categoria==='debate' && sbClient && (!_dpA||!_dpB)){
-    sbClient.from('bitacora_posts').select('id,postura_a,postura_b,contenido').eq('id',id).maybeSingle()
+    sbClient.from('bitacora_posts_full').select('id,postura_a,postura_b,contenido').eq('id',id).maybeSingle()
       .then(function(fr){
         if(!fr||fr.error||!fr.data) return;
         var d=fr.data, fA=(d.postura_a||'').trim(), fB=(d.postura_b||'').trim();
@@ -38158,13 +38230,10 @@ async function _btSendComment(postId){
     _btRefreshCard(postId);
     _btLoadComments(postId);
     // v1443: notificar al autor del post (actividad) — respeta el anónimo del comentario
+    // v1618: vía RPC — el cliente ya no recibe el user_id del autor (ver _notifyPostAuthor)
     try{
-      sbClient.from('bitacora_posts').select('user_id').eq('id',postId).maybeSingle().then(function(pw){
-        if(pw && pw.data && pw.data.user_id){
-          var _nm = _btAnon ? 'Alguien' : (safeLS('get','velo_user_name')||'Alguien');
-          _createVeloNotif(pw.data.user_id, 'bt_comment', _nm+' comentó tu historia en Bitácora', text.slice(0,80), postId);
-        }
-      }).catch(function(){});
+      var _nm = _btAnon ? 'Alguien' : (safeLS('get','velo_user_name')||'Alguien');
+      _notifyPostAuthor(postId, 'bt_comment', _nm+' comentó tu historia en Bitácora', text.slice(0,80));
     }catch(_){}
   }).catch(function(){ if(input) input.disabled=false; pToast('⚠️','Error de conexión'); });
 }
@@ -38280,13 +38349,10 @@ function _btReact(postId,type){
           _setMine(m2,type); _btReactMap[postId]=m2;
           _refreshDetail();
           // v1443: notificar al autor del post que alguien reaccionó (actividad)
+          // v1618: vía RPC — el cliente ya no recibe el user_id del autor
           try{
-            sbClient.from('bitacora_posts').select('user_id').eq('id',postId).maybeSingle().then(function(pw){
-              if(pw && pw.data && pw.data.user_id){
-                var _nm = safeLS('get','velo_user_name')||'Alguien';
-                _createVeloNotif(pw.data.user_id, 'bt_reaction', _nm+' reaccionó a tu historia en Bitácora', '', postId);
-              }
-            }).catch(function(){});
+            var _nmR = safeLS('get','velo_user_name')||'Alguien';
+            _notifyPostAuthor(postId, 'bt_reaction', _nmR+' reaccionó a tu historia en Bitácora', '');
           }catch(_){}
         }).catch(function(){ pToast('Error de conexión'); });
     }).catch(function(){ pToast('Error de conexión'); });
@@ -38539,7 +38605,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1617;
+    var _BUILT_V = 1618;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

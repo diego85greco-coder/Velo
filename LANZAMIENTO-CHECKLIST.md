@@ -64,6 +64,26 @@ aplica, hay que dejar constancia escrita del razonamiento.
 
 ---
 
+### ~~De-anonimización de las publicaciones anónimas~~ ✅ RESUELTO (v1618)
+Era el hueco de privacidad más grave que quedaba: cualquier persona con cuenta
+podía pedir la tabla cruda (`GET /rest/v1/help_posts?select=user_id,preview`) y
+obtener el autor real de cada publicación "anónima", cruzándolo con `profiles`
+para ponerle nombre. Además, comentar cualquier post de Bitácora devolvía el
+`user_id` de su autor.
+
+**Arreglado en `20260729_anon_posts_deanon_fix.sql` + cliente v1618:**
+- Las publicaciones anónimas ajenas ya no son legibles en la tabla cruda (ni por
+  el websocket). El feed se sirve por las vistas enmascaradas.
+- El aviso al autor de un comentario o reacción lo resuelve el servidor (RPC
+  `velo_notify_bitacora_author`); el cliente nunca recibe su identificador.
+- De paso: borrar una publicación de Bitácora vuelve a ser cosa del autor (o de
+  moderación). Antes cualquier usuario podía borrar la de cualquiera.
+
+⚠️ **Falta aplicar la migración en la base** (la conexión a Supabase estaba caída
+el 29/07). Verificación incluida al final del archivo `.sql`.
+
+---
+
 ## 🟠 IMPORTANTES — poco trabajo, evitan problemas
 
 ### 6. Procedimiento de brechas de seguridad (art. 33)
@@ -96,10 +116,7 @@ Ya existe el sistema de reportes — falta el circuito de respuesta.
 - **Backups y recuperación:** verificar que Supabase los tenga activos y probar
   una restauración. Hoy nadie lo comprobó.
 - **Rotar el VAPID key:** estuvo en el repositorio (queda en el historial de git).
-- 🔴 **De-anonimización pendiente:** en Sala de Ayuda, Muro y Bitácora, un usuario
-  logueado todavía puede leer la tabla cruda y ligar publicaciones "anónimas" a
-  su autor. **Es el hueco de privacidad más relevante que queda abierto** y va a
-  aparecer en la DPIA.
+- ~~De-anonimización~~ ✅ **RESUELTO (v1618)** — ver abajo.
 - **Página de estado / aviso de caídas.**
 - **Accesibilidad** (contraste, lectores de pantalla) — exigible a servicios
   digitales en la UE desde 2025.
@@ -115,7 +132,7 @@ Ya existe el sistema de reportes — falta el circuito de respuesta.
    crisis (las 5 preguntas están en `LEGAL-dpa-y-dpia.md`)
 
 **Técnico pendiente:**
-4. 🔴 De-anonimización en Sala de Ayuda / Muro / Bitácora
+4. Aplicar `20260729_anon_posts_deanon_fix.sql` en la base (código ya desplegado)
 5. Límites de uso por usuario en los endpoints de IA y correo
 6. Procedimiento de brechas (art. 33) y plazos de conservación concretos
 7. Verificar backups y probar una restauración

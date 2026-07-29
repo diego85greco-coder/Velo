@@ -131,9 +131,12 @@ concreto de cada proveedor y archivar la constancia]**
 - Aislamiento por usuario mediante RLS a nivel de fila en las tablas privadas
 - Autenticación con contraseña *hasheada*; sesiones con token
 - Endpoints de IA y de correo restringidos a usuarios autenticados
-- Enmascaramiento de identidad en publicaciones anónimas mediante vistas
+- Enmascaramiento de identidad en publicaciones anónimas mediante vistas, y
+  acceso a la tabla de origen restringido por RLS: una publicación anónima sólo
+  la puede relacionar con su autor la propia persona (o moderación). El aviso al
+  autor de un comentario se resuelve en el servidor, sin devolver su
+  identificador al resto de usuarios *(v1618, 29/07/2026)*
 - Borrado de cuenta que elimina el contenido en todas las tablas
 
 **Pendientes conocidos** (ver `LANZAMIENTO-CHECKLIST.md`): límites de uso por
-usuario en los endpoints de IA/correo, y cierre de la de-anonimización en Sala de
-Ayuda, Muro y Bitácora.
+usuario en los endpoints de IA/correo.
