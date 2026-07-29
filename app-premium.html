@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1609">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1609">
+  <link rel="stylesheet" href="premium.css?v=20260626-1610">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1610">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -3783,14 +3783,15 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
       </div>
       <button onclick="closeModal('termsOv')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink4);padding:0">✕</button>
     </div>
-    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 5 de junio de 2026 · heyvelo.app</div>
+    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 24 de julio de 2026 · heyvelo.app</div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.75;display:flex;flex-direction:column;gap:14px">
       <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">Al acceder o utilizar heyvelo.app, usted declara conocer y aceptar estas condiciones.</p>
       <div>
-        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">1. NATURALEZA DE HEYVELO: INTERMEDIACIÓN TECNOLÓGICA</div>
-        <p style="margin:0 0 6px">Heyvelo actúa única y exclusivamente como una aplicación intermediaria para la comunicación y facilitación de contactos.</p>
-        <p style="margin:0 0 6px"><strong>Rol de la Plataforma:</strong> Heyvelo provee la infraestructura tecnológica necesaria para que los Usuarios puedan comunicarse entre sí (ayuda mutua) y para que los Usuarios puedan conectar con Profesionales independientes.</p>
-        <p style="margin:0"><strong>Exención de Responsabilidad:</strong> Heyvelo no es una entidad médica, no presta servicios de salud, no supervisa la calidad de las consultas y no interviene en la relación profesional-paciente. Heyvelo no garantiza el resultado de las sesiones ni la veracidad de los consejos intercambiados en los chats grupales. Toda interacción es responsabilidad exclusiva de las partes involucradas.</p>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">1. NATURALEZA DE HEYVELO</div>
+        <p style="margin:0 0 6px">Heyvelo es una aplicación de bienestar emocional y apoyo entre pares. Provee la infraestructura tecnológica para que las personas usuarias registren su estado de ánimo, escriban un diario personal y se comuniquen entre sí (ayuda mutua, círculos y acompañamiento voluntario).</p>
+        <p style="margin:0 0 6px"><strong>Heyvelo NO es un servicio sanitario:</strong> no es una entidad médica ni psicológica, no presta servicios de salud, no realiza diagnósticos, no ofrece tratamiento ni terapia, y no sustituye la atención de un profesional cualificado. Los contenidos de la aplicación tienen una finalidad de autoconocimiento y acompañamiento, nunca clínica.</p>
+        <p style="margin:0 0 6px"><strong>Apoyo entre pares:</strong> Las personas que acompañan (guardianes, compañeros y participantes de la comunidad) son usuarias voluntarias sin cualificación profesional exigida ni verificada por Heyvelo. Heyvelo no supervisa ni garantiza la veracidad, idoneidad o seguridad de los consejos intercambiados entre usuarios. Toda interacción es responsabilidad exclusiva de las partes.</p>
+        <p style="margin:0"><strong>Emergencias:</strong> Heyvelo no es un servicio de emergencia ni de intervención en crisis, y no garantiza que ningún mensaje sea leído o respondido en un plazo determinado. Si usted o alguien más está en peligro inmediato o en riesgo de autolesión, contacte de inmediato al <strong>112</strong> (emergencias UE) o al <strong>SNS 24 – 808 24 24 24</strong> (Portugal), o al servicio de emergencias de su país.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">2. FUNCIONALIDADES Y MODERACIÓN (IA Y HUMANA)</div>
@@ -3800,35 +3801,33 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">3. PRIVACIDAD Y DATOS EN SECCIONES ESPECIALES</div>
         <p style="margin:0 0 6px">Heyvelo prioriza la privacidad bajo el modelo de minimización de datos:</p>
-        <p style="margin:0 0 6px"><strong>Diario Íntimo:</strong> No se almacena el contenido escrito; solo se procesan estados de ánimo estadísticos.</p>
-        <p style="margin:0 0 6px"><strong>Secciones Comunitarias (Al Mar, Muro de la Felicidad, etc.):</strong> No se retiene información sensible ni privada.</p>
+        <p style="margin:0 0 6px"><strong>Diario Íntimo:</strong> Su contenido (texto y, si los adjunta, notas de voz e imágenes) se guarda cifrado en tránsito en nuestros servidores para poder sincronizarlo entre sus dispositivos y evitar que lo pierda. Es <em>privado</em>: sólo usted puede leerlo. El acceso está restringido a nivel de base de datos mediante políticas que impiden que ninguna otra persona usuaria lo consulte. Puede eliminar cualquier entrada, o toda su cuenta, en cualquier momento.</p>
+        <p style="margin:0 0 6px"><strong>Secciones Comunitarias (Al Mar, Muro de la Felicidad, Sala de Ayuda, Bitácora, Círculos):</strong> Lo que publique en estos espacios se almacena y es visible para otras personas usuarias según el alcance de cada sección. Las publicaciones marcadas como anónimas ocultan su identidad al resto de usuarios. Le recomendamos no compartir en ellos datos que permitan identificarle (nombre completo, dirección, teléfono) ni información sensible que no desee que otros conozcan.</p>
         <p style="margin:0 0 6px"><strong>Función de clima:</strong> Heyvelo <em>no</em> utiliza geolocalización automática, GPS ni dirección IP para detectar la ubicación del usuario. La ciudad es ingresada de forma completamente voluntaria y manual por el usuario. Los datos meteorológicos se obtienen exclusivamente de la API pública Open-Meteo (open-meteo.com) a partir del nombre de ciudad indicado. Heyvelo no recopila, registra ni comparte datos de ubicación geográfica real. El usuario puede cambiar o eliminar su ciudad guardada en cualquier momento.</p>
         <p style="margin:0"><strong>Responsabilidad del Usuario:</strong> Usted es responsable de la información que decide publicar o compartir en los espacios comunitarios.</p>
       </div>
       <div>
-        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">4. POLÍTICA DE RESERVAS DE CONSULTAS PROFESIONALES</div>
-        <p style="margin:0 0 6px">Esta política es vinculante para las sesiones programadas entre Usuario y Profesional:</p>
-        <p style="margin:0 0 4px">· <strong>Cancelación &gt; 72h:</strong> Reembolso del 90%.</p>
-        <p style="margin:0 0 4px">· <strong>Cancelación 48h–72h:</strong> Reembolso del 50%.</p>
-        <p style="margin:0 0 4px">· <strong>Cancelación &lt; 24h:</strong> Sin reembolso.</p>
-        <p style="margin:0"><strong>Comisión de Gestión:</strong> Heyvelo retiene el 20% del valor total de cada reserva como comisión por servicios de plataforma y gestión tecnológica, independientemente de la cancelación.</p>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">4. EDAD MÍNIMA</div>
+        <p style="margin:0 0 6px">El uso de Heyvelo está permitido a partir de los <strong>16 años</strong>. Al registrarse, usted declara tener al menos esa edad. Si detectamos una cuenta de una persona menor de 16 años, la eliminaremos junto con sus datos.</p>
+        <p style="margin:0">Si es responsable legal de un menor y cree que ha creado una cuenta, escríbanos a <strong>privacidad-datos@heyvelo.app</strong> y la eliminaremos.</p>
       </div>
       <div>
-        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">5. SUSCRIPCIONES, DONACIONES E IMPACTO SOCIAL</div>
-        <p style="margin:0 0 6px"><strong>Pagos:</strong> Las suscripciones de Profesionales y "Velo Plus" son recurrentes y no reembolsables.</p>
-        <p style="margin:0 0 6px"><strong>Donaciones de Impacto Social:</strong> Los usuarios pueden donar fondos que Heyvelo destinará a: (1) Mantenimiento técnico o (2) Fondo de Acceso a Salud.</p>
-        <p style="margin:0">Heyvelo gestiona la asignación de sesiones solidarias de forma discrecional, sin que la donación garantice una sesión específica. Estas donaciones son voluntarias, definitivas y no reembolsables.</p>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">5. SUSCRIPCIONES Y DONACIONES</div>
+        <p style="margin:0 0 6px"><strong>Velo Plus:</strong> Suscripción mensual de 2,99 USD que desbloquea funciones adicionales. Se renueva automáticamente cada mes hasta que usted la cancele. Puede cancelarla en cualquier momento desde la aplicación; conservará el acceso hasta el final del período ya abonado y no se le volverá a cobrar.</p>
+        <p style="margin:0 0 6px"><strong>Derecho de desistimiento:</strong> Conforme a la normativa europea de consumo, dispone de 14 días naturales desde la contratación para desistir. Al tratarse de un contenido digital de acceso inmediato, al suscribirse acepta que la prestación comience de inmediato; si ejerce el desistimiento dentro de ese plazo se le reembolsará la parte proporcional no disfrutada. Solicítelo en <strong>consultas@heyvelo.app</strong>.</p>
+        <p style="margin:0 0 6px"><strong>Donaciones:</strong> Son aportes voluntarios destinados al mantenimiento técnico de la plataforma y a mantenerla gratuita. Por su naturaleza, son definitivas y no reembolsables.</p>
+        <p style="margin:0"><strong>Pagos:</strong> Se procesan íntegramente a través de <strong>Stripe</strong>. Heyvelo no recibe, ve ni almacena los datos de su tarjeta.</p>
       </div>
       <div>
-        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">6. RESPONSABILIDAD DEL PROFESIONAL</div>
-        <p style="margin:0 0 6px"><strong>Independencia:</strong> El Profesional opera de forma independiente a Heyvelo.</p>
-        <p style="margin:0 0 6px"><strong>Autenticidad:</strong> El Profesional garantiza la vigencia de sus títulos y licencias.</p>
-        <p style="margin:0"><strong>Indemnidad:</strong> Ante cualquier mala praxis o reclamo legal, el Profesional se obliga a mantener a Heyvelo indemne frente a cualquier sanción o gasto jurídico.</p>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">6. NORMAS DE CONVIVENCIA Y CONTENIDO</div>
+        <p style="margin:0 0 6px">Al publicar en Heyvelo usted se compromete a no difundir contenido ilícito, violento, sexual, discriminatorio, publicitario, ni que promueva la autolesión, el suicidio o los trastornos alimentarios; ni a suplantar identidades, acosar a otras personas o difundir datos de terceros sin permiso.</p>
+        <p style="margin:0 0 6px">Heyvelo puede retirar contenido, suspender o cancelar cuentas que incumplan estas normas. Usted conserva la titularidad de lo que publica y nos concede únicamente la licencia técnica necesaria para almacenarlo y mostrarlo dentro de la aplicación.</p>
+        <p style="margin:0"><strong>Reportes:</strong> Puede denunciar contenido o usuarios desde la propia aplicación; revisamos los reportes y actuamos cuando corresponde.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">7. SEGURIDAD Y PROTECCIÓN DE DATOS (RGPD)</div>
-        <p style="margin:0 0 6px"><strong>Custodia:</strong> Heyvelo es encargado del tratamiento; el Profesional es el responsable y único custodio de los expedientes clínicos.</p>
-        <p style="margin:0"><strong>Conservación:</strong> Tras la baja de la cuenta, se conservarán únicamente los datos mínimos exigidos legalmente (logs, IP, timestamp) para defensa ante reclamaciones.</p>
+        <p style="margin:0 0 6px"><strong>Responsable:</strong> Heyvelo es el responsable del tratamiento de los datos que usted introduce en la aplicación. El detalle está en la Política de Privacidad.</p>
+        <p style="margin:0"><strong>Conservación:</strong> Al eliminar su cuenta se borran sus datos personales y su contenido. Se conservan de forma bloqueada únicamente los mínimos exigidos legalmente (registro de aceptación de términos, logs e IP) para defensa ante reclamaciones.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">8. LEY APLICABLE Y JURISDICCIÓN</div>
@@ -3841,10 +3840,23 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <p style="margin:0 0 4px">· Sonido de oleaje (mar): "<em>Gentle Waves – Quiet Beach</em>" por <strong>amholma</strong> — Freesound.org (#376795), licencia Creative Commons CC BY 4.0. Atribución: amholma / freesound.org.</p>
         <p style="margin:0 0 6px">· Tracks de música de relajación (Olas de Calma, Bosque Profundo, Paz Interior, Fluir, Amanecer): grabaciones CC0 (dominio público) obtenidas de Freesound.org — uso libre sin restricciones.</p>
         <p style="margin:0 0 6px">· Tracks de música de meditación (Meditación Profunda, Improvisación Interior, Despertar del Alma, Quietud, Melodía del Corazón): "<em>Impact Allegretto</em>", "<em>Meditation Impromptu 01–03</em>", "<em>Slow Burn</em>" por <strong>Kevin MacLeod</strong> (incompetech.com), licencia Creative Commons CC BY 4.0. Atribución: Music by Kevin MacLeod (incompetech.com) Licensed under Creative Commons: By Attribution 4.0 — http://creativecommons.org/licenses/by/4.0/</p>
-        <p style="margin:0 0 6px"><strong>Inteligencia Artificial:</strong> Heyvelo utiliza servicios de IA de terceros para mejorar la experiencia de usuario:</p>
-        <p style="margin:0 0 4px">· <strong>Google Gemini</strong> (Google LLC): chatbot "Velo IA" — asistente de acompañamiento emocional.</p>
-        <p style="margin:0 0 4px">· <strong>Groq / Llama</strong> (Meta Platforms): moderación automática de contenido comunitario.</p>
-        <p style="margin:0">Estos servicios se rigen por sus propias políticas de uso. Heyvelo no almacena conversaciones del chatbot ni los resultados de moderación más allá de lo estrictamente necesario para el funcionamiento de la plataforma.</p>
+        <p style="margin:0 0 6px"><strong>Inteligencia Artificial — transparencia:</strong> Heyvelo utiliza sistemas de IA de terceros. Conforme al Reglamento (UE) 2024/1689 de Inteligencia Artificial, le informamos de forma clara de cuándo interactúa con una IA y de qué hace cada sistema:</p>
+        <p style="margin:0 0 4px">· <strong>Velo IA (chatbot)</strong> — Google Gemini (Google LLC). <em>Usted está hablando con una máquina, no con una persona.</em> Genera texto de acompañamiento emocional que puede ser impreciso o equivocado. No emite diagnósticos, no da indicaciones médicas ni sustituye a un profesional.</p>
+        <p style="margin:0 0 4px">· <strong>Moderación automática</strong> — Groq / Llama (Meta) y Google Gemini para el análisis de imágenes. Revisa el contenido publicado para detectar material nocivo. Puede ocultar o marcar contenido de forma automática.</p>
+        <p style="margin:0 0 4px">· <strong>Resúmenes semanales y mensuales (Wrapped)</strong> — Google Gemini. Elaboran un texto descriptivo a partir de los estados de ánimo y la actividad que usted registró. Son una lectura orientativa y <em>no</em> constituyen una valoración clínica, un diagnóstico ni una predicción sobre su salud.</p>
+        <p style="margin:0 0 6px"><strong>Decisiones automatizadas:</strong> Ningún sistema de IA de Heyvelo toma decisiones con efectos jurídicos o significativos sobre usted. La moderación automática puede ocultar contenido de forma preventiva, pero usted puede oponerse y solicitar revisión humana escribiendo a <strong>consultas@heyvelo.app</strong>.</p>
+        <p style="margin:0 0 6px"><strong>Contenido generado por IA:</strong> Los textos producidos por estos sistemas se identifican como tales dentro de la aplicación.</p>
+        <p style="margin:0">Estos servicios se rigen además por sus propias políticas de uso. Heyvelo no conserva las conversaciones del chatbot más allá de lo necesario para su funcionamiento, y no las emplea para entrenar modelos.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">10. DISPONIBILIDAD Y RESPONSABILIDAD</div>
+        <p style="margin:0 0 6px">Heyvelo se ofrece "tal cual", sin garantía de disponibilidad ininterrumpida. Podemos modificar, suspender o discontinuar funciones; si ello afecta a una suscripción activa, le avisaremos y reembolsaremos la parte proporcional no disfrutada.</p>
+        <p style="margin:0">Nada en estas condiciones excluye la responsabilidad que legalmente no pueda excluirse, incluida la derivada de dolo o negligencia grave, ni los derechos que le reconoce la normativa de consumo.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">11. RECLAMACIONES</div>
+        <p style="margin:0 0 6px">Puede dirigir cualquier reclamación a <strong>consultas@heyvelo.app</strong>. Nos comprometemos a responder en un plazo razonable.</p>
+        <p style="margin:0">Como consumidor en la UE, también puede acudir a la plataforma europea de resolución de litigios en línea (<em>ec.europa.eu/consumers/odr</em>) y, en Portugal, al Libro de Reclamaciones electrónico (<em>livroreclamacoes.pt</em>).</p>
       </div>
     </div>
     <button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:20px" onclick="closeModal('termsOv')">Entendido ✓</button>
@@ -3862,7 +3874,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
       </div>
       <button onclick="closeModal('privacyOv')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink4);padding:0">✕</button>
     </div>
-    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 5 de junio de 2026 · heyvelo.app</div>
+    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 24 de julio de 2026 · heyvelo.app</div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.75;display:flex;flex-direction:column;gap:14px">
       <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">En Heyvelo.app, la protección de sus datos personales es una prioridad. Esta política detalla cómo gestionamos su información de manera transparente y segura conforme al RGPD y la legislación portuguesa (Ley 58/2019).</p>
       <div>
@@ -3872,18 +3884,21 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">2. ¿QUÉ INFORMACIÓN RECOPILAMOS Y PARA QUÉ?</div>
         <p style="margin:0 0 6px">Recopilamos únicamente los datos mínimos necesarios para operar nuestra plataforma:</p>
-        <p style="margin:0 0 5px"><strong>Datos de cuenta:</strong> Nombre de usuario y correo electrónico para la gestión de su perfil.</p>
-        <p style="margin:0 0 5px"><strong>Datos profesionales:</strong> Información técnica y acreditaciones de los Profesionales para verificar su idoneidad en la plataforma.</p>
-        <p style="margin:0 0 5px"><strong>Datos de transacciones:</strong> Información necesaria para la gestión de pagos (procesada de forma segura mediante Stripe/PayPal; Heyvelo no almacena datos bancarios).</p>
-        <p style="margin:0 0 5px"><strong>Datos de salud y notas clínicas:</strong> Heyvelo actúa como encargado del tratamiento. El Profesional es el responsable y único custodio de estos expedientes; Heyvelo no accede, audita ni edita este contenido.</p>
+        <p style="margin:0 0 5px"><strong>Datos de cuenta:</strong> Nombre, @usuario, correo electrónico y avatar, para la gestión de su perfil. <em>Base legal: ejecución del contrato.</em></p>
+        <p style="margin:0 0 5px"><strong>Estados de ánimo y diario personal:</strong> Los ánimos que registra y el contenido de su diario (texto y, si los adjunta, notas de voz e imágenes) se guardan asociados a su cuenta para sincronizarlos entre sus dispositivos y elaborar sus estadísticas y resúmenes. Son datos relativos a su salud emocional y por tanto de <strong>categoría especial</strong> (art. 9 RGPD): los tratamos sobre la base de su <em>consentimiento explícito</em>, que usted otorga al usar estas funciones y puede retirar en cualquier momento eliminando el contenido o su cuenta.</p>
+        <p style="margin:0 0 5px"><strong>Contenido comunitario:</strong> Lo que publica en Al Mar, Muro de la Felicidad, Sala de Ayuda, Bitácora, Círculos, Vibes y la Pregunta del Día, incluidas fotos y notas de voz. <em>Base legal: consentimiento y ejecución del contrato.</em></p>
+        <p style="margin:0 0 5px"><strong>Mensajes privados:</strong> El contenido de los chats directos, de acompañamiento y de círculos se almacena para poder entregarlo. Heyvelo no lee sus mensajes privados salvo obligación legal. <em>Base legal: ejecución del contrato.</em></p>
+        <p style="margin:0 0 5px"><strong>Datos de transacciones:</strong> Información necesaria para la gestión de pagos, procesada de forma segura mediante <strong>Stripe</strong>. Heyvelo no recibe ni almacena datos bancarios ni de tarjeta. <em>Base legal: ejecución del contrato y obligación legal contable.</em></p>
+        <p style="margin:0 0 5px"><strong>Notificaciones:</strong> Si las activa, guardamos el identificador técnico de suscripción push de su navegador y su zona horaria para enviarle los avisos en su horario. Puede desactivarlas en cualquier momento desde la aplicación. <em>Base legal: consentimiento.</em></p>
         <p style="margin:0 0 5px"><strong>Ciudad para el clima (opcional):</strong> Si el usuario activa la función de clima, la ciudad ingresada manualmente se almacena en su perfil para mostrar información meteorológica local. Esta información es proporcionada voluntariamente por el usuario; Heyvelo <em>no</em> utiliza geolocalización automática ni dirección IP para inferir la ubicación. El usuario puede modificar o eliminar esta preferencia en cualquier momento.</p>
         <p style="margin:0"><strong>Datos de uso técnico:</strong> Dirección IP, logs de acceso y metadatos de aceptación de términos, necesarios para nuestra seguridad y defensa legal.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">3. PROTECCIÓN EN SECCIONES ESPECIALES (PRIVACIDAD POR DISEÑO)</div>
         <p style="margin:0 0 6px">Heyvelo aplica principios de privacidad desde el diseño y por defecto (<em>privacy by design &amp; by default</em>):</p>
-        <p style="margin:0 0 5px"><strong>Diario Íntimo:</strong> No almacenamos el contenido de sus escritos. Solo registramos sus estados de ánimo para fines estadísticos de seguimiento personal.</p>
-        <p style="margin:0 0 5px"><strong>Comunidad (Muro de la Felicidad, Al Mar, Sala de Ayuda, Guardianes):</strong> No almacenamos información sensible o personal en estas secciones. La información publicada en espacios comunitarios es responsabilidad del usuario.</p>
+        <p style="margin:0 0 5px"><strong>Diario Íntimo:</strong> Su contenido se almacena para que no lo pierda y pueda verlo en todos sus dispositivos, pero es <em>estrictamente privado</em>: sólo usted puede leerlo. El aislamiento está aplicado en la propia base de datos mediante políticas de acceso por fila, de modo que ninguna otra persona usuaria puede consultarlo. Puede borrar entradas individuales o todo su historial cuando quiera.</p>
+        <p style="margin:0 0 5px"><strong>Comunidad (Muro de la Felicidad, Al Mar, Sala de Ayuda, Bitácora, Círculos, Guardianes):</strong> Lo que publique aquí se almacena y es visible para otras personas según el alcance de cada sección. Las publicaciones anónimas ocultan su identidad al resto de usuarios mediante vistas que enmascaran su identificador. Recomendamos no incluir datos que permitan identificarle.</p>
+        <p style="margin:0 0 5px"><strong>Anonimato:</strong> El anonimato dentro de la aplicación es frente a otras personas usuarias, no frente a Heyvelo: por razones de seguridad y moderación conservamos internamente el vínculo entre la publicación y la cuenta que la creó.</p>
         <p style="margin:0 0 5px"><strong>Función de clima:</strong> Heyvelo <em>no</em> solicita acceso a la ubicación del dispositivo, no rastrea la dirección IP con fines de geolocalización, ni emplea ninguna tecnología de seguimiento o fingerprinting para determinar dónde se encuentra el usuario. La consulta meteorológica se realiza únicamente con el nombre de ciudad que el usuario introduce de forma explícita y voluntaria, enviando dicho nombre a la API pública Open-Meteo. En ningún caso se almacenan registros de ubicación, historiales de ciudades consultadas ni datos de posición geográfica real.</p>
         <p style="margin:0"><strong>Moderación:</strong> Utilizamos IA y supervisión humana para proteger la seguridad de los chats. Este procesamiento responde a nuestro interés legítimo en mantener una comunidad sana y libre de acoso.</p>
       </div>
@@ -3893,8 +3908,20 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <p style="margin:0 0 4px">· <strong>Acceso y Rectificación:</strong> Consultar qué datos tenemos y actualizarlos.</p>
         <p style="margin:0 0 4px">· <strong>Supresión ("Derecho al olvido"):</strong> Solicitar la eliminación total de su cuenta y sus datos personales.</p>
         <p style="margin:0 0 4px">· <strong>Portabilidad:</strong> Obtener una copia de sus datos en formato estructurado.</p>
-        <p style="margin:0 0 8px">· <strong>Oposición y limitación:</strong> Oponerse al tratamiento de sus datos personales para fines específicos o solicitar su limitación temporal.</p>
-        <p style="margin:0">Para ejercer estos derechos: <strong>privacidad-datos@heyvelo.app</strong>.</p>
+        <p style="margin:0 0 4px">· <strong>Oposición y limitación:</strong> Oponerse al tratamiento de sus datos personales para fines específicos o solicitar su limitación temporal.</p>
+        <p style="margin:0 0 8px">· <strong>Retirar el consentimiento:</strong> En cualquier momento, sin que ello afecte a la licitud del tratamiento previo.</p>
+        <p style="margin:0 0 6px">Para ejercer estos derechos: <strong>privacidad-datos@heyvelo.app</strong>. Responderemos en el plazo máximo de un mes.</p>
+        <p style="margin:0"><strong>Reclamación ante la autoridad de control:</strong> Si considera que no hemos atendido correctamente sus derechos, puede reclamar ante la Comissão Nacional de Proteção de Dados (CNPD, Portugal — <em>cnpd.pt</em>) o ante la autoridad de protección de datos de su país de residencia.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">4·bis. MENORES DE EDAD</div>
+        <p style="margin:0">Heyvelo está dirigida a personas de <strong>16 años o más</strong>. No recopilamos conscientemente datos de menores de esa edad. Si detectamos una cuenta de un menor de 16 años, la eliminaremos junto con sus datos. Si es responsable legal de un menor y cree que ha creado una cuenta, escríbanos a <strong>privacidad-datos@heyvelo.app</strong>.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">4·ter. INTELIGENCIA ARTIFICIAL Y DECISIONES AUTOMATIZADAS</div>
+        <p style="margin:0 0 6px">Heyvelo emplea IA de terceros para el chatbot "Velo IA", la moderación automática de contenido y la redacción de los resúmenes semanales y mensuales. Cuando interactúa con el chatbot, está interactuando con una máquina, no con una persona.</p>
+        <p style="margin:0 0 6px">Sus estados de ánimo y su actividad se envían a estos servicios únicamente para generar el texto del resumen que usted solicita o recibe. No se emplean para entrenar modelos ni con fines publicitarios.</p>
+        <p style="margin:0">No tomamos decisiones automatizadas con efectos jurídicos o similarmente significativos sobre usted (art. 22 RGPD). La moderación puede ocultar contenido de forma preventiva; tiene derecho a solicitar <strong>revisión humana</strong> escribiendo a <strong>consultas@heyvelo.app</strong>.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">5. CONSERVACIÓN Y SEGURIDAD</div>
@@ -3903,10 +3930,16 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">6. TRANSFERENCIAS A TERCEROS</div>
-        <p style="margin:0 0 6px">No vendemos ni compartimos sus datos con fines publicitarios. Solo compartimos información cuando es estrictamente necesario:</p>
-        <p style="margin:0 0 4px">· <strong>Pasarelas de pago:</strong> Para procesar suscripciones y donaciones (Stripe/PayPal).</p>
+        <p style="margin:0 0 6px">No vendemos ni compartimos sus datos con fines publicitarios, ni los utilizamos para entrenar modelos de IA. Sólo compartimos información con los proveedores necesarios para operar:</p>
+        <p style="margin:0 0 4px">· <strong>Supabase</strong> (base de datos y autenticación) — alojamiento de su cuenta y contenido. Región de alojamiento: Unión Europea.</p>
+        <p style="margin:0 0 4px">· <strong>Vercel</strong> (hosting de la aplicación) — entrega de la web y funciones de servidor.</p>
+        <p style="margin:0 0 4px">· <strong>Stripe</strong> (pagos) — para procesar suscripciones y donaciones.</p>
+        <p style="margin:0 0 4px">· <strong>Google (Gemini)</strong> — chatbot, análisis de imágenes y generación de los resúmenes semanales y mensuales.</p>
+        <p style="margin:0 0 4px">· <strong>Groq / Meta (Llama)</strong> — moderación automática de texto.</p>
+        <p style="margin:0 0 4px">· <strong>Cloudinary</strong> — almacenamiento y entrega de imágenes y vídeos que usted publica.</p>
+        <p style="margin:0 0 4px">· <strong>Resend</strong> — envío de correos transaccionales.</p>
         <p style="margin:0 0 4px">· <strong>Autoridades:</strong> Ante órdenes judiciales vinculantes.</p>
-        <p style="margin:0 0 4px">· <strong>Moderación:</strong> Uso de sistemas de IA para filtrar contenido nocivo.</p>
+        <p style="margin:0 0 6px"><strong>Transferencias internacionales:</strong> Algunos de estos proveedores están establecidos en Estados Unidos. Dichas transferencias se amparan en las Cláusulas Contractuales Tipo aprobadas por la Comisión Europea y/o en el Marco de Privacidad de Datos UE-EE. UU., según el proveedor.</p>
         <p style="margin:0">· <strong>Open-Meteo (clima):</strong> Para obtener datos meteorológicos se envía únicamente el nombre de la ciudad elegida por el usuario. Open-Meteo es una API meteorológica de código abierto y acceso público que no recibe datos de identificación personal, dirección IP ni información de cuenta. Consulte su política en open-meteo.com.</p>
       </div>
       <div>
@@ -4492,8 +4525,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1609"></script>
-<script src="premium-redesign.js?v=20260626-1609"></script>
+<script src="premium.js?v=20260626-1610"></script>
+<script src="premium-redesign.js?v=20260626-1610"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
