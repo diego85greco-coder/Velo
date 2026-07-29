@@ -34350,6 +34350,30 @@ function pShowWeeklySummary(data){
       +'</div>'
     : '';
 
+  // v1606: SEMANA SIN ACTIVIDAD → no mostrar la ficha completa llena de ceros.
+  // Una grilla de "0 / 0 / 0" con bienestar, tendencia y comparativas se lee como
+  // un boletín de notas reprobado; en una app de salud mental eso avergüenza justo
+  // a quien tuvo una semana difícil. En su lugar: un estado corto y cálido, la
+  // tira de días (honesta), la cita, y una acción concreta para retomar hoy.
+  if(!data.checkIns && !data.diaryEntries){
+    cnt.innerHTML =
+      '<div style="margin-bottom:16px">'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.8);margin-bottom:4px">✨ RESUMEN SEMANAL</div>'
+      +'<div style="font-size:26px;font-weight:700;font-family:\'Cormorant Garamond\',serif;color:#fff;line-height:1">Tu semana</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:4px;margin-bottom:18px">'+timelineHtml+'</div>'
+      +'<div style="text-align:center;padding:6px 4px 2px">'
+        +'<div style="font-size:40px;line-height:1;margin-bottom:12px">🌱</div>'
+        +'<div style="font-size:18px;font-family:\'Cormorant Garamond\',serif;color:#fff;line-height:1.35;margin-bottom:10px">Esta semana no registraste nada<br>y está perfecto</div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.62);line-height:1.6;font-family:Jost,sans-serif;padding:0 6px">'
+          +'Hay semanas de pausa, y no hay nada que recuperar ni justificar. Cuando quieras volver, un toque alcanza.'
+        +'</div>'
+      +'</div>'
+      + quoteHtml
+      +'<button onclick="pCloseWeeklySummary();try{pGoTo(\'mood\')}catch(_){}" style="width:100%;padding:15px;margin-top:6px;background:linear-gradient(135deg,rgba(116,198,157,.30),rgba(74,160,110,.34));border:1.5px solid rgba(116,198,157,.55);border-radius:14px;color:#eafff4;font-size:15px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">🌿 Registrar cómo me siento hoy</button>'
+      +'<button onclick="pCloseWeeklySummary()" style="width:100%;padding:12px;margin-top:8px;background:none;border:none;color:rgba(255,255,255,.45);font-size:13.5px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer">Ahora no</button>';
+  } else {
+
   cnt.innerHTML =
     // Header
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
@@ -34431,6 +34455,7 @@ function pShowWeeklySummary(data){
     +'<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.3);margin-bottom:18px">El 1° de cada mes recibís un análisis completo del mes 📋</div>'
     // CTA
     +'<button onclick="pCloseWeeklySummary()" style="width:100%;padding:14px;background:rgba(116,198,157,.22);border:1px solid rgba(116,198,157,.45);border-radius:14px;color:#74c69d;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">¡Hasta el próximo domingo! 🌱</button>';
+  }
   }catch(e){ cnt.innerHTML = '<div style="color:#74c69d;text-align:center;padding:20px">Tu semana en Velo 🌱<br><br><button onclick="pCloseWeeklySummary()" style="margin-top:12px;padding:12px 24px;background:rgba(116,198,157,.22);border:1px solid rgba(116,198,157,.45);border-radius:14px;color:#74c69d;font-size:14px;font-weight:700;cursor:pointer">Cerrar</button></div>'; }
 
   // Style the overlay itself for dark background
@@ -38401,7 +38426,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1606;
+    var _BUILT_V = 1607;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
