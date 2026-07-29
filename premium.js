@@ -34501,18 +34501,30 @@ function pShowWeeklySummary(data){
 
   // Style the overlay itself for dark background
   try{
+    // v1611: el contenedor del modal es un bottom-sheet (align-items:flex-end) y
+    // dejaba la hoja anclada abajo sin estirarse. Para este overlay se estira a
+    // pantalla completa; así el ancho y el alto los define la hoja, no el contenido.
+    try{
+      ov.style.setProperty('align-items','stretch','important');
+      ov.style.setProperty('justify-content','center','important');
+      ov.style.setProperty('padding','0','important');
+    }catch(_){}
     var sheet = ov.querySelector('.p-sheet');
     if(sheet){
       sheet.style.background = 'linear-gradient(160deg,rgba(18,38,28,.97) 0%,rgba(12,28,22,.98) 100%)';
       sheet.style.border = '1px solid rgba(116,198,157,.15)';
       sheet.style.boxShadow = '0 30px 80px rgba(0,0,0,.6)';
-      // v1609: el resumen semanal ocupa casi toda la pantalla. .p-modal-ov es un
-      // bottom-sheet (align-items:flex-end) y la altura la define el contenido, así
-      // que con el estado vacío quedaba una tarjeta chica pegada abajo y medio
-      // pantallazo borroso arriba. Es un momento del mes: merece pantalla completa.
-      // Sólo se aplica a ESTE overlay (estilo inline), no al resto de los modales.
-      sheet.style.minHeight = '92vh';
-      sheet.style.borderRadius = '30px 30px 0 0';
+      // v1611: el resumen ocupa la pantalla COMPLETA (alto y ancho). Hay reglas con
+      // !important en el CSS (max-height:90svh) que ganan a un estilo inline normal,
+      // por eso se fija con setProperty(...,'important'). Y se fuerza el ancho: sin
+      // esto quedaba una franja del fondo visible a la derecha y la tarjeta se veía
+      // cortada. Sólo afecta a ESTE overlay, no al resto de los modales.
+      var _sp = function(k,v){ try{ sheet.style.setProperty(k,v,'important'); }catch(_){ } };
+      _sp('width','100%'); _sp('max-width','100%');
+      _sp('min-height','100svh'); _sp('max-height','100svh');
+      _sp('overflow-x','hidden');
+      _sp('border-radius','0');
+      _sp('padding-top','calc(env(safe-area-inset-top,0px) + 22px)');
       // Con poco contenido (semana sin registros) se centra en vez de quedar
       // arrumbado arriba dejando un hueco abajo.
       if(!data.checkIns && !data.diaryEntries){
@@ -38485,7 +38497,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1610;
+    var _BUILT_V = 1611;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
