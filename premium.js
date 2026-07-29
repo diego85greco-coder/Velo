@@ -11023,7 +11023,18 @@ function _startBuzónListener(){
 
   // ── Polling fallback every 60 s — reliable even if Realtime is not enabled on the table ──
   if(_buzónPollTmr) return;
-  _buzónLastCheck = _buzónLastCheck || new Date(Date.now() - 5000).toISOString(); // first run: only last 5s
+  // v1609: la campana no se encendía NUNCA con avisos creados mientras la app
+  // estaba cerrada (el caso normal: el resumen semanal se genera el domingo a la
+  // mañana). _buzónLastCheck vive en memoria, así que en cada arranque volvía a
+  // cero y el primer chequeo sólo miraba los últimos 5 SEGUNDOS — un broadcast de
+  // hace horas quedaba fuera de la ventana y su id nunca entraba en
+  // velo_bcast_unread. Ahora la marca se persiste y, si no hay ninguna, se mira
+  // hacia atrás 7 días. Volver a avisar algo ya visto no es riesgo: _buzónHandleNew
+  // deduplica por velo_bcast_shown + velo_bcast_read_<id> + _syncedReadIds.
+  if(!_buzónLastCheck){
+    var _bStored = safeLS('get','velo_buzon_last_check') || '';
+    _buzónLastCheck = _bStored || new Date(Date.now() - 7*24*3600*1000).toISOString();
+  }
   _buzónPollTmr = setInterval(function(){
     _buzónPollOnce();
   }, 60000);
@@ -11035,10 +11046,13 @@ function _buzónPollOnce(){
   _initSupabase();
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !sbClient) return;
-  var since = _buzónLastCheck || new Date(Date.now() - 65000).toISOString();
+  // v1609: mismo criterio que arriba — sin marca previa, mirar 7 días atrás en vez
+  // de 65 segundos, para no perder los avisos creados con la app cerrada.
+  var since = _buzónLastCheck || safeLS('get','velo_buzon_last_check') || new Date(Date.now() - 7*24*3600*1000).toISOString();
   var userType = safeLS('get','velo_user_type')||'user';
   var targets = ['user:'+myId, 'all', userType==='pro'?'pros':'users'];
   _buzónLastCheck = new Date().toISOString();
+  safeLS('set','velo_buzon_last_check', _buzónLastCheck); // persistir: sobrevive recargas
   sbClient.from('broadcasts')
     .select('*')
     .in('target', targets)
@@ -34492,6 +34506,24 @@ function pShowWeeklySummary(data){
       sheet.style.background = 'linear-gradient(160deg,rgba(18,38,28,.97) 0%,rgba(12,28,22,.98) 100%)';
       sheet.style.border = '1px solid rgba(116,198,157,.15)';
       sheet.style.boxShadow = '0 30px 80px rgba(0,0,0,.6)';
+      // v1609: el resumen semanal ocupa casi toda la pantalla. .p-modal-ov es un
+      // bottom-sheet (align-items:flex-end) y la altura la define el contenido, así
+      // que con el estado vacío quedaba una tarjeta chica pegada abajo y medio
+      // pantallazo borroso arriba. Es un momento del mes: merece pantalla completa.
+      // Sólo se aplica a ESTE overlay (estilo inline), no al resto de los modales.
+      sheet.style.minHeight = '92vh';
+      sheet.style.borderRadius = '30px 30px 0 0';
+      // Con poco contenido (semana sin registros) se centra en vez de quedar
+      // arrumbado arriba dejando un hueco abajo.
+      if(!data.checkIns && !data.diaryEntries){
+        sheet.style.display = 'flex';
+        sheet.style.flexDirection = 'column';
+        sheet.style.justifyContent = 'center';
+      } else {
+        sheet.style.display = '';
+        sheet.style.flexDirection = '';
+        sheet.style.justifyContent = '';
+      }
     }
     if(typeof openModal==='function') openModal('weeklySummaryOv');
     else { ov.classList.add('show'); ov.style.display='flex'; }
@@ -38453,7 +38485,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1608;
+    var _BUILT_V = 1609;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
