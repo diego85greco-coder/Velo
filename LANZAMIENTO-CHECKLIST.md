@@ -79,12 +79,38 @@ para ponerle nombre. Además, comentar cualquier post de Bitácora devolvía el
 - De paso: borrar una publicación de Bitácora vuelve a ser cosa del autor (o de
   moderación). Antes cualquier usuario podía borrar la de cualquiera.
 
-⚠️ **Falta aplicar la migración en la base** (la conexión a Supabase estaba caída
-el 29/07). Verificación incluida al final del archivo `.sql`.
+✅ **Aplicada en la base el 29/07.** Verificado simulando un usuario cualquiera:
+17 publicaciones anónimas (12 en Sala de Ayuda, 3 en Muro, 2 en Bitácora) dejaron
+de ser rastreables; el feed sigue completo, el autor sigue viendo las suyas,
+moderación sigue viendo todo, y publicar funciona en las tres secciones.
 
 ---
 
 ## 🟠 IMPORTANTES — poco trabajo, evitan problemas
+
+### 🔴 Nuevo (29/07): quedan 11 tablas con `USING(true)`
+Al revisar los avisos de seguridad de Supabase después de aplicar el arreglo de
+anonimato aparecieron otras tablas con la misma clase de hueco que ya se cerró en
+diario/ánimos el 24/07: la policy autoriza a cualquiera, con o sin sesión.
+
+**Las tres que importan de verdad:**
+
+| Tabla | Policy | Qué permite hoy |
+|---|---|---|
+| `plus_grants` | `allow_all` (ALL) | **Darse Velo Plus a uno mismo** sin pagar |
+| `happy_history` | `public_delete` (DELETE) | **Borrar el historial del Muro de todos** |
+| `terms_acceptance` | `allow_all` (ALL) | Leer o alterar la constancia de consentimiento (art. 7.1) |
+
+**El resto, menor pero conviene:** `user_blocks` (leer o quitar los bloqueos de
+otra persona), `contacts`, `admin_news` (publicar avisos con pinta de oficiales),
+`donations`, `guardian_presence`, `bitacora_reactions` (borrar reacciones ajenas),
+`momentos` (`momentos_update_hearts_only` permite editar *cualquier* columna, no
+sólo los corazones), y las tablas del módulo de profesionales que ya no se usa
+(`bookings`, `reviews`, `sessions`, `reportes`).
+
+⚠️ Cada una necesita el mismo cuidado que se aplicó acá: **auditar cada lectura y
+escritura del cliente antes de cerrar la policy.** Cerrar `daily_responses` sin
+hacerlo rompió el Pulso de Comunidad el 24/07.
 
 ### 6. Procedimiento de brechas de seguridad (art. 33)
 Ante una filtración hay **72 horas** para notificar a la CNPD. Hoy no hay
@@ -132,7 +158,7 @@ Ya existe el sistema de reportes — falta el circuito de respuesta.
    crisis (las 5 preguntas están en `LEGAL-dpa-y-dpia.md`)
 
 **Técnico pendiente:**
-4. Aplicar `20260729_anon_posts_deanon_fix.sql` en la base (código ya desplegado)
+4. Cerrar las policies `USING(true)` que quedan en otras tablas — ver abajo
 5. Límites de uso por usuario en los endpoints de IA y correo
 6. Procedimiento de brechas (art. 33) y plazos de conservación concretos
 7. Verificar backups y probar una restauración

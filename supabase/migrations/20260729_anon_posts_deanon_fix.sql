@@ -62,14 +62,43 @@
 --   * _btDeletePost usa `.select('id')` para no dar un borrado por hecho si la
 --     RLS lo bloquea.
 --
--- ANTES DE APLICAR: verificar los nombres de policies REALES en producción.
--- El 24/07 los de moderation_flags no coincidían con los de los archivos y por
--- eso el barrido de abajo es dinámico y no por nombre:
---   select tablename, policyname, cmd, roles, qual
---     from pg_policies
---    where schemaname='public'
---      and tablename in ('help_posts','happy_posts','bitacora_posts')
---    order by tablename, cmd;
+-- ESTADO REAL ENCONTRADO EN PRODUCCIÓN (verificado antes de aplicar, 29/07)
+-- No coincidía con lo que asumían estos archivos — de ahí que el barrido sea
+-- dinámico y no por nombre:
+--   help_posts      · help_all               ALL    {anon,authenticated} true
+--                   · help_posts_daily_limit INSERT RESTRICTIVE (el tope del plan
+--                     gratuito — se conserva)
+--   happy_posts     · happy_all              ALL    {anon,authenticated} true
+--                   · public_read_happy      SELECT {public}            true
+--                     ↑ ESTA NO ESTABA EN NINGÚN ARCHIVO. Una segunda policy de
+--                     lectura abierta: cerrar sólo happy_all no habría servido
+--                     de nada, porque las permisivas se combinan con OR.
+--   bitacora_posts  · bt_select / bt_insert / bt_delete, todas {public} true
+--                     (sin policy de UPDATE — no se crea ninguna)
+--
+-- Tipos confirmados: user_id es `text` en las tres tablas (el comentario de
+-- 20260718h suponía uuid en bitacora_posts, y era text); anon/is_anon son
+-- boolean NULLABLE, de ahí el coalesce(...,false).
+--
+-- APLICADA en prod el 29/07/2026 (migración `anon_posts_deanon_fix`).
+-- Verificado, simulando un usuario autenticado cualquiera:
+--   * publicaciones anónimas ajenas visibles en el crudo: 12→0 (Ayuda),
+--     3→0 (Muro), 2→0 (Bitácora). 17 en total dejaron de ser rastreables.
+--   * las no anónimas siguen visibles (10 / 7 / 1).
+--   * las vistas siguen devolviendo el feed completo (22 / 10 / 3 filas) con el
+--     user_id sólo en las no anónimas.
+--   * el autor sigue viendo SUS anónimas (la app se las fija arriba) y la vista
+--     se las reconoce como propias.
+--   * moderación (velo_is_admin) sigue viendo todo.
+--   * el RPC avisa al autor de un post anónimo sin que quien comenta pueda leer
+--     la fila; sender_id queda registrado.
+--   * publicar en las tres secciones sigue funcionando; el tope de 4/24 h cuenta
+--     bien las filas propias.
+--
+-- Nota: el advisor de Supabase marcará help_posts_feed como
+-- "Security Definer View". Es intencional: es exactamente lo que le permite leer
+-- todas las filas y devolverlas enmascaradas, igual que las otras 7 vistas de
+-- máscara que ya estaban así.
 --
 -- Idempotente.
 -- ============================================================================
