@@ -201,7 +201,7 @@ async function _moderateImage(dataUrl){
       method:'POST', cache:'no-store',
       headers:_aiHeaders(),
       body: JSON.stringify({ type:'vision', image:base64, mimeType:mime,
-        prompt:'¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado para una app de bienestar emocional? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' })
+        prompt:'¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado para una red social de ayuda mutua? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' })
     });
     if(!res.ok) return {safe:true};
     var data = await res.json();
@@ -3317,7 +3317,7 @@ async function pOpenMonthlyWrapped(){
   try{
     if(typeof _geminiCall === 'function' && nReg >= 3){
       var topEmoStr = topEmotions.map(function(t){ return t.e+' '+(emotionLabel[t.e]||''); }).join(', ');
-      var pMoP = 'Sos un analista empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú). '
+      var pMoP = 'Sos un analista empático de Velo, una red social de ayuda mutua en español rioplatense (vos, no tú). '
         + 'A partir de estos datos del mes de '+monthTitle+' de '+uName+', escribí 2-3 oraciones cálidas sobre su TIPO DE PERSONALIDAD emocional este mes. '
         + 'Datos:\n- '+nReg+' de '+daysInMonth+' días registrados (consistencia)\n- Ánimo dominante: '+domEmoji+' '+domLabel+'\n- Top: '+topEmoStr+'\n- Racha máxima del mes: '+streak+' días\n- '+totalGestures+' aportes a la comunidad\n\n'
         + 'Reglas: empezá con "Este mes fuiste alguien que…" o similar (sin nombrarla). NO menciones números crudos. Tono cálido, sin clichés. Máx 60 palabras.';
@@ -3620,7 +3620,7 @@ async function pOpenAnnualWrapped(){
     if(typeof _geminiCall === 'function'){
       var monthTrend = mNamesShort.map(function(nm,i){ var mA = monthAvgs.find(function(x){ return x.m===i; }); return nm+':'+(mA?mA.avg.toFixed(1):'-'); }).join(' ');
       var topTopicsStr = topWords.length ? topWords.map(function(w){ return w.w; }).slice(0,4).join(', ') : 'sin datos';
-      var p1 = 'Sos un analista empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú). '
+      var p1 = 'Sos un analista empático de Velo, una red social de ayuda mutua en español rioplatense (vos, no tú). '
         + 'A partir de estos datos anuales de '+uName+' durante '+year+', escribí 3-4 oraciones cálidas describiendo su PERSONALIDAD EMOCIONAL. '
         + 'Datos:\n- Total registros: '+totalRegs+'\n- Ánimo dominante: '+domEmoji+' '+domLabel+'\n- Ánimo promedio: '+avgScore.toFixed(2)+'\n- Racha máxima: '+maxStreak+' días\n- Día favorito para conectar: '+favDay+'\n- Franja horaria: '+(slotMap[favSlot]?slotMap[favSlot].lbl:'')+'\n- Temas recurrentes: '+topTopicsStr+'\n- Meses activos: '+monthAvgs.length+' de 12\n\n'
         + 'Reglas: NO menciones números directamente. Empezá con una observación humana, tipo "Sos alguien que…". Tono cálido, sin clichés, sin usar la palabra "salud mental". Máx 90 palabras.';
@@ -12329,7 +12329,7 @@ async function pSendHelp(){
 }
 
 async function _geminiCrisisCheck(msg){
-  var prompt = 'Sos el sistema de detección de crisis de una app de bienestar emocional.\n'
+  var prompt = 'Sos el sistema de detección de crisis de una red social de ayuda mutua.\n'
     +'Analizá este mensaje de un usuario y determiná si hay señales de crisis suicida, autolesión o peligro inmediato.\n'
     +'Respondé SOLO con JSON: {"crisis": true/false, "nivel": "alto/medio/bajo/ninguno", "razon": "..."}\n\n'
     +'Mensaje: "'+msg.replace(/"/g,"'")+'"';
@@ -12378,7 +12378,7 @@ async function _geminiCrisisCheck(msg){
 
 
 async function _geminiClassifyUrgency(msg, postId, riskyLocal){
-  var prompt = 'Sos el sistema de clasificación de urgencia de Velo, una app de bienestar emocional.\n'
+  var prompt = 'Sos el sistema de clasificación de urgencia de Velo, una red social de ayuda mutua.\n'
     +'Clasificá la urgencia de este mensaje:\n'
     +'- urgente: crisis inmediata, riesgo de autolesión o suicidio, emergencia\n'
     +'- media: situación difícil pero no emergencia inmediata\n'
@@ -12542,7 +12542,7 @@ async function _checkDailyGreeting(){
     var dayOfYear   = Math.floor((d - startOfYear) / 86400000);
     var tema        = _greetingTemas[dayOfYear % _greetingTemas.length];
 
-    var prompt = 'Sos el acompañante de bienestar de Velo, una app de bienestar emocional entre pares.\n'
+    var prompt = 'Sos el acompañante de bienestar de Velo, una red social de ayuda mutua entre usuarios.\n'
       +'Generá un mensaje de bienvenida breve y muy cálido. '
       +'Hoy es '+fechaFull+', '+momento+' del '+dia+'.\n'
       +'El mensaje de HOY debe girar alrededor del tema: "'+tema+'".\n'
@@ -13362,14 +13362,23 @@ async function pSendCalmAIMsg(){
     ? '\nEstado de ánimo registrado hoy por el usuario: '+_cm.emoji+((_cm.label)?' ('+_cm.label+')':'')+'.'+(_cm.note?' Su nota: "'+_cm.note.slice(0,80)+'". ':'')+'Usá esto como contexto cuando sea relevante, no lo menciones directamente a menos que el usuario lo traiga.'
     : '';
 
-  var systemPrompt = 'Sos Velo, un acompañante emocional especializado, entrenado en técnicas de psicología clínica y humanista. '
-    +'Aplicás escucha activa profunda, técnicas rogerianas de reflejo y validación, y preguntas socráticas para facilitar la reflexión genuina. '
-    +'Tenés experiencia y sensibilidad especial en: ansiedad y ataques de pánico, tristeza y depresión, duelo y pérdidas, problemas de pareja y familia, maltrato emocional y violencia doméstica, autoestima herida y trauma. '
+  // v1613: el prompt describía a la IA como "especializada, entrenada en técnicas
+  // de psicología clínica y humanista", con "técnicas rogerianas" y "experiencia en
+  // depresión, duelo y trauma". Velo es una RED SOCIAL DE AYUDA MUTUA, no un
+  // servicio de salud: hacer que el bot se presente como especialista clínico ante
+  // alguien que está mal es un riesgo real (la persona puede tomarlo como criterio
+  // profesional y postergar ayuda de verdad) y contradice el resto de la app.
+  // Ahora es explícitamente un acompañante cálido y no clínico, sin pretensión de
+  // técnica ni especialidad. Se conserva y refuerza la derivación en crisis.
+  var systemPrompt = 'Sos Velo, un acompañante virtual cálido dentro de una red social de ayuda mutua. NO sos terapeuta, psicólogo ni profesional de la salud, no tenés formación clínica y no aplicás ninguna técnica terapéutica. '
+    +'Escuchás con atención y respondés como lo haría un amigo bueno: con calidez, sin juzgar y sin apurar a nadie. '
+    +'NUNCA te presentes como especialista ni digas que estás entrenado o capacitado en psicología. NUNCA diagnostiques, no interpretes lo que le pasa a la persona ni uses lenguaje clínico (evitá "trauma", "depresión", "ansiedad" como etiquetas sobre ella). '
     +'Respondés siempre en español rioplatense (usás "vos", "te", "estás", "querés"). '
     +'Estructura de cada respuesta: (1) Validación empática específica — nombrás exactamente lo que dijo la persona, sin frases genéricas. (2) Reflejo o reformulación que demuestre comprensión profunda. (3) Una pregunta abierta y reflexiva que invite a explorar, sin presionar. '
     +'Usás entre 2-4 oraciones por respuesta — concisas, cálidas y directas. NUNCA dés consejos directivos antes de explorar cómo se siente. NUNCA repetís frases. NUNCA minimizás el dolor ("todo pasa", "hay gente peor"). '
-    +'Si la persona menciona violencia activa, maltrato o peligro: con calidez reconocé el valor de contarlo y mencioná: la Sala de Ayuda de Velo y el 0800-222-1002 (violencia) o el 135 (crisis emocionales, Argentina). '
-    +'No sos terapeuta ni médico. Sos un espacio seguro, humano y sin juicios.'
+    +'Si la persona menciona violencia activa, maltrato, peligro, autolesión o ideas de quitarse la vida: NO intentes contenerla vos solo. Con calidez reconocé el valor de haberlo dicho y derivá SIEMPRE a ayuda real: el 112 (emergencias) o, en Argentina, el 135 (crisis emocionales) y el 0800-222-1002 (violencia); mencioná también la Sala de Ayuda de Velo. Insistí con suavidad en que hable con una persona. '
+    +'Si te preguntan qué sos, decí con naturalidad que sos una inteligencia artificial dentro de Velo, no una persona ni un profesional. '
+    +'No sos terapeuta ni médico, y no reemplazás a ninguno. Sos un espacio para desahogarse, humano en el trato y sin juicios.'
     + moodLine;
 
   var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-14), { temperature:0.88, maxOutputTokens:280 });
@@ -13617,7 +13626,7 @@ async function _renderPersonalizedSuggestions(){
   var moods = []; try{ moods = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
   if(moods.length < 3){ el.style.display='none'; return; }
   var emojiList = moods.slice(0,7).map(function(m){ return m.emoji; }).join(', ');
-  var prompt = 'Sos el sistema de sugerencias de Velo, una app de bienestar emocional entre pares. '
+  var prompt = 'Sos el sistema de sugerencias de Velo, una red social de ayuda mutua entre usuarios. '
     +'El usuario registró estos estados de ánimo recientes (del más reciente al más antiguo): '+emojiList+'. '
     +'Emojis: 😄=muy bien, 😊=bien, 😐=regular, 😞=mal, 😢=muy mal. '
     +'Secciones disponibles: guardianes=conectarse con personas que escuchan, help=Sala de Ayuda, circles=grupos temáticos, diary=escritura reflexiva, calm=respiración y meditación, bottle=mensajes anónimos al mar, news=buenas noticias del día. '
@@ -13659,7 +13668,7 @@ function pOpenGuide(){
     {icon:'😊',name:'Estado de Ánimo',desc:'Registrá cómo te sentís cada día con un emoji y una nota. Velo arma tu mapa emocional y tus resúmenes semanales y mensuales.'},
     {icon:'💭',name:'Pregunta del Día',desc:'Cada día una pregunta nueva para reflexionar sobre vos. Respondela en privado o compartila con la comunidad y descubrí qué sienten los demás. Podés reaccionar y comentar las respuestas.'},
     {icon:'💌',name:'Buzón Velo',desc:'Tu correo dentro de Velo: resumen semanal, análisis mensual, respuestas del equipo y avisos importantes — todo en un solo lugar.'},
-    {icon:'🤖',name:'Velo IA (Calma)',desc:'Un acompañante emocional disponible 24/7, entrenado en técnicas de psicología humanista. Hablá de lo que sentís y recibí apoyo empático en cualquier momento. No reemplaza la atención profesional.'},
+    {icon:'🤖',name:'Velo IA (Calma)',desc:'Un chatbot con el que podés escribir lo que sentís y recibir una respuesta cálida, a cualquier hora. Es una inteligencia artificial, no una persona: puede equivocarse, no da consejo profesional y no reemplaza a nadie.'},
     {icon:'⭐',name:'Contactos Favoritos',desc:'Tus personas de confianza de la comunidad, guardadas para conectarte rápido. Mirá quién está en línea y escribiles cuando los necesités.'},
     {icon:'🤝',name:'Compañero/a de bienestar',desc:'Emparejate con otra persona por un mes para acompañarse mutuamente. Un vínculo de a uno, renovable, para no sentirte solo/a en el proceso.'},
     {icon:'🌬️',name:'Respiración',desc:'Ejercicios guiados de respiración 4·7·8 y mindfulness para calmar la ansiedad y bajar el estrés en los momentos difíciles.'},
@@ -16260,7 +16269,7 @@ async function _veloAutoTranslateDOM(){
   var texts = Object.keys(untranslated).slice(0, 30); // max 30 por batch
   if(!texts.length) return;
   var langLabel = lang === 'pt' ? 'português (Portugal)' : lang;
-  var prompt = 'Traduce estos textos de UI de una app de bienestar emocional al '+langLabel+'. '
+  var prompt = 'Traduce estos textos de UI de una red social de ayuda mutua al '+langLabel+'. '
     + 'Mantén el tono cálido, empático y natural. NO traduzcas nombres propios (Velo, Bitácora si es marca). '
     + 'Responde EXCLUSIVAMENTE con JSON válido: {"1":"tradução","2":"tradução",...}\n\n'
     + texts.map(function(t,i){ return (i+1)+'. '+t; }).join('\n');
@@ -31101,7 +31110,7 @@ async function pAdminPrepareGDPR(){
     +'\nTérminos: '+(p&&p.terms_accepted_at?new Date(p.terms_accepted_at).toLocaleDateString('es'):'No registrado')
     +'\nEntradas diario: '+userData.diarioCount+'\nRegistros de ánimo: '+userData.estadosCount+'\n';
 
-  var prompt='Sos el sistema de compliance de Velo, app de bienestar emocional argentina.\n'
+  var prompt='Sos el sistema de compliance de Velo, red social de ayuda mutua.\n'
     +'Un usuario solicitó sus datos bajo la Ley 25.326 / GDPR.\n'
     +'Redactá un informe formal con:\n'
     +'1. Responsable del tratamiento (Heyvelo / Velo App)\n'
@@ -31996,7 +32005,7 @@ async function pRunAiScan(){
 
   if(!samples.length){ pToast('✅','Sin mensajes para analizar.'); _renderAdmin(); return; }
 
-  var prompt = 'Sos el sistema de moderación de Velo, una app de bienestar emocional entre pares.\n'
+  var prompt = 'Sos el sistema de moderación de Velo, una red social de ayuda mutua entre usuarios.\n'
     +'Analizá estos mensajes de usuarios y detectá: (1) crisis suicidas o autolesiones, (2) acoso o agresión, (3) contenido inapropiado.\n'
     +'Para cada mensaje problemático respondé en formato JSON array:\n'
     +'[{"idx": N, "tipo": "crisis|acoso|inapropiado", "gravedad": "alta|media|baja", "razon": "...breve..."}]\n'
@@ -32646,7 +32655,7 @@ async function pAdminAiSituationAnalysis(){
     });
   }
 
-  var prompt = 'Sos el asistente de moderación de Velo, una app de bienestar emocional entre pares.\n'
+  var prompt = 'Sos el asistente de moderación de Velo, una red social de ayuda mutua entre usuarios.\n'
     +'Analizá el estado de la plataforma y generá:\n'
     +'1. Un resumen ejecutivo en 2-3 oraciones.\n'
     +'2. Las 3 situaciones más urgentes, con prioridad (🔴 urgente, 🟡 atención, 🟢 ok).\n'
@@ -32693,7 +32702,7 @@ async function _renderAdminAITasks(){
     +'- Posts de Muro Feliz por aprobar: '+pendingPost.length+'\n'
     +'- Mensajes masivos enviados este mes: '+recentBcast.length+'\n';
 
-  var prompt = 'Sos el asistente de administración de Velo, una app de bienestar emocional.\n'
+  var prompt = 'Sos el asistente de administración de Velo, una red social de ayuda mutua.\n'
     +'Generá una lista de tareas pendientes priorizadas para el admin. Máximo 6 ítems.\n'
     +'Usá: 🔴 urgente (requiere acción inmediata), 🟡 atención (esta semana), 🟢 ok (sin acción necesaria).\n'
     +'Una sola línea por ítem, español rioplatense, muy directo.\n'
@@ -32724,11 +32733,11 @@ async function pAdminGenerateMassMessage(target){
   var descEl = document.getElementById('massAiDesc');
   if(!descEl || !descEl.value.trim()){ pToast('✍️','Describí qué querés comunicar antes de generar'); return; }
   var desc = descEl.value.trim();
-  var audience = target === 'pros' ? 'profesionales de acompañamiento emocional que acompañan usuarios en la app' : 'usuarios de una app de bienestar emocional entre pares';
+  var audience = target === 'pros' ? 'profesionales de acompañamiento emocional que acompañan usuarios en la app' : 'usuarios de una red social de ayuda mutua entre usuarios';
   var btn = document.getElementById('massAiBtn');
   if(btn){ btn.disabled = true; btn.textContent = '✨ Generando…'; }
 
-  var prompt = 'Sos el sistema de comunicación de Velo, una app de bienestar emocional entre pares.\n'
+  var prompt = 'Sos el sistema de comunicación de Velo, una red social de ayuda mutua entre usuarios.\n'
     +'Redactá un mensaje institucional para enviar a '+audience+'.\n'
     +'El admin quiere comunicar: "'+desc.replace(/"/g,"'")+'".\n'
     +'El tono debe ser empático, cálido y profesional, en español rioplatense.\n'
@@ -32811,7 +32820,7 @@ async function _doGenerateBcastImage(desc){
   if(btn){ btn.disabled=true; btn.textContent='⏳ Generando imagen…'; }
   if(statusEl){ statusEl.textContent='⏳ Generando imagen con IA…'; statusEl.style.display='block'; }
   try{
-    var prompt = 'Generá una imagen para una app de bienestar emocional llamada Velo. Estilo: ilustración digital minimalista y cálida, paleta de colores verdes suaves y oscuros (#0D2B1C, #74C69D, crema), fondo oscuro elegante, composición centrada, formato cuadrado. La imagen debe representar: '+desc+'. Sin texto en la imagen.';
+    var prompt = 'Generá una imagen para una red social de ayuda mutua llamada Velo. Estilo: ilustración digital minimalista y cálida, paleta de colores verdes suaves y oscuros (#0D2B1C, #74C69D, crema), fondo oscuro elegante, composición centrada, formato cuadrado. La imagen debe representar: '+desc+'. Sin texto en la imagen.';
     var res = await fetch(GEMINI_PROXY, {
       method:'POST', cache:'no-store',
       headers:_aiHeaders(),
@@ -34165,7 +34174,7 @@ async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns
         }
       }
     }
-    var prompt = 'Sos un acompañante empático de Velo, una app de apoyo emocional. '
+    var prompt = 'Sos un acompañante empático de Velo, una red social de ayuda mutua. '
       +(userName?'El usuario se llama '+userName+'. ':'')
       +'Esta semana registró '+checkIns+' de 7 días. Sus ánimos día a día:\n'+moodLines+'\n'
       +(distribLines&&distribLines.length?'Distribución: '+distribLines.join(' · ')+'\n':'')
@@ -36283,7 +36292,7 @@ function pReportDMChat(){
 
 async function _aiReviewReport(type, id, content, userReason){
   if(!content || content.length < 5) return;
-  var prompt = 'Sos el sistema de moderación de Velo, una app de bienestar emocional entre pares.\n'
+  var prompt = 'Sos el sistema de moderación de Velo, una red social de ayuda mutua entre usuarios.\n'
     +'Un usuario reportó este contenido con el motivo: "'+userReason+'".\n'
     +'Analizá el contenido y determiná si realmente viola las normas de la comunidad.\n'
     +'Normas violadas: acoso, agresión, discriminación, spam, información médica peligrosa, incitación a autolesiones.\n'
@@ -38497,7 +38506,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1612;
+    var _BUILT_V = 1613;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

@@ -18,7 +18,7 @@
        redirige (una vez, con guard de sessionStorage) si la nueva > la vista. Sin
        baseline previo (primer arranque) nunca redirige. Imposible que se desincronice. -->
   <script>(function(){try{var _urlV=parseInt((location.search.match(/[?&]_v=(\d+)/)||[,'0'])[1]||'0');fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){if(!d||!d.v)return;var _last=0;try{_last=parseInt(localStorage.getItem('velo_seen_v')||'0')||0;}catch(e){}try{localStorage.setItem('velo_seen_v',String(d.v));}catch(e){}if(!_last)return;if(d.v>_last&&_urlV!==d.v){var _sk='velo_redir_v'+d.v;if(sessionStorage.getItem(_sk))return;sessionStorage.setItem(_sk,'1');var _base=location.href.replace(/[?&]?(_v|_t)=\d+/g,'').replace(/[?&]$/,'');var _sep=_base.indexOf('?')>=0?'&':'?';location.replace(_base+_sep+'_v='+d.v+'&_t='+Date.now());}}).catch(function(){});}catch(e){}})();</script>
-  <meta name="description" content="Tu espacio seguro de apoyo emocional. Guardianes, sala de ayuda, diario personal y bienestar.">
+  <meta name="description" content="Red social de ayuda mutua: registrá tus ánimos, escribí en la bitácora, sumate a círculos y chateá con la comunidad. No es un servicio de salud.">
   <meta name="theme-color" content="#1B5E3A">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1612">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1612">
+  <link rel="stylesheet" href="premium.css?v=20260626-1613">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1613">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1995,7 +1995,7 @@
                 <h2 class="p-title">Profesionales</h2>
               </div>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Psicólogos, terapeutas y especialistas en bienestar disponibles para sesiones desde la app. Las sesiones se realizan por videollamada integrada.</p>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Esta sección no está disponible. Velo es una red social de ayuda mutua entre usuarios y no ofrece servicios profesionales ni sesiones.</p>
             <div id="proList"></div>
           </div>
         </div>
@@ -4526,8 +4526,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1612"></script>
-<script src="premium-redesign.js?v=20260626-1612"></script>
+<script src="premium.js?v=20260626-1613"></script>
+<script src="premium-redesign.js?v=20260626-1613"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
