@@ -64,21 +64,30 @@ Velo no los opera ni garantiza su disponibilidad.
 
 ## Datos que se registran
 
-El pedido publicado en la Sala de Ayuda se marca internamente como
-`urgencia: 'urgente'` para ordenar su visibilidad en la comunidad.
+**Ninguno específico de la crisis.** Se guarda el pedido que la persona escribió
+y publicó voluntariamente en la Sala de Ayuda, nada más.
 
-⚠️ **Pendiente de decisión — consultar con el abogado.** Esa marca equivale a un
-registro de que la persona expresó ideación suicida: es dato de salud de máxima
-sensibilidad y hoy **no tiene plazo de borrado definido**.
+La detección de señales de crisis **no deja rastro**: no se almacena una marca, un
+indicador ni una clasificación de riesgo asociada a la cuenta. Su único efecto es
+inmediato y en pantalla — abrir el directorio SOS y mostrar el aviso.
 
-Opciones a evaluar:
-1. Borrado automático de la marca al cerrarse o expirar el pedido.
-2. No persistirla: usarla sólo en memoria para ordenar la vista.
-3. Conservarla con un plazo corto y explícito, declarado en la Política de Privacidad.
+**Decisión adoptada (24/07/2026):** no persistir la marca de urgencia
+(*opción 2* de las evaluadas). Hasta esa fecha el pedido se guardaba con
+`urgencia: 'urgente'`, lo que equivalía a un registro permanente de que esa
+persona había expresado ideación suicida — dato de salud de máxima sensibilidad,
+sin plazo de borrado y sin finalidad que lo justificara una vez mostrado el pedido.
 
-*Recomendación técnica:* la opción 2 es la más limpia — el ordenamiento por
-urgencia se puede resolver en el cliente sin dejar rastro permanente asociado a la
-persona.
+**Implementación:**
+- El cliente ya no envía `urgencia` al publicar, ni el clasificador de IA la
+  escribe en la base.
+- El triaje se **recalcula en cada dispositivo al renderizar**, a partir del texto
+  que de todos modos está publicado. Los pedidos urgentes se siguen mostrando
+  primero: el orden en pantalla no cambia.
+- Migración `20260724_drop_help_urgencia.sql` — **borra el histórico ya
+  almacenado** y anula el valor por defecto de la columna.
+
+*Principio aplicado:* minimización (art. 5.1.c). Si el dato no es necesario una
+vez cumplida su función, no se conserva.
 
 ---
 

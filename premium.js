@@ -1182,7 +1182,14 @@ function _sbHelpRow(r){
   return { id:r.id, emoji:r.emoji||'💙', anon:r.anon, name:r.anon?'Usuario Anónimo':(r.user_name||'Usuario'),
     av:r.anon?'':(r.user_av||''),
     userId:r.user_id||'', time:new Date(r.created_at).getTime(), preview:r.preview, taken:r.taken,
-    closed:r.closed||false, urgencia:r.urgencia||'normal', isSB:true };
+    // v1616: la urgencia se calcula acá, en el cliente, a partir del texto ya
+    // publicado — no se lee de la base (dejó de guardarse). El orden en pantalla
+    // es el mismo, pero no queda registrado quién expresó señales de crisis.
+    closed:r.closed||false,
+    urgencia: (function(){
+      try{ return _localCrisisCheck(r.preview||'') ? 'urgente' : 'normal'; }catch(_){ return 'normal'; }
+    })(),
+    isSB:true };
 }
 function _sbBottleRow(r){
   return { id:r.id, mood:r.mood||'💭', text:r.text, color:r.color||'rgba(116,198,157,.12)',
@@ -12318,9 +12325,14 @@ async function pSendHelp(){
   _initSupabase();
   if(sbClient){
     try{
+      // v1616: NO se persiste la marca de urgencia. Guardar 'urgente' equivalía a
+      // dejar en la base un registro de que esa persona expresó ideación suicida
+      // —dato de salud de máxima sensibilidad— sin plazo de borrado. El triaje se
+      // recalcula en cada cliente al renderizar (ver _sbHelpRow), a partir del
+      // texto que igualmente está publicado: mismo orden en pantalla, cero rastro.
       var _hpIns = await sbClient.from('help_posts').insert({ id:'hu'+ts,
         user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
-        emoji: isAnon ? '💙' : (userAv || '🧑'), preview:msg, urgencia:(_risky?'urgente':'normal'), anon:isAnon, taken:false
+        emoji: isAnon ? '💙' : (userAv || '🧑'), preview:msg, anon:isAnon, taken:false
       });
       // v1513: si el servidor rechaza por límite diario (RLS backstop), revertir
       // el post optimista y ofrecer Plus — así el tope no se puede saltear.
@@ -12423,14 +12435,11 @@ async function _geminiClassifyUrgency(msg, postId, riskyLocal){
     var data = JSON.parse(match[0]);
     var urgencia = data.urgencia || 'baja';
     if(riskyLocal && urgencia !== 'urgente') urgencia = 'urgente'; // nunca degradar el triaje local
-    // v1506: persistir en Supabase — antes quedaba solo local y los guardianes
-    // nunca veían la urgencia de los pedidos de otros
-    if(postId && urgencia !== 'baja'){
-      _initSupabase();
-      if(sbClient){
-        try{ sbClient.from('help_posts').update({ urgencia: urgencia }).eq('id', postId).then(function(){}).catch(function(){}); }catch(e){}
-      }
-    }
+    // v1616: ya NO se persiste la urgencia en Supabase. Escribir 'urgente' en la
+    // fila dejaba registrado de forma permanente que esa persona expresó señales
+    // de crisis. Los demás clientes recalculan el triaje al renderizar
+    // (_sbHelpRow) desde el texto publicado, así que los guardianes siguen viendo
+    // los pedidos urgentes primero — sin que quede el rastro en la base.
     var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
     if(posts.length){
       posts[0].urgencia = urgencia;
@@ -38536,7 +38545,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1615;
+    var _BUILT_V = 1616;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
