@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1611">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1611">
+  <link rel="stylesheet" href="premium.css?v=20260626-1612">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1612">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -884,7 +884,7 @@
               <div class="land-legal-title">Aviso Legal</div>
               <p class="land-legal-text">
                 <strong>Titular:</strong> HeyVelo · heyvelo.app · <a href="mailto:consultas@heyvelo.app">consultas@heyvelo.app</a><br><br>
-                <strong>Actividad:</strong> Plataforma digital de acompañamiento emocional entre pares. VELO no presta servicios sanitarios ni de atención clínica profesional. En situaciones de urgencia psicológica, contacte los servicios de emergencia de su país (112 en España/Portugal).<br><br>
+                <strong>Actividad:</strong> Red social de ayuda mutua entre personas usuarias (registro de ánimos, publicaciones tipo foro, chats grupales e individuales). VELO no presta servicios sanitarios ni de atención clínica profesional, ni servicios de emergencia. La sección SOS es un directorio informativo de líneas de ayuda operadas por terceros. Ante una urgencia, contacte los servicios de emergencia de su país (112 en España/Portugal).<br><br>
                 <strong>Propiedad intelectual:</strong> Todo el contenido, diseño, logotipos y código fuente de VELO son propiedad de HeyVelo y están protegidos por la legislación de propiedad intelectual. Queda prohibida su reproducción total o parcial sin autorización expresa por escrito.<br><br>
                 <strong>Protección de datos:</strong> El tratamiento de datos personales se rige por el Reglamento (UE) 2016/679 (RGPD) y la Ley n.º 58/2019 de Portugal. Más información en nuestra <a href="#" onclick="pShowPrivacy();return false;">Política de Privacidad</a>.<br><br>
                 <strong>Créditos de audio:</strong> Los sonidos y música de relajación utilizados en esta aplicación son de dominio público (CC0) o licencia Creative Commons. Atribución requerida: sonido de oleaje "Gentle Waves – Quiet Beach" por amholma (freesound.org/s/376795), CC BY 4.0. La aplicación utiliza servicios de IA de Google (Gemini) y Groq/Meta (Llama) para el chatbot y moderación de contenido.<br><br>
@@ -3788,10 +3788,11 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
       <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">Al acceder o utilizar heyvelo.app, usted declara conocer y aceptar estas condiciones.</p>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">1. NATURALEZA DE HEYVELO</div>
-        <p style="margin:0 0 6px">Heyvelo es una aplicación de bienestar emocional y apoyo entre pares. Provee la infraestructura tecnológica para que las personas usuarias registren su estado de ánimo, escriban un diario personal y se comuniquen entre sí (ayuda mutua, círculos y acompañamiento voluntario).</p>
-        <p style="margin:0 0 6px"><strong>Heyvelo NO es un servicio sanitario:</strong> no es una entidad médica ni psicológica, no presta servicios de salud, no realiza diagnósticos, no ofrece tratamiento ni terapia, y no sustituye la atención de un profesional cualificado. Los contenidos de la aplicación tienen una finalidad de autoconocimiento y acompañamiento, nunca clínica.</p>
-        <p style="margin:0 0 6px"><strong>Apoyo entre pares:</strong> Las personas que acompañan (guardianes, compañeros y participantes de la comunidad) son usuarias voluntarias sin cualificación profesional exigida ni verificada por Heyvelo. Heyvelo no supervisa ni garantiza la veracidad, idoneidad o seguridad de los consejos intercambiados entre usuarios. Toda interacción es responsabilidad exclusiva de las partes.</p>
-        <p style="margin:0"><strong>Emergencias:</strong> Heyvelo no es un servicio de emergencia ni de intervención en crisis, y no garantiza que ningún mensaje sea leído o respondido en un plazo determinado. Si usted o alguien más está en peligro inmediato o en riesgo de autolesión, contacte de inmediato al <strong>112</strong> (emergencias UE) o al <strong>SNS 24 – 808 24 24 24</strong> (Portugal), o al servicio de emergencias de su país.</p>
+        <p style="margin:0 0 6px">Heyvelo es una <strong>red social de ayuda mutua</strong> entre personas usuarias. Provee la infraestructura tecnológica para que sus miembros registren sus ánimos, publiquen entradas en secciones tipo foro (Bitácora, Muro de la Felicidad, Al Mar), participen en chats grupales (Círculos) y mantengan chats individuales entre sí.</p>
+        <p style="margin:0 0 6px"><strong>Contenido generado por los usuarios:</strong> Heyvelo actúa como prestador de servicios de alojamiento de datos. Los textos, imágenes y audios publicados son creados por las personas usuarias bajo su exclusiva responsabilidad; Heyvelo no los hace propios ni los revisa previamente, sin perjuicio de la moderación descrita en la cláusula 2 y de la retirada de contenido ilícito una vez conocido.</p>
+        <p style="margin:0 0 6px"><strong>Heyvelo NO es un servicio sanitario:</strong> no es una entidad médica ni psicológica, no presta servicios de salud, no realiza diagnósticos, no ofrece tratamiento, terapia ni consejo profesional, y no sustituye la atención de un profesional cualificado. El intercambio entre usuarios es apoyo entre pares, no asistencia sanitaria.</p>
+        <p style="margin:0 0 6px"><strong>Sin cualificación profesional:</strong> Las personas que acompañan (guardianes, compañeros y demás miembros) son usuarias voluntarias, sin titulación exigida ni verificada por Heyvelo. Heyvelo no supervisa ni garantiza la veracidad, idoneidad o seguridad de lo que se intercambia. Toda interacción es responsabilidad exclusiva de las partes.</p>
+        <p style="margin:0"><strong>Sección SOS — directorio informativo:</strong> Heyvelo pone a disposición un listado de teléfonos públicos de emergencia y de líneas de ayuda en crisis de distintos países, para que usted pueda contactarlos <em>por su cuenta</em> si lo desea. Dichos servicios son operados por terceros ajenos a Heyvelo: no los prestamos, no intervenimos en la comunicación y no garantizamos su disponibilidad, cobertura ni tiempo de respuesta. Heyvelo <strong>no es un servicio de emergencia ni de intervención en crisis</strong> y no garantiza que ningún mensaje publicado o enviado dentro de la aplicación sea leído o respondido. Ante un peligro inmediato, llame al <strong>112</strong> (UE) o al número de emergencias de su país.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">2. FUNCIONALIDADES Y MODERACIÓN (IA Y HUMANA)</div>
@@ -3876,7 +3877,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     </div>
     <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 24 de julio de 2026 · heyvelo.app</div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.75;display:flex;flex-direction:column;gap:14px">
-      <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">En Heyvelo.app, la protección de sus datos personales es una prioridad. Esta política detalla cómo gestionamos su información de manera transparente y segura conforme al RGPD y la legislación portuguesa (Ley 58/2019).</p>
+      <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">Heyvelo es una red social de ayuda mutua entre personas usuarias. Esta política detalla cómo gestionamos su información de manera transparente y segura conforme al RGPD y la legislación portuguesa (Ley 58/2019). Heyvelo no presta servicios sanitarios: los datos de ánimo que usted registra se tratan con especial protección, pero no constituyen una historia clínica.</p>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">1. RESPONSABLE DEL TRATAMIENTO</div>
         <p style="margin:0">El responsable de la gestión de sus datos es Heyvelo, con sede en Oporto, Portugal. Para cualquier consulta, ejercicio de sus derechos o comunicación relativa a la protección de datos, puede escribir a: <strong>privacidad-datos@heyvelo.app</strong>.</p>
@@ -4525,8 +4526,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1611"></script>
-<script src="premium-redesign.js?v=20260626-1611"></script>
+<script src="premium.js?v=20260626-1612"></script>
+<script src="premium-redesign.js?v=20260626-1612"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
