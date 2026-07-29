@@ -12306,7 +12306,7 @@ async function pSendHelp(){
   var userAv = isAnon ? '' : (safeLS('get','velo_user_av')||'🧑');
   ta.value = '';
   closeModal('helpFormOv');
-  pToast('💌','Mensaje publicado. Alguien te acompañará pronto 💚');
+  pToast('💌','Mensaje publicado en la Sala de Ayuda 💚');
   var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var ts = Date.now();
   posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, av:userAv, time:ts, preview:msg, taken:false,
@@ -12334,7 +12334,7 @@ async function pSendHelp(){
     }catch(e){ console.error('[pSendHelp insert]', e); }
   }
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Alguien te acompañará pronto.\n\n"'+msg+'"', extracto:'Alguien te acompañará pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
+  inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Otras personas de la comunidad pueden verlo y responderte, aunque nadie está obligado a hacerlo. Velo no es un servicio de emergencia: si necesitás ayuda urgente, usá el botón SOS para ver las líneas de tu país.\n\n"'+msg+'"', extracto:'Tu mensaje está publicado en la comunidad.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
   // Store seeker's own post id so we can receive guardian notifications
   safeLS('set','velo_my_help_post_id','hu'+ts);
@@ -12346,7 +12346,11 @@ async function pSendHelp(){
   if(_risky){
     setTimeout(function(){
       try{ pOpenSOS(); }catch(_){}
-      pToast('💙','No estás solo/a. Si podés, contactá una línea de tu país — tu pedido ya está publicado y alguien va a acompañarte');
+      // No prometer acompañamiento. Velo no es un servicio de emergencia y quienes
+      // responden son voluntarios: asegurar que "alguien va a acompañarte" crea una
+      // expectativa que no se puede garantizar y, en el peor momento posible, puede
+      // hacer que la persona espere en vez de llamar a una línea real.
+      pToast('💙','Velo no es un servicio de emergencia. Si estás en peligro, llamá ahora a una de estas líneas.');
     }, 700);
   }
   // Gemini crisis detection and urgency classification — run silently in background
@@ -12370,7 +12374,7 @@ async function _geminiCrisisCheck(msg){
       // For high-level crisis: open SOS immediately, don't wait
       if(data.nivel === 'alto'){
         pOpenSOS();
-        pToast('🆘','Por favor contactá una línea de crisis ahora. Estamos acá para vos 💙');
+        pToast('🆘','Por favor contactá ahora una línea de crisis. Velo no puede ayudarte en una emergencia 💙');
       } else {
         setTimeout(function(){
           pToast('💙','Recordá: no estás solo/a. El botón SOS siempre está disponible.');
@@ -38532,7 +38536,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1614;
+    var _BUILT_V = 1615;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
