@@ -1176,7 +1176,10 @@ function _startFeedPoll(page, view, render){
         .then(function(r){
           if(!r || r.error || r.count == null) return;
           if(_curPage !== page) return;
-          if(_feedPollLast !== null && r.count !== _feedPollLast){ try{ render(); }catch(_){} }
+          // Sólo al SUBIR: si baja es porque una publicación vieja salió de la
+          // ventana de 48 h, y re-renderizar ahí movería el scroll de quien está
+          // leyendo sin que haya nada nuevo que mostrar.
+          if(_feedPollLast !== null && r.count > _feedPollLast){ try{ render(); }catch(_){} }
           _feedPollLast = r.count;
         }).catch(function(){});
     }catch(e){}
@@ -38605,7 +38608,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1618;
+    var _BUILT_V = 1619;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
