@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1616">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1616">
+  <link rel="stylesheet" href="premium.css?v=20260626-1617">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1617">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -902,7 +902,7 @@
                 <strong>Actividad:</strong> Red social de ayuda mutua entre personas usuarias (registro de ánimos, publicaciones tipo foro, chats grupales e individuales). VELO no presta servicios sanitarios ni de atención clínica profesional, ni servicios de emergencia. La sección SOS es un directorio informativo de líneas de ayuda operadas por terceros. Ante una urgencia, contacte los servicios de emergencia de su país (112 en España/Portugal).<br><br>
                 <strong>Propiedad intelectual:</strong> Todo el contenido, diseño, logotipos y código fuente de VELO son propiedad de HeyVelo y están protegidos por la legislación de propiedad intelectual. Queda prohibida su reproducción total o parcial sin autorización expresa por escrito.<br><br>
                 <strong>Protección de datos:</strong> El tratamiento de datos personales se rige por el Reglamento (UE) 2016/679 (RGPD) y la Ley n.º 58/2019 de Portugal. Más información en nuestra <a href="#" onclick="pShowPrivacy();return false;">Política de Privacidad</a>.<br><br>
-                <strong>Créditos de audio:</strong> Los sonidos y música de relajación utilizados en esta aplicación son de dominio público (CC0) o licencia Creative Commons. Atribución requerida: sonido de oleaje "Gentle Waves – Quiet Beach" por amholma (freesound.org/s/376795), CC BY 4.0. La aplicación utiliza servicios de IA de Google (Gemini) y Groq/Meta (Llama) para el chatbot y moderación de contenido.<br><br>
+                <strong>Créditos de audio:</strong> Los sonidos y música de relajación utilizados en esta aplicación son de dominio público (CC0) o licencia Creative Commons. Atribución requerida: sonido de oleaje "Gentle Waves – Quiet Beach" por amholma (freesound.org/s/376795), CC BY 4.0. La aplicación utiliza servicios de IA de Google (Gemini) para el chatbot, la moderación de contenido y los resúmenes.<br><br>
                 <strong>Legislación aplicable y jurisdicción:</strong> Las presentes condiciones se rigen por la ley portuguesa. Para cualquier litigio derivado del uso de esta plataforma, las partes se someten expresamente a la jurisdicción de los tribunales de Oporto, Portugal. Consulte nuestros <a href="#" onclick="pShowTerms();return false;">Términos y Condiciones</a> completos.
               </p>
             </div>
@@ -3865,7 +3865,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <p style="margin:0 0 6px">· Tracks de música de meditación (Meditación Profunda, Improvisación Interior, Despertar del Alma, Quietud, Melodía del Corazón): "<em>Impact Allegretto</em>", "<em>Meditation Impromptu 01–03</em>", "<em>Slow Burn</em>" por <strong>Kevin MacLeod</strong> (incompetech.com), licencia Creative Commons CC BY 4.0. Atribución: Music by Kevin MacLeod (incompetech.com) Licensed under Creative Commons: By Attribution 4.0 — http://creativecommons.org/licenses/by/4.0/</p>
         <p style="margin:0 0 6px"><strong>Inteligencia Artificial — transparencia:</strong> Heyvelo utiliza sistemas de IA de terceros. Conforme al Reglamento (UE) 2024/1689 de Inteligencia Artificial, le informamos de forma clara de cuándo interactúa con una IA y de qué hace cada sistema:</p>
         <p style="margin:0 0 4px">· <strong>Velo IA (chatbot)</strong> — Google Gemini (Google LLC). <em>Usted está hablando con una máquina, no con una persona.</em> Genera texto de acompañamiento emocional que puede ser impreciso o equivocado. No emite diagnósticos, no da indicaciones médicas ni sustituye a un profesional.</p>
-        <p style="margin:0 0 4px">· <strong>Moderación automática</strong> — Groq / Llama (Meta) y Google Gemini para el análisis de imágenes. Revisa el contenido publicado para detectar material nocivo. Puede ocultar o marcar contenido de forma automática.</p>
+        <p style="margin:0 0 4px">· <strong>Moderación automática</strong> — Google Gemini. Analiza el contenido publicado (texto e imágenes) para detectar material nocivo. Revisa el contenido publicado para detectar material nocivo. Puede ocultar o marcar contenido de forma automática.</p>
         <p style="margin:0 0 4px">· <strong>Resúmenes semanales y mensuales (Wrapped)</strong> — Google Gemini. Elaboran un texto descriptivo a partir de los estados de ánimo y la actividad que usted registró. Son una lectura orientativa y <em>no</em> constituyen una valoración clínica, un diagnóstico ni una predicción sobre su salud.</p>
         <p style="margin:0 0 6px"><strong>Decisiones automatizadas:</strong> Ningún sistema de IA de Heyvelo toma decisiones con efectos jurídicos o significativos sobre usted. La moderación automática puede ocultar contenido de forma preventiva, pero usted puede oponerse y solicitar revisión humana escribiendo a <strong>consultas@heyvelo.app</strong>.</p>
         <p style="margin:0 0 6px"><strong>Contenido generado por IA:</strong> Los textos producidos por estos sistemas se identifican como tales dentro de la aplicación.</p>
@@ -3958,7 +3958,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <p style="margin:0 0 4px">· <strong>Vercel</strong> (hosting de la aplicación) — entrega de la web y funciones de servidor.</p>
         <p style="margin:0 0 4px">· <strong>Stripe</strong> (pagos) — para procesar suscripciones y donaciones.</p>
         <p style="margin:0 0 4px">· <strong>Google (Gemini)</strong> — chatbot, análisis de imágenes y generación de los resúmenes semanales y mensuales.</p>
-        <p style="margin:0 0 4px">· <strong>Groq / Meta (Llama)</strong> — moderación automática de texto.</p>
+        <p style="margin:0 0 4px"></p>
         <p style="margin:0 0 4px">· <strong>Cloudinary</strong> — almacenamiento y entrega de imágenes y vídeos que usted publica.</p>
         <p style="margin:0 0 4px">· <strong>Resend</strong> — envío de correos transaccionales.</p>
         <p style="margin:0 0 4px">· <strong>Autoridades:</strong> Ante órdenes judiciales vinculantes.</p>
@@ -4548,8 +4548,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1616"></script>
-<script src="premium-redesign.js?v=20260626-1616"></script>
+<script src="premium.js?v=20260626-1617"></script>
+<script src="premium-redesign.js?v=20260626-1617"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

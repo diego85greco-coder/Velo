@@ -115,8 +115,7 @@ categoría especial a escala, conviene evaluarlo (art. 37).
 | Supabase | Base de datos, auth, storage | UE | ⬜ **[PENDIENTE]** |
 | Vercel | Hosting, funciones, analítica | EE. UU. | ⬜ **[PENDIENTE]** |
 | Stripe | Pagos | EE. UU./UE | ⬜ **[PENDIENTE]** |
-| Google (Gemini) | IA: chatbot, moderación de imágenes, resúmenes | EE. UU. | ⬜ **[PENDIENTE]** |
-| Groq | IA: moderación de texto | EE. UU. | ⬜ **[PENDIENTE]** |
+| Google (Gemini) | IA: chatbot, moderación de contenido y resúmenes | EE. UU. | ⬜ **[PENDIENTE]** |
 | Cloudinary | Imágenes y vídeo | EE. UU./UE | ⬜ **[PENDIENTE]** |
 | Resend | Correos transaccionales | EE. UU. | ⬜ **[PENDIENTE]** |
 

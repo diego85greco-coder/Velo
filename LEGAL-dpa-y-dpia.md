@@ -7,7 +7,7 @@ rápido.
 
 ---
 
-# 4. DPA con los proveedores
+# 4. DPA con los proveedores (6)
 
 Un DPA (*Data Processing Agreement*) es el contrato del art. 28 RGPD que te
 protege: fija que el proveedor sólo trata los datos siguiendo tus instrucciones.
@@ -21,9 +21,8 @@ Casi todos se aceptan desde el panel de la cuenta en unos minutos.
 | 2 | **Vercel** | Dashboard → Team Settings → Legal → DPA | ⬜ |
 | 3 | **Stripe** | Dashboard → Settings → Legal / Compliance | ⬜ |
 | 4 | **Google (Gemini API)** | Consola de Google Cloud → Terms → Data Processing Addendum | ⬜ |
-| 5 | **Groq** | Panel de cuenta → Legal (si no aparece, pedirlo por soporte) | ⬜ |
-| 6 | **Cloudinary** | Account → Security & Compliance → DPA | ⬜ |
-| 7 | **Resend** | Settings → Legal → DPA | ⬜ |
+| 5 | **Cloudinary** | Account → Security & Compliance → DPA | ⬜ |
+| 6 | **Resend** | Settings → Legal → DPA | ⬜ |
 
 **Al aceptar cada uno, guardá el PDF o la captura con la fecha** en una carpeta
 `legal/dpa/`. Esa constancia es lo que se muestra en una inspección.

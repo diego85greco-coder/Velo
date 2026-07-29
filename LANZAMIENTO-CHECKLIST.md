@@ -58,7 +58,7 @@ tiene casi toda la información — hay que volcarla al formato del art. 30.
 
 ### 4. Faltan los DPA firmados con los proveedores
 Hay un modal que los menciona, pero hacen falta los **acuerdos reales** con:
-Supabase, Vercel, Google (Gemini), Groq, Cloudinary, Resend y Stripe.
+Supabase, Vercel, Google (Gemini), Cloudinary, Resend y Stripe.
 
 **Arreglo:** casi todos publican un DPA estándar que se acepta desde el panel de
 la cuenta. Es trámite, pero hay que hacerlo y guardar la constancia.
@@ -90,7 +90,7 @@ términos no hay forma de pedir la aceptación nueva.
 
 ### 9. Sin límite de uso en los endpoints de IA y email
 Ya exigen sesión (arreglado hoy), pero un usuario autenticado puede llamarlos en
-bucle y quemar la cuota de Gemini/Groq/Resend. El límite de 25 IA/día es sólo del
+bucle y quemar la cuota de Gemini/Resend. El límite de 25 IA/día es sólo del
 cliente: el proxy nunca lo consulta.
 
 ### 10. Obligaciones de moderación (DSA)

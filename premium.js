@@ -117,7 +117,6 @@ var GEMINI_URLS   = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='
 ];
 var GEMINI_PROXY      = '/api/gemini';     // Gemini 2.5 Flash proxy (Google AI, grounding enabled)
-var GROQ_PROXY        = '/api/groq';       // Groq proxy — llama-3.3-70b, same response shape as Gemini
 var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
 // v1594: JWT del usuario cacheado (se setea en _syncRealtimeAuth). Los proxies de
 // IA exigen un token válido → corta el abuso anónimo que quemaba la API key.
@@ -275,13 +274,12 @@ async function _geminiCall(prompt, cfg){
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
     else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini proxy',pr.status, e1.error||''); }
   }catch(e){ console.warn('[Velo] Gemini proxy fetch error:', e.message); }
-  // 2. Groq proxy fallback (Llama 3.3-70b — returns Gemini-compatible shape)
-  try{
-    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:_aiHeaders(),
-      body: JSON.stringify({ prompt:prompt, cfg:cfg||{} }) });
-    if(gr.ok){ var t2 = _gText(await gr.json()); if(t2) return t2; }
-  }catch(e){}
-  // 3. Direct Gemini API (requires client-side key — likely empty in production)
+  // v1617: eliminado el fallback a Groq. Ya no se usa como proveedor de IA (todo
+  // es Gemini), pero el código lo seguía llamando cuando Gemini fallaba: en esos
+  // casos los mensajes de las personas usuarias SÍ salían hacia Groq/Meta, un
+  // encargado que no está declarado ni tiene contrato. Se cae directo al respaldo
+  // de Gemini de abajo.
+  // 2. Direct Gemini API (requires client-side key — likely empty in production)
   for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
     var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
     try{
@@ -13322,13 +13320,9 @@ async function _geminiChat(systemPrompt, msgs, cfg){
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
     else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini chat',pr.status,e1.error||''); }
   }catch(e){ console.warn('[Velo] Gemini chat error:',e.message); }
-  // 2. Groq proxy — fallback multi-turn chat (llama-3.3-70b)
-  try{
-    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:_aiHeaders(),
-      body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
-    if(gr.ok){ var t2 = _gText(await gr.json()); if(t2) return t2; }
-  }catch(e){}
-  // 3. Last resort: embed conversation as single generate prompt
+  // v1617: eliminado el fallback a Groq (ver nota en _geminiCall). Se pasa
+  // directamente al respaldo con Gemini.
+  // 2. Last resort: embed conversation as single generate prompt
   var convLines = msgs.slice(-8).map(function(m){
     return (m.user ? 'Usuario' : 'Acompañante Velo') + ': ' + m.text;
   });
@@ -38545,7 +38539,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1616;
+    var _BUILT_V = 1617;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
