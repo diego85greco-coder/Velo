@@ -302,6 +302,10 @@ var SUPABASE_URL  = 'https://yuravtnjvvztsxdtggod.supabase.co';
 var SUPABASE_ANON = 'sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C';
 var STRIPE_PK     = 'pk_live_51TXmCcV05dCjGGP2F9YnbPBIantFoxurCpISx86i0DFNFcmM2sovtp5LcV5tOVxI72V4AfgY8sK5GtJVTyYnnI1L00QwkGS6P4';
 var VELO_EMAIL    = 'consultas@heyvelo.app';
+// Versión de los textos legales aceptados. Subir este número CADA VEZ que cambien
+// los Términos o la Política de Privacidad de forma sustancial: queda registrado
+// qué versión aceptó cada persona y permite pedir una nueva aceptación.
+var VELO_TERMS_VERSION = '2026-07-24';
 var SUPABASE_FN   = SUPABASE_URL + '/functions/v1/stripe-checkout';
 
 var _supabaseLib = (typeof window !== 'undefined') ? window.supabase : null;
@@ -1215,6 +1219,12 @@ async function pSignUp(){
   var passOk = pass && pass.length >= 6 && /[0-9]/.test(pass) && /[a-z]/.test(pass) && /[A-Z]/.test(pass);
   if(!passOk){ _showFieldErr('regPassErr'); ok=false; }
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; ok=false; }
+  // Edad mínima 16 años (Portugal). Los Términos ya lo exigían pero el registro no
+  // lo comprobaba: cualquier menor podía crear cuenta sin declarar nada.
+  var ageEl = document.getElementById('regAgeCheck');
+  var ageErrEl = document.getElementById('regAgeErr');
+  if(ageErrEl) ageErrEl.style.display = 'none';
+  if(ageEl && !ageEl.checked){ if(ageErrEl) ageErrEl.style.display='block'; ok=false; }
   if(!ok) return;
   if(!_botGuardCheck()) return;
 
@@ -1231,11 +1241,27 @@ async function pSignUp(){
         options:{ data:{ nombre:name, role:'user' }, emailRedirectTo: appURL }
       });
       if(!result.error && result.data && result.data.user){
-        await sbClient.from('profiles').upsert({
+        // Constancia del consentimiento: fecha + VERSIÓN aceptada. Sin la versión
+        // no hay forma de saber qué texto aceptó cada persona ni de pedir una nueva
+        // aceptación cuando los términos cambien.
+        var _consentTs = new Date().toISOString();
+        var _profRow = {
           id: result.data.user.id, nombre: name, email: email,
-          role: 'user', terms_accepted_at: new Date().toISOString(),
-          created_at: new Date().toISOString()
-        });
+          role: 'user', terms_accepted_at: _consentTs,
+          created_at: _consentTs
+        };
+        try{ _profRow.terms_version = (typeof VELO_TERMS_VERSION !== 'undefined') ? VELO_TERMS_VERSION : null; }catch(_){}
+        try{ _profRow.age_confirmed_at = _consentTs; }catch(_){}
+        var _pIns = await sbClient.from('profiles').upsert(_profRow);
+        // Si la columna todavía no existe en el esquema, reintentar sin los campos nuevos
+        if(_pIns && _pIns.error){
+          try{
+            await sbClient.from('profiles').upsert({
+              id: result.data.user.id, nombre: name, email: email,
+              role: 'user', terms_accepted_at: _consentTs, created_at: _consentTs
+            });
+          }catch(_){}
+        }
       }
     } else {
       result = { error: null };
@@ -38506,7 +38532,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1613;
+    var _BUILT_V = 1614;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

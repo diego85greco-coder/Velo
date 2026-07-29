@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1613">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1613">
+  <link rel="stylesheet" href="premium.css?v=20260626-1614">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1614">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -197,12 +197,27 @@
     #homeMomentoSection,
     #homeMemoryCard { display:none !important; }
   </style>
-  <!-- Vercel Web Analytics -->
-  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
-  <script defer src="/_vercel/insights/script.js"></script>
-  <!-- Vercel Speed Insights -->
-  <script>window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments);};</script>
-  <script defer src="/_vercel/speed-insights/script.js"></script>
+  <!-- Vercel Web Analytics + Speed Insights — SÓLO con consentimiento.
+       Antes se cargaban acá directamente, sin esperar al banner de cookies: la
+       medición arrancaba antes de que la persona pudiera decidir, y el propio
+       banner afirmaba que no se usaba rastreo. Ahora sólo se inyectan si el
+       usuario eligió "Aceptar"; con "Solo esenciales" no se cargan nunca. -->
+  <script>
+    window._veloLoadAnalytics = function(){
+      if(window._veloAnalyticsLoaded) return;
+      window._veloAnalyticsLoaded = true;
+      window.va = window.va || function(){ (window.vaq = window.vaq || []).push(arguments); };
+      window.si = window.si || function(){ (window.siq = window.siq || []).push(arguments); };
+      ['/_vercel/insights/script.js','/_vercel/speed-insights/script.js'].forEach(function(src){
+        var s = document.createElement('script'); s.defer = true; s.src = src;
+        document.head.appendChild(s);
+      });
+    };
+    try{
+      var _cc = localStorage.getItem('velo_cookie_consent') || '';
+      if(_cc.indexOf('all') === 0) window._veloLoadAnalytics();
+    }catch(e){}
+  </script>
 </head>
 <body class="r-dark">
 
@@ -1031,6 +1046,13 @@
               <label for="regTcCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto los <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowTerms()">Términos y Condiciones</span> y la <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowPrivacy()">Política de Privacidad</span> de Velo.</label>
             </div>
             <div class="p-err-msg" id="regTcErr" style="margin-bottom:10px">Debés aceptar los términos para continuar</div>
+            <!-- Verificación de edad: los Términos exigen 16 años (edad mínima de
+                 consentimiento digital en Portugal) pero el registro no lo comprobaba. -->
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;background:var(--cream2);border-radius:12px;padding:12px 14px">
+              <input type="checkbox" id="regAgeCheck" style="accent-color:var(--sage2);width:18px;height:18px;cursor:pointer;flex-shrink:0;margin-top:1px">
+              <label for="regAgeCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Declaro que tengo <strong>16 años o más</strong>.</label>
+            </div>
+            <div class="p-err-msg" id="regAgeErr" style="margin-bottom:10px">Velo sólo está disponible para mayores de 16 años</div>
             <!-- Honeypot anti-bot: visually hidden, never filled by humans -->
             <div style="position:absolute;left:-9999px;height:0;overflow:hidden" aria-hidden="true" tabindex="-1">
               <input type="text" id="_vhp" name="website" autocomplete="off" tabindex="-1">
@@ -4300,7 +4322,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     <span style="font-size:20px">🍪</span>
     <div style="flex:1;min-width:220px">
       <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:3px">Política de Cookies</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.55);line-height:1.5">Usamos cookies esenciales para el funcionamiento de la app (sesión, preferencias). No usamos cookies de rastreo ni publicidad.</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.55);line-height:1.5">Usamos almacenamiento esencial para que la app funcione (sesión y preferencias); eso no se puede desactivar. Con tu permiso usamos además <strong>estadísticas de uso anónimas</strong> (Vercel) para saber qué falla y mejorar. Nunca usamos publicidad ni vendemos tus datos.</div>
     </div>
     <div style="display:flex;gap:8px;flex-shrink:0">
       <button onclick="_cookieAccept('essential')" style="font-size:12px;font-weight:700;padding:9px 16px;border-radius:100px;background:none;border:1.5px solid rgba(255,255,255,.25);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Jost',sans-serif">Solo esenciales</button>
@@ -4526,8 +4548,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1613"></script>
-<script src="premium-redesign.js?v=20260626-1613"></script>
+<script src="premium.js?v=20260626-1614"></script>
+<script src="premium-redesign.js?v=20260626-1614"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
@@ -4539,6 +4561,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   })();
   function _cookieAccept(type){
     localStorage.setItem('velo_cookie_consent', type+'|'+new Date().toISOString());
+    // Cargar la medición sólo si se aceptó de verdad. Con "Solo esenciales" no se
+    // carga nada, ni ahora ni en próximas visitas.
+    if(type === 'all' && typeof window._veloLoadAnalytics === 'function') window._veloLoadAnalytics();
     var b=document.getElementById('cookieBanner');
     if(b){ b.style.transition='opacity .4s'; b.style.opacity='0'; setTimeout(function(){ b.style.display='none'; }, 400); }
   }
