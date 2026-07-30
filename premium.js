@@ -37356,8 +37356,11 @@ function pInitBitacora(){
     _startFeedPoll('bitacora', 'bitacora_posts_full', function(){ _btLoadTab(_btCurrentTab, true); });
   }
   // Load globally-hidden post IDs (reported but not yet resolved)
+  // v1620: por la vista `bitacora_reported_ids`, que expone SÓLO el post_id. La
+  // tabla cruda dejaba ver también quién había reportado a quién — material para
+  // represalias en una comunidad chica. Ahora es de moderación.
   if(sbClient){
-    sbClient.from('bitacora_reports').select('post_id').not('post_id','is',null)
+    sbClient.from('bitacora_reported_ids').select('post_id').not('post_id','is',null)
       .then(function(res){
         if(res.data) res.data.forEach(function(r){ if(r.post_id) _btHiddenIds.add(String(r.post_id)); });
       }).catch(function(){});
@@ -38608,7 +38611,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1619;
+    var _BUILT_V = 1620;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
