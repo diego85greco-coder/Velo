@@ -88,29 +88,34 @@ moderación sigue viendo todo, y publicar funciona en las tres secciones.
 
 ## 🟠 IMPORTANTES — poco trabajo, evitan problemas
 
-### 🔴 Nuevo (29/07): quedan 11 tablas con `USING(true)`
-Al revisar los avisos de seguridad de Supabase después de aplicar el arreglo de
-anonimato aparecieron otras tablas con la misma clase de hueco que ya se cerró en
-diario/ánimos el 24/07: la policy autoriza a cualquiera, con o sin sesión.
+### ~~Policies `USING(true)` en otras tablas~~ ✅ RESUELTO (v1620, 30/07)
+Cerradas 15 tablas. Lo que estaba abierto y ya no:
 
-**Las tres que importan de verdad:**
+| Tabla | Qué permitía |
+|---|---|
+| `reportes` | Leer **todos los reportes, incluidos los de crisis** — el dato más sensible de la app |
+| `bitacora_reports` | Ver **quién reportó a quién** (material para represalias) |
+| `happy_history` | Borrar el historial del Muro de todos |
+| `contacts` | Leer los mensajes del formulario de contacto, con su email |
+| `terms_acceptance` | Alterar la constancia de consentimiento (art. 7.1) |
+| `user_blocks` | Leer y quitar los bloqueos de otra persona |
+| `guardian_presence` | Cambiarle a otro el nombre, el estado o la valoración |
+| `admin_news` | Publicar avisos con pinta de oficiales |
+| `donations` | Ver quién donó y cuánto |
+| `momentos`, `bitacora_reactions`, `reviews` | Editar o borrar contenido ajeno |
+| `plus_grants`, `bookings`, `sessions` | Escribir en tablas internas o retiradas |
 
-| Tabla | Policy | Qué permite hoy |
-|---|---|---|
-| `plus_grants` | `allow_all` (ALL) | **Darse Velo Plus a uno mismo** sin pagar |
-| `happy_history` | `public_delete` (DELETE) | **Borrar el historial del Muro de todos** |
-| `terms_acceptance` | `allow_all` (ALL) | Leer o alterar la constancia de consentimiento (art. 7.1) |
+**Corrección:** el 29/07 se dijo que `plus_grants` permitía darse Velo Plus sin
+pagar. Es falso — nada lee esa tabla para autorizar. Quien decide es
+`profiles.role`, protegido por el trigger `trg_velo_protect_role`.
 
-**El resto, menor pero conviene:** `user_blocks` (leer o quitar los bloqueos de
-otra persona), `contacts`, `admin_news` (publicar avisos con pinta de oficiales),
-`donations`, `guardian_presence`, `bitacora_reactions` (borrar reacciones ajenas),
-`momentos` (`momentos_update_hearts_only` permite editar *cualquier* columna, no
-sólo los corazones), y las tablas del módulo de profesionales que ya no se usa
-(`bookings`, `reviews`, `sessions`, `reportes`).
+**Bug corregido de paso:** `momentos` no tenía policy de DELETE, así que borrar
+un momento no borraba nada (decía "listo" y reaparecía al refrescar). Ahora sí.
 
-⚠️ Cada una necesita el mismo cuidado que se aplicó acá: **auditar cada lectura y
-escritura del cliente antes de cerrar la policy.** Cerrar `daily_responses` sin
-hacerlo rompió el Pulso de Comunidad el 24/07.
+Estado final en toda la base: **0 policies `ALL` y 0 `DELETE` con `USING(true)`**
+(eran 13 y 3). Quedan 2 `UPDATE` abiertas a propósito (el guardián cierra el
+pedido ajeno; las reacciones escriben en el post ajeno) y 18 `SELECT` de
+contenido público por diseño.
 
 ### 6. Procedimiento de brechas de seguridad (art. 33)
 Ante una filtración hay **72 horas** para notificar a la CNPD. Hoy no hay
@@ -158,10 +163,9 @@ Ya existe el sistema de reportes — falta el circuito de respuesta.
    crisis (las 5 preguntas están en `LEGAL-dpa-y-dpia.md`)
 
 **Técnico pendiente:**
-4. Cerrar las policies `USING(true)` que quedan en otras tablas — ver abajo
-5. Límites de uso por usuario en los endpoints de IA y correo
-6. Procedimiento de brechas (art. 33) y plazos de conservación concretos
-7. Verificar backups y probar una restauración
+4. Límites de uso por usuario en los endpoints de IA y correo
+5. Procedimiento de brechas (art. 33) y plazos de conservación concretos
+6. Verificar backups y probar una restauración
 
 **Ya cerrado el 24/07:** encuadre de la app, textos legales, transparencia de IA,
 consentimiento de analytics, edad mínima, constancia de consentimiento,
