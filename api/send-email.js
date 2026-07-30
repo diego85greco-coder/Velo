@@ -14,8 +14,31 @@ async function _veloUser(req) {
     const r = await fetch(`${_SUPA_URL}/auth/v1/user`, { headers: { apikey: _SUPA_ANON, Authorization: `Bearer ${jwt}` } });
     if (!r.ok) return null;
     const u = await r.json().catch(() => null);
-    return (u && u.id) ? u : null;
+    if (!u || !u.id) return null;
+    u._jwt = jwt;
+    return u;
   } catch (_) { return null; }
+}
+
+// v1621 (ABUSO): tope de correos por persona y día, contado en el servidor.
+// Exigir sesión (v1597) evitó que cualquiera de afuera mandara correos como
+// Velo, pero una cuenta cualquiera todavía podía llamar en bucle y quemar la
+// cuota de Resend —o usar el remitente noreply@heyvelo.app para spam—. El RPC
+// velo_consume_quota cuenta y registra en el mismo paso.
+// Ante un fallo de la base se deja pasar: no vale la pena cortar los correos
+// transaccionales por un problema de conexión.
+async function _veloQuota(jwt, kind) {
+  try {
+    const r = await fetch(`${_SUPA_URL}/rest/v1/rpc/velo_consume_quota`, {
+      method: 'POST',
+      headers: { apikey: _SUPA_ANON, Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_kind: kind })
+    });
+    if (!r.ok) return { ok: true, degraded: true };
+    const j = await r.json().catch(() => null);
+    if (!j || typeof j.ok === 'undefined') return { ok: true, degraded: true };
+    return j;
+  } catch (_) { return { ok: true, degraded: true }; }
 }
 
 module.exports = async function handler(req, res) {
@@ -35,8 +58,14 @@ module.exports = async function handler(req, res) {
   // enviados como Velo) exige además ser admin.
   const _u = await _veloUser(req);
   if (!_u) return res.status(401).json({ error: 'No autenticado' });
-  if (type === 'admin-reply' && _ADMIN_MAILS.indexOf(String(_u.email || '').trim().toLowerCase()) < 0) {
+  const _isAdmin = _ADMIN_MAILS.indexOf(String(_u.email || '').trim().toLowerCase()) >= 0;
+  if (type === 'admin-reply' && !_isAdmin) {
     return res.status(403).json({ error: 'Solo admin' });
+  }
+  // El tope no aplica a moderación: responder consultas es su trabajo.
+  if (!_isAdmin) {
+    const _q = await _veloQuota(_u._jwt, 'email');
+    if (!_q.ok) return res.status(429).json({ error: 'Llegaste al límite diario de correos', limit: _q.limit, used: _q.used });
   }
 
   const displayName = name || 'amigo/a';

@@ -1,0 +1,40 @@
+name: Copia de seguridad de la base
+
+# El proyecto de Supabase está en plan GRATUITO, que no incluye copias de
+# seguridad automáticas. Sin esto, perder la base significaría perder los
+# diarios, los ánimos y las conversaciones de todo el mundo sin vuelta atrás.
+#
+# El volcado se guarda como ARTEFACTO (privado del repositorio), nunca como
+# commit: subir el diario íntimo de la gente a git lo dejaría en el historial
+# para siempre.
+
+on:
+  schedule:
+    - cron: '40 3 * * *'   # 03:40 UTC — antes de las limpiezas de las 04:00
+  workflow_dispatch:        # y a mano cuando haga falta
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Volcar la base a JSON
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node .github/scripts/backup.js
+
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: velo-backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 30
+          if-no-files-found: error

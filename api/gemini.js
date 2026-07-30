@@ -37,12 +37,33 @@ async function _veloAuthed(req) {
   try {
     const auth = req.headers.authorization || req.headers.Authorization || '';
     const jwt = String(auth).replace(/^Bearer\s+/i, '').trim();
-    if (!jwt || jwt === _SUPA_ANON) return false; // exigir token de usuario real, no la anon key
+    if (!jwt || jwt === _SUPA_ANON) return null; // exigir token de usuario real, no la anon key
     const r = await fetch(`${_SUPA_URL}/auth/v1/user`, { headers: { apikey: _SUPA_ANON, Authorization: `Bearer ${jwt}` } });
-    if (!r.ok) return false;
+    if (!r.ok) return null;
     const u = await r.json().catch(() => null);
-    return !!(u && u.id);
-  } catch (_) { return false; }
+    return (u && u.id) ? jwt : null;
+  } catch (_) { return null; }
+}
+
+// v1621 (ABUSO): consumir cupo ANTES de gastar la clave de Gemini.
+// El tope de 25/24h lo llevaba el cliente insertando en `ia_usage`, así que
+// llamar a este endpoint directamente con el token del navegador lo salteaba por
+// completo y se podía quemar la cuota en un bucle. Ahora lo cuenta el servidor
+// mediante el RPC velo_consume_quota, que cuenta y registra en el mismo paso.
+// Si el RPC no responde se DEJA PASAR: preferimos que la app siga funcionando
+// ante un fallo de la base antes que cortarle la IA a todo el mundo.
+async function _veloQuota(jwt, kind) {
+  try {
+    const r = await fetch(`${_SUPA_URL}/rest/v1/rpc/velo_consume_quota`, {
+      method: 'POST',
+      headers: { apikey: _SUPA_ANON, Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_kind: kind })
+    });
+    if (!r.ok) return { ok: true, degraded: true };
+    const j = await r.json().catch(() => null);
+    if (!j || typeof j.ok === 'undefined') return { ok: true, degraded: true };
+    return j;
+  } catch (_) { return { ok: true, degraded: true }; }
 }
 
 module.exports = async function handler(req, res) {
@@ -52,7 +73,16 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!(await _veloAuthed(req))) return res.status(401).json({ error: 'No autenticado' });
+  const _jwt = await _veloAuthed(req);
+  if (!_jwt) return res.status(401).json({ error: 'No autenticado' });
+
+  const _q = await _veloQuota(_jwt, 'ia');
+  if (!_q.ok) {
+    return res.status(429).json({
+      error: 'Llegaste al límite diario de Velo IA',
+      limit: _q.limit, used: _q.used, reason: _q.reason
+    });
+  }
 
   const KEY = process.env.GEMINI_API_KEY || process.env.GEMINI_KEY;
   if (!KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });

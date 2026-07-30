@@ -266,13 +266,23 @@ function _gText(json){
   }catch(e){ return null; }
 }
 
+// v1621: el proxy ahora lleva el tope diario en el servidor y responde 429 al
+// pasarse. Se marca acá para que quien llame muestre el aviso cálido en vez de
+// un "no pude responder" seco.
+var _iaQuotaHit = false;
+
 async function _geminiCall(prompt, cfg){
   // 1. Gemini proxy
   try{
     var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ prompt:prompt, cfg:cfg||{} }) });
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
-    else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini proxy',pr.status, e1.error||''); }
+    else {
+      var e1={}; try{e1=await pr.json();}catch(x){}
+      console.warn('[Velo] Gemini proxy',pr.status, e1.error||'');
+      // Tope diario alcanzado: no tiene sentido reintentar por otro camino.
+      if(pr.status === 429){ _iaQuotaHit = true; return null; }
+    }
   }catch(e){ console.warn('[Velo] Gemini proxy fetch error:', e.message); }
   // v1617: eliminado el fallback a Groq. Ya no se usa como proveedor de IA (todo
   // es Gemini), pero el código lo seguía llamando cuando Gemini fallaba: en esos
@@ -13377,7 +13387,12 @@ async function _geminiChat(systemPrompt, msgs, cfg){
     var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:_aiHeaders(),
       body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
-    else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini chat',pr.status,e1.error||''); }
+    else {
+      var e1={}; try{e1=await pr.json();}catch(x){}
+      console.warn('[Velo] Gemini chat',pr.status,e1.error||'');
+      // v1621: tope diario del servidor — no reintentar por el camino largo.
+      if(pr.status === 429){ _iaQuotaHit = true; return null; }
+    }
   }catch(e){ console.warn('[Velo] Gemini chat error:',e.message); }
   // v1617: eliminado el fallback a Groq (ver nota en _geminiCall). Se pasa
   // directamente al respaldo con Gemini.
@@ -13473,14 +13488,20 @@ async function pSendCalmAIMsg(){
     +'No sos terapeuta ni médico, y no reemplazás a ninguno. Sos un espacio para desahogarse, humano en el trato y sin juicios.'
     + moodLine;
 
+  _iaQuotaHit = false; // v1621
   var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-14), { temperature:0.88, maxOutputTokens:280 });
-  if(!reply){
+  if(!reply && !_iaQuotaHit){
     await new Promise(function(r){ setTimeout(r, 1500); });
     reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-14), { temperature:0.88, maxOutputTokens:280 });
   }
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
-  if(!reply){
+  if(!reply && _iaQuotaHit){
+    // v1621: el tope lo decidió el servidor. Mismo aviso cálido que el chequeo
+    // local, no un "problema de conexión" que no es cierto.
+    try{ safeLS('set', _dailyKey('calmai'), '25'); }catch(_s){}
+    _calmAILimitNotice();
+  } else if(!reply){
     _calmAIAddMsg('Hay un problema de conexión en este momento 🌿 ¿Podés intentarlo de nuevo en un instante? Estoy acá para vos.', false);
   } else {
     _calmAIAddMsg(reply, false);
@@ -38611,7 +38632,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1620;
+    var _BUILT_V = 1621;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

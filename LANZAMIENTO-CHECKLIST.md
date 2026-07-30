@@ -117,23 +117,35 @@ Estado final en toda la base: **0 policies `ALL` y 0 `DELETE` con `USING(true)`*
 pedido ajeno; las reacciones escriben en el post ajeno) y 18 `SELECT` de
 contenido público por diseño.
 
-### 6. Procedimiento de brechas de seguridad (art. 33)
-Ante una filtración hay **72 horas** para notificar a la CNPD. Hoy no hay
-procedimiento escrito ni forma de saber a quién avisar.
+### ~~6. Procedimiento de brechas de seguridad (art. 33)~~ 📄 ESCRITO
+`LEGAL-brechas-y-conservacion.md`, parte 1: qué cuenta como brecha en Velo, los
+5 pasos, cuándo hay que notificar a la CNPD y cuándo además a las personas, y
+qué registrar siempre. Falta que el responsable complete el contacto.
 
-### 7. Plazos de conservación concretos
-La política dice "los mínimos exigidos legalmente". Debería decir cuántos años y
-para qué (ej.: logs 12 meses; registro de aceptación de términos 5 años).
+### ~~7. Plazos de conservación concretos~~ 📄 PROPUESTOS
+Mismo archivo, parte 2: una tabla con plazo y motivo para cada tipo de dato.
+Falta que el responsable decida los `[COMPLETAR]` y copiarlos a la Política de
+Privacidad.
 
 ### ~~8. Re-consentimiento al cambiar los términos~~ ✅ RESUELTO (v1614)
 Se guarda `terms_version` además de la fecha. Al publicar textos nuevos, basta
 subir `VELO_TERMS_VERSION` en `premium.js` para poder identificar quién aceptó
 qué versión. *(Falta implementar el aviso de re-aceptación en sí.)*
 
-### 9. Sin límite de uso en los endpoints de IA y email
-Ya exigen sesión (arreglado hoy), pero un usuario autenticado puede llamarlos en
-bucle y quemar la cuota de Gemini/Resend. El límite de 25 IA/día es sólo del
-cliente: el proxy nunca lo consulta.
+### ~~9. Sin límite de uso en los endpoints de IA y email~~ ✅ RESUELTO (v1621)
+El tope lo lleva ahora el **servidor**, no el cliente. Antes, el contador de 25
+mensajes de IA lo insertaba el navegador, así que llamar a `/api/gemini`
+directamente con el token lo salteaba entero y se podía quemar la clave de
+Gemini en un bucle.
+
+Ahora los dos proxies llaman al RPC `velo_consume_quota`, que cuenta y registra
+en el mismo paso: **25 IA/día** (ilimitado con Plus) y **10 correos/día** (sin
+tope para moderación, que responde consultas). La tabla del contador no es
+accesible por REST — sólo entra por el RPC. Verificado: el mensaje 26 y el
+correo 11 se cortan.
+
+Si la base no responde, se **deja pasar**: no vale cortarle la IA a todo el
+mundo por un fallo de conexión.
 
 ### 10. Obligaciones de moderación (DSA)
 Con usuarios en la UE y contenido publicado por terceros, conviene: explicar por
@@ -144,8 +156,14 @@ Ya existe el sistema de reportes — falta el circuito de respuesta.
 
 ## 🟡 RECOMENDABLES
 
-- **Backups y recuperación:** verificar que Supabase los tenga activos y probar
-  una restauración. Hoy nadie lo comprobó.
+- 🔴 **Backups: el proyecto está en plan GRATUITO y NO tiene copias
+  automáticas.** Verificado el 30/07. Si la base se pierde, se pierden los
+  diarios, ánimos y conversaciones de todo el mundo, sin vuelta atrás.
+  **Mitigación puesta hoy:** volcado nocturno a JSON como artefacto de GitHub
+  (`.github/workflows/backup.yml`), usando el secreto que ya existía. Cubre las
+  54 tablas pero **no** los audios/imágenes de Storage ni `auth.users`.
+  Para eso hace falta el plan Pro (~25 USD/mes) o un `pg_dump` con la
+  contraseña de la base. **Falta probar una restauración.**
 - **Rotar el VAPID key:** estuvo en el repositorio (queda en el historial de git).
 - ~~De-anonimización~~ ✅ **RESUELTO (v1618)** — ver abajo.
 - **Página de estado / aviso de caídas.**
@@ -163,9 +181,10 @@ Ya existe el sistema de reportes — falta el circuito de respuesta.
    crisis (las 5 preguntas están en `LEGAL-dpa-y-dpia.md`)
 
 **Técnico pendiente:**
-4. Límites de uso por usuario en los endpoints de IA y correo
-5. Procedimiento de brechas (art. 33) y plazos de conservación concretos
-6. Verificar backups y probar una restauración
+4. Rotar la VAPID privada (estuvo en el repositorio)
+5. Probar una restauración a partir de un backup
+6. Aplicar los plazos de conservación que decida el titular (3 necesitan un
+   trabajo programado: cuentas inactivas, pedidos viejos, reportes resueltos)
 
 **Ya cerrado el 24/07:** encuadre de la app, textos legales, transparencia de IA,
 consentimiento de analytics, edad mínima, constancia de consentimiento,
