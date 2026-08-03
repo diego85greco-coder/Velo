@@ -36561,8 +36561,13 @@ async function _execDeleteAccount(reason){
           await _del(sbClient.from('bitacora_comments').delete().eq('user_id', uid));
           await _del(sbClient.from('bitacora_comment_reactions').delete().eq('user_id', uid));
           await _del(sbClient.from('dq_reactions').delete().eq('user_id', uid));
+          // v1622: se quitó `bio`, que NO existe en profiles. Como PostgREST
+          // rechaza el update entero cuando una columna no existe, este último
+          // paso del borrado de cuenta fallaba por completo: si el RPC del
+          // servidor no había corrido, el perfil quedaba intacto con el nombre
+          // y el avatar de la persona.
           await _del(sbClient.from('profiles').update({
-            nombre:'[eliminado]', avatar:'🌿', motto:'', bio:'',
+            nombre:'[eliminado]', avatar:'🌿', motto:'',
             push_subscription:null, helped_count:0, received_count:0
           }).eq('id', uid));
           window._veloDeletePartial = true; // v1605: el borrado server-side no corrió
@@ -38632,7 +38637,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1621;
+    var _BUILT_V = 1622;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
