@@ -3270,7 +3270,7 @@ async function pOpenMonthlyWrapped(){
         var _vb = await sbClient.from('vibes').select('id').eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd);
         if(!_vb.error && _vb.data){ comm.vibes = _vb.data.length;
           var _vbIds = _vb.data.map(function(v){return v.id;});
-          if(_vbIds.length){ var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds); if(!_vRx.error && _vRx.data) comm.vibeRx = _vRx.data.length; }
+          if(_vbIds.length){ var _vRx = await sbClient.from('vibe_reactions').select('vibe_id').in('vibe_id',_vbIds); if(!_vRx.error && _vRx.data) comm.vibeRx = _vRx.data.length; } // v1623: vibe_reactions no tiene columna id
         }
       }catch(e){}
     }catch(e){}
@@ -3684,7 +3684,7 @@ async function pOpenAnnualWrapped(){
         var _vb = await sbClient.from('vibes').select('id').eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd);
         if(!_vb.error && _vb.data){ comm.vibes = _vb.data.length;
           var _vbIds = _vb.data.map(function(v){return v.id;});
-          if(_vbIds.length){ var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds); if(!_vRx.error && _vRx.data) comm.vibeRx = _vRx.data.length; }
+          if(_vbIds.length){ var _vRx = await sbClient.from('vibe_reactions').select('vibe_id').in('vibe_id',_vbIds); if(!_vRx.error && _vRx.data) comm.vibeRx = _vRx.data.length; } // v1623: vibe_reactions no tiene columna id
         }
       }catch(_){}
     }catch(e){}
@@ -4666,8 +4666,15 @@ async function _loginAndGo(){
       }
       // Restore deep-link from URL hash (bookmarked section)
       var _hashDl = (location.hash||'').slice(1).trim();
+      // v1623: se quitaron 'professionals' y 'vela'. Los botones de esas dos
+      // secciones están ocultos, pero seguían siendo accesibles con
+      // heyvelo.app/#vela o #professionals — y esas páginas todavía ofrecen
+      // "sesiones con un profesional verificado", justo lo que la app dejó de
+      // ofrecer y lo que se sacó de los términos y de la política de privacidad.
+      // Además el formulario de Vela decía "te contactaremos en 7-14 días" y
+      // no guardaba la solicitud en ningún lado (la tabla no existe).
       var _dlSafe = ['diary','bitacora','momento','happy','guardians','help','bottle',
-                     'contacts','mood','news','inbox','circles','professionals','calm-ai','respira','vela','profile'];
+                     'contacts','mood','news','inbox','circles','calm-ai','respira','profile'];
       if(_hashDl && _dlSafe.indexOf(_hashDl) >= 0){ setTimeout(function(){ pGoTo(_hashDl); }, 300); }
       // Retry any pending Supabase diary syncs (may have been offline last session)
       setTimeout(_retryDiarySync, 3000);
@@ -14214,11 +14221,15 @@ async function pViewMyBottleReplies(bottleId){
   document.body.appendChild(ov);
   try{
     // Buscar broadcasts con el marker [bid:XXX] de esta botella
+    // v1623: pedía created_at y read_at, que NO existen en broadcasts (la fecha
+    // es sent_at), y ordenaba por created_at. PostgREST rechazaba la consulta
+    // entera, así que este panel decía SIEMPRE "Todavía sin respuestas" aunque
+    // hubiera respuestas a la botella.
     var res = await sbClient.from('broadcasts')
-      .select('id,body,sender,sent_at,created_at,read_at')
+      .select('id,body,sender,sent_at')
       .eq('target', 'user:'+uid)
       .ilike('body', '%[bid:'+bottleId+']%')
-      .order('created_at', {ascending: false})
+      .order('sent_at', {ascending: false})
       .limit(100);
     var listEl = document.getElementById('bottleRepliesList');
     if(!listEl) return;
@@ -15112,8 +15123,11 @@ async function _runGlobalSearch(q){
   if(tab === 'all' || tab === 'bitacora'){
     if(sbClient){
       try{
+        // v1623: pedía user_name y user_av, que no existen en la vista (son
+        // author_name y author_avatar). La consulta fallaba entera, así que
+        // BUSCAR EN BITÁCORA nunca devolvía ningún resultado.
         var bt = await sbClient.from('bitacora_posts_full')
-          .select('id,titulo,contenido,categoria,is_anon,user_id,user_name,user_av,created_at')
+          .select('id,titulo,contenido,categoria,is_anon,user_id,author_name,author_avatar,created_at')
           .or('titulo.ilike.%'+q+'%,contenido.ilike.%'+q+'%')
           .order('created_at',{ascending:false}).limit(15);
         if(!bt.error && bt.data && bt.data.length){
@@ -15122,7 +15136,7 @@ async function _runGlobalSearch(q){
           htmlParts.push('<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(180,155,240,.75);margin:14px 0 8px">📖 BITÁCORA · '+bt.data.length+'</div>');
           htmlParts.push(bt.data.map(function(p){
             var preview = String(p.contenido||'').replace(/[\n\r]+/g,' ').slice(0,120);
-            var senderName = p.is_anon ? 'Anónimo/a' : (p.user_name || 'Usuario');
+            var senderName = p.is_anon ? 'Anónimo/a' : (p.author_name || 'Usuario');
             return '<div onclick="document.getElementById(\'veloSearchOv\').remove();if(typeof _btOpenDetail===\'function\')_btOpenDetail('+_jsAttr(p.id)+')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-left:3px solid '+(catCol[p.categoria]||'#95d5b2')+';border-radius:0 12px 12px 0;padding:10px 14px;margin-bottom:8px;cursor:pointer"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:12px;font-weight:800;color:rgba(255,255,255,.85);font-family:Jost,sans-serif">'+_escHtml(senderName)+'</span><span style="font-size:10px;color:rgba(255,255,255,.40);text-transform:uppercase;letter-spacing:.8px">· '+(p.categoria||'apoyo')+'</span></div>'+(p.titulo?'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:rgba(255,255,255,.94);line-height:1.25;margin-bottom:2px">'+_escHtml(p.titulo)+'</div>':'')+'<div style="font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_escHtml(preview)+'</div></div>';
           }).join(''));
         }
@@ -31214,7 +31228,10 @@ async function pAdminPrepareGDPR(){
     if(userData.perfil){
       var uid=userData.perfil.id;
       try{ var dRes=await sbClient.from('diary_entries').select('id',{count:'exact',head:true}).eq('user_id',uid); userData.diarioCount=dRes.count||0; }catch(e){}
-      try{ var mRes=await sbClient.from('moods').select('id',{count:'exact',head:true}).eq('user_id',uid); userData.estadosCount=mRes.count||0; }catch(e){}
+      // v1623: la tabla se llama mood_entries, no 'moods'. El informe de una
+      // solicitud RGPD reportaba SIEMPRE 0 registros de ánimo — o sea que se
+      // le respondía a la persona con datos incompletos sobre lo que guardamos.
+      try{ var mRes=await sbClient.from('mood_entries').select('id',{count:'exact',head:true}).eq('user_id',uid); userData.estadosCount=mRes.count||0; }catch(e){}
     }
   }
   var p=userData.perfil;
@@ -38637,7 +38654,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1622;
+    var _BUILT_V = 1623;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
