@@ -95,9 +95,17 @@ realmente anónimas *(29/07)* · 0 policies abiertas de lectura, alteración o
 borrado *(30/07)* · endpoints de IA y correo con sesión obligatoria y tope de
 uso *(v1597 y v1621)* · borrado de cuenta que borra de verdad.
 
+- ✅ **Copias de seguridad probadas (30/07).** Ciclo completo verificado: copia →
+  pérdida total simulada → restauración → comparación campo por campo. 31
+  ánimos, 1 entrada de diario y 3 publicaciones restaurados con **0 filas
+  distintas**. Script en `.github/scripts/restore.js` — por defecto hace un
+  simulacro y sólo escribe con `--commit`.
+
 **Falta:**
-- **Rotar la VAPID privada** — estuvo en el repositorio y queda en el historial
-- **Verificar los backups** de Supabase y probar una restauración
+- **Rotar la VAPID privada** — estuvo en el repositorio y queda en el historial.
+  Claves nuevas ya generadas; hay que actualizar los secretos de GitHub y Vercel
+  **antes** de desplegar el cambio en la app (al revés, las notificaciones dejan
+  de llegar). La app ya sabe re-suscribir sola a quien las tenga activas.
 - Revisar los avisos de seguridad de Supabase **cada vez que se cambie la base**
   (`get_advisors`) — es lo que destapó los huecos del 30/07
 
@@ -128,16 +136,42 @@ criterio para determinarlo. Propuesta:
 | Contador de uso de IA y correo | 48 h (se borra solo cada noche) | Sólo sirve para el tope de 24 h |
 | Estadísticas de uso | Sólo con consentimiento del banner | ePrivacy |
 
-## Cómo aplicarlos
+## Cómo se aplican — ✅ IMPLEMENTADO (30/07)
 
-Los tres plazos que hoy **no** se cumplen solos y necesitarían un trabajo
-programado en la base (como el que ya limpia el contador de IA cada noche):
+Los tres plazos que no se cumplían solos ya tienen un trabajo programado en la
+base, que corre cada noche a las 04:30 UTC.
 
-1. Cuentas inactivas
-2. Pedidos viejos de Sala de Ayuda
-3. Reportes de moderación ya resueltos
+Los valores están **todos en una sola tabla**, `velo_retention_policy`, para
+poder cambiarlos sin tocar código:
 
-Los demás se cumplen porque el dato expira solo o porque lo borra la persona.
+| Política | Días | Estado |
+|---|---|---|
+| `help_posts` — pedidos ya cerrados | 90 | ⬜ desactivada |
+| `moderation_flags` — reportes ya resueltos | 365 | ⬜ desactivada |
+| `inactive_accounts` — cuentas sin actividad | 730 | ⬜ desactivada |
+
+**Empiezan las tres desactivadas a propósito.** Borrar datos de personas es
+irreversible y esa decisión es del responsable, no de una migración.
+
+Para ver qué se borraría hoy, sin borrar nada:
+
+```sql
+select * from public.velo_retention_report();
+```
+
+Para activar una, cuando el plazo esté decidido:
+
+```sql
+update public.velo_retention_policy set enabled = true where key = 'help_posts';
+update public.velo_retention_policy set days = 120 where key = 'help_posts'; -- o cambiar el plazo
+```
+
+`inactive_accounts` **nunca borra sola**, aunque se active: sólo señala las
+cuentas. Borrarle la cuenta a alguien sin avisarle antes por email sería
+desproporcionado — el aviso y el borrado quedan como decisión con revisión.
+
+Los demás plazos se cumplen porque el dato expira solo o porque lo borra la
+persona.
 
 **Una vez fijados los plazos, hay que copiarlos a la Política de Privacidad**
 (modal `privacyOv` en `app-premium.html`) y al Registro de Actividades
