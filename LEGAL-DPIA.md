@@ -190,7 +190,7 @@ pidiendo ayuda.
 
 | | |
 |---|---|
-| **Medidas** | Los endpoints de IA exigen sesión (v1594) y tienen tope de uso en el servidor (v1621). Se eliminó Groq como proveedor de respaldo (v1617): hasta entonces, cuando Gemini fallaba, los mensajes salían hacia un encargado no declarado y sin contrato |
+| **Medidas** | Los endpoints de IA exigen sesión (v1594) y tienen tope de uso en el servidor (v1621). Se eliminó Groq como proveedor de respaldo (v1617): hasta entonces, cuando Gemini fallaba, los mensajes salían hacia un encargado no declarado y sin contrato. **Minimización (v1624):** los resúmenes enviaban el nombre de pila junto a los datos de ánimo — salud emocional atada a una persona identificable— y encima el propio prompt pedía no usarlo. Se dejó de enviar |
 | **Riesgo residual** | ⚠️ **ALTO — sin resolver.** Depende enteramente de que el nivel de Gemini no sea el gratuito, cosa **no verificada** |
 | **Acción** | Verificar el nivel y aceptar el DPA de Google **antes de abrir al público** |
 
@@ -250,7 +250,8 @@ pidiendo ayuda.
 |---|---|
 | **Medidas** | Procedimiento escrito con los 5 pasos, plazo de 72 h y criterios de notificación: `LEGAL-brechas-y-conservacion.md` |
 | **Riesgo residual** | **Bajo** |
-| **Pendiente** | Rotar la clave VAPID (estuvo en el repositorio); designar por escrito a quién avisar |
+| **Pendiente** | Designar por escrito a quién avisar |
+| **Rotación VAPID** | La clave privada de notificaciones estaba **en texto plano en el código y en el historial de un repositorio público**. Comprobado el 30/07 que **no es explotable hoy**: las suscripciones push no son legibles ni con sesión (la tabla `profiles` no es accesible y la vista no expone la columna), y sin ellas la clave no sirve. Aun así se rota: par nuevo generado y ambos extremos preparados para firmar con las dos claves a la vez, de modo que el cambio no corte las notificaciones de nadie (v1624) |
 
 ---
 

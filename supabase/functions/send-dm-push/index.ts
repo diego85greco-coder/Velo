@@ -44,6 +44,35 @@ if (VAPID_PRIVATE) {
   console.error("[vapid] VAPID_PRIVATE_KEY no está seteada como secret de este Edge Function");
 }
 
+// ── ROTACIÓN DE CLAVES SIN VENTANA DE CORTE (v1624) ────────────────────────
+// La clave privada vieja quedó en el historial del repositorio, que es público.
+// Durante la transición conviven suscripciones firmadas con la vieja y con la
+// nueva: se intenta con la vieja y, si el servicio de push rechaza la firma, se
+// reintenta con la nueva antes de dar nada por perdido.
+//
+// CRÍTICO: sin esto, el manejo de errores de más abajo BORRA la suscripción
+// ante un 403 de firma. Durante la rotación eso habría destruido las
+// suscripciones de todo el mundo en vez de renovarlas.
+const VAPID_PUBLIC_NEW  = "BAWKrfNmzoZJ5V1RCeKl7uBurMwV9CZBHJ-KedWWojhuQgb-zj_5jJBG4jVcTMm4bf1QCnmxrqwYRO_EYSk20lk";
+const VAPID_PRIVATE_NEW = (Deno.env.get("VAPID_PRIVATE_KEY_NEW") || "").trim();
+console.log(`[vapid] rotación: clave nueva ${VAPID_PRIVATE_NEW ? "CONFIGURADA" : "todavía no configurada"}`);
+
+async function _sendPushDual(sub: any, payload: string, opts: any) {
+  try {
+    return await webPush.sendNotification(sub, payload, opts);
+  } catch (e: any) {
+    const code = e?.statusCode;
+    if (!VAPID_PRIVATE_NEW || (code !== 401 && code !== 403)) throw e;
+    // Reintento firmando con el par nuevo.
+    webPush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_NEW, VAPID_PRIVATE_NEW);
+    try {
+      return await webPush.sendNotification(sub, payload, opts);
+    } finally {
+      webPush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+    }
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response("ok", { status: 200 });
   let payload: any = {};
@@ -195,7 +224,7 @@ serve(async (req: Request): Promise<Response> => {
   });
 
   try {
-    await webPush.sendNotification(rawSub, notifPayload, { TTL: 60 * 60 * 24 });
+    await _sendPushDual(rawSub, notifPayload, { TTL: 60 * 60 * 24 });
     console.log(`[send-dm-push] ✅ SENT — push entregado al servicio para ${toId}`);
     return new Response("sent", { status: 200 });
   } catch (e: any) {

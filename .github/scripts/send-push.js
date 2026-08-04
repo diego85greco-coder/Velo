@@ -28,17 +28,47 @@ if (!VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1);
 }
 
-// Fingerprint de la private key (sin exponer la key). Comparar con:
-//   priv esperada = RYeGjvTCv_ozjj54pSlTS_Qra_oD9363jIChSR-rZWg
-//   Prefix: RYeGjvTC, Tail: rZWg, Len: 43, SHA256 prefix: 9b488d2f053ab8d1
-const _privPrefix = VAPID_PRIVATE_KEY.slice(0, 8);
-const _privTail   = VAPID_PRIVATE_KEY.slice(-4);
-const _privHash   = crypto.createHash('sha256').update(VAPID_PRIVATE_KEY).digest('hex').slice(0, 16);
-console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_prefix="${VAPID_PUBLIC_KEY.slice(0, 12)}..." private_key_len=${VAPID_PRIVATE_KEY.length} priv_prefix="${_privPrefix}" priv_tail="${_privTail}" priv_hash=${_privHash}`);
-if (_privHash !== '9b488d2f053ab8d1') {
-  console.warn(`[vapid] ⚠️ PRIVATE KEY MISMATCH — el secret VAPID_PRIVATE_KEY NO es RYeGjvT...rZWg`);
-}
+// v1624 (SEGURIDAD): este bloque traía la clave privada ENTERA escrita en un
+// comentario, y el repositorio es público. Se quitó. Sólo queda una huella
+// (hash truncado) que permite diagnosticar sin exponer nada.
+const _privHash = crypto.createHash('sha256').update(VAPID_PRIVATE_KEY).digest('hex').slice(0, 16);
+console.log(`[vapid] subject="${VAPID_SUBJECT}" pub_prefix="${VAPID_PUBLIC_KEY.slice(0, 12)}..." priv_len=${VAPID_PRIVATE_KEY.length} priv_hash=${_privHash}`);
+
+// ── ROTACIÓN DE CLAVES SIN VENTANA DE CORTE ────────────────────────────────
+// La clave privada vieja quedó en el historial de este repositorio, que es
+// público, así que hay que cambiarla. El problema: una suscripción creada con
+// la clave pública A sólo acepta notificaciones firmadas con la privada A, y
+// las suscripciones existentes no se pueden migrar desde el servidor.
+//
+// Solución: durante la transición el servidor firma con LAS DOS. Intenta con la
+// vieja (que es la que tienen hoy todas las suscripciones) y, si el servicio de
+// push rechaza la firma, reintenta con la nueva. Así no hay ningún momento en
+// que las notificaciones dejen de llegar, y el orden en que se hagan los pasos
+// deja de importar.
+//
+// Cuando ya no queden suscripciones con la clave vieja (la app las renueva sola
+// al abrirse), se puede borrar todo lo que diga OLD y dejar sólo la nueva.
+const VAPID_PUBLIC_NEW  = 'BAWKrfNmzoZJ5V1RCeKl7uBurMwV9CZBHJ-KedWWojhuQgb-zj_5jJBG4jVcTMm4bf1QCnmxrqwYRO_EYSk20lk';
+const VAPID_PRIVATE_NEW = (process.env.VAPID_PRIVATE_KEY_NEW || '').trim();
+const _DET_OLD = { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_KEY,  privateKey: VAPID_PRIVATE_KEY };
+const _DET_NEW = { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_NEW,  privateKey: VAPID_PRIVATE_NEW };
+console.log(`[vapid] rotación: clave nueva ${VAPID_PRIVATE_NEW ? 'CONFIGURADA' : 'todavía no configurada'}`);
+
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+
+const _origSend = webpush.sendNotification.bind(webpush);
+webpush.sendNotification = async function (sub, payload, options) {
+  const opts = options || {};
+  try {
+    return await _origSend(sub, payload, Object.assign({}, opts, { vapidDetails: _DET_OLD }));
+  } catch (e) {
+    const code = e && (e.statusCode || e.status);
+    // Sólo se reintenta si el rechazo es de FIRMA (401/403). Un 404 o 410
+    // significa que la suscripción ya no existe, y eso lo maneja quien llama.
+    if (!VAPID_PRIVATE_NEW || (code !== 401 && code !== 403)) throw e;
+    return await _origSend(sub, payload, Object.assign({}, opts, { vapidDetails: _DET_NEW }));
+  }
+};
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Decodificar y loguear un JWT de prueba para verificar aud/exp/sub

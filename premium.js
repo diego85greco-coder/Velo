@@ -3392,9 +3392,15 @@ async function pOpenMonthlyWrapped(){
   var monthlyAiPersonality = null, monthlyAiReflection = null;
   try{
     if(typeof _geminiCall === 'function' && nReg >= 3){
+      // v1624 (MINIMIZACIÓN, art. 5.1.c): los resúmenes mandaban a Gemini el
+      // NOMBRE DE PILA junto a los datos de ánimo del período — o sea, salud
+      // emocional atada a una persona identificable, en un proveedor de fuera
+      // de la UE. Y encima para nada: el propio prompt pedía "sin nombrarla",
+      // así que el nombre nunca aparecía en el texto devuelto. Ahora se manda
+      // sólo el dato agregado y anónimo. El resumen se lee igual.
       var topEmoStr = topEmotions.map(function(t){ return t.e+' '+(emotionLabel[t.e]||''); }).join(', ');
       var pMoP = 'Sos un analista empático de Velo, una red social de ayuda mutua en español rioplatense (vos, no tú). '
-        + 'A partir de estos datos del mes de '+monthTitle+' de '+uName+', escribí 2-3 oraciones cálidas sobre su TIPO DE PERSONALIDAD emocional este mes. '
+        + 'A partir de estos datos del mes de '+monthTitle+', escribí 2-3 oraciones cálidas sobre el TIPO DE PERSONALIDAD emocional de esta persona en el mes. '  // v1624: sin el nombre — ver nota de minimización
         + 'Datos:\n- '+nReg+' de '+daysInMonth+' días registrados (consistencia)\n- Ánimo dominante: '+domEmoji+' '+domLabel+'\n- Top: '+topEmoStr+'\n- Racha máxima del mes: '+streak+' días\n- '+totalGestures+' aportes a la comunidad\n\n'
         + 'Reglas: empezá con "Este mes fuiste alguien que…" o similar (sin nombrarla). NO menciones números crudos. Tono cálido, sin clichés. Máx 60 palabras.';
       monthlyAiPersonality = await _geminiCall(pMoP, { temperature:0.9, maxOutputTokens:150 });
@@ -3697,11 +3703,11 @@ async function pOpenAnnualWrapped(){
       var monthTrend = mNamesShort.map(function(nm,i){ var mA = monthAvgs.find(function(x){ return x.m===i; }); return nm+':'+(mA?mA.avg.toFixed(1):'-'); }).join(' ');
       var topTopicsStr = topWords.length ? topWords.map(function(w){ return w.w; }).slice(0,4).join(', ') : 'sin datos';
       var p1 = 'Sos un analista empático de Velo, una red social de ayuda mutua en español rioplatense (vos, no tú). '
-        + 'A partir de estos datos anuales de '+uName+' durante '+year+', escribí 3-4 oraciones cálidas describiendo su PERSONALIDAD EMOCIONAL. '
+        + 'A partir de estos datos anuales de '+year+', escribí 3-4 oraciones cálidas describiendo la PERSONALIDAD EMOCIONAL de esta persona. '  // v1624: sin el nombre
         + 'Datos:\n- Total registros: '+totalRegs+'\n- Ánimo dominante: '+domEmoji+' '+domLabel+'\n- Ánimo promedio: '+avgScore.toFixed(2)+'\n- Racha máxima: '+maxStreak+' días\n- Día favorito para conectar: '+favDay+'\n- Franja horaria: '+(slotMap[favSlot]?slotMap[favSlot].lbl:'')+'\n- Temas recurrentes: '+topTopicsStr+'\n- Meses activos: '+monthAvgs.length+' de 12\n\n'
         + 'Reglas: NO menciones números directamente. Empezá con una observación humana, tipo "Sos alguien que…". Tono cálido, sin clichés, sin usar la palabra "salud mental". Máx 90 palabras.';
       aiPersonality = await _geminiCall(p1, { temperature:0.90, maxOutputTokens:180 });
-      var p2 = 'Sos un analista empático de Velo. Escribí 3 oraciones sobre el CRECIMIENTO Y APRENDIZAJE emocional de '+uName+' durante '+year+', apoyándote en su evolución mes a mes. '
+      var p2 = 'Sos un analista empático de Velo. Escribí 3 oraciones sobre el CRECIMIENTO Y APRENDIZAJE emocional de esta persona durante '+year+', apoyándote en su evolución mes a mes. '  // v1624: sin el nombre
         + 'Trend mensual (promedio de ánimo 1-5): '+monthTrend+'\n'
         + 'Mejor mes: '+(bestMonth?mNames[bestMonth.m]:'—')+' | Más difícil: '+(worstMonth?mNames[worstMonth.m]:'—')+'\n'
         + 'Aportes a la comunidad: '+totalGestures+' gestos\n\n'
@@ -38654,7 +38660,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1623;
+    var _BUILT_V = 1624;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

@@ -92,7 +92,7 @@ categoría especial a escala, conviene evaluarlo (art. 37).
 | | |
 |---|---|
 | **Finalidad** | Elaborar el resumen semanal/mensual a partir de la actividad propia |
-| **Datos enviados** | Ánimos del período, conteos de actividad, nombre de pila |
+| **Datos enviados** | Ánimos del período y conteos de actividad. **Sin el nombre** — se quitó el 30/07: se enviaba junto a los datos de ánimo y el propio prompt pedía no usarlo (minimización, art. 5.1.c) |
 | **Base legal** | Consentimiento (parte de la función de registro de ánimos) |
 | **Encargado** | Google (Gemini). No se emplean para entrenar modelos |
 | **Observación** | No es valoración clínica ni decisión automatizada del art. 22 |
