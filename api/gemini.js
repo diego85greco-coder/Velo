@@ -76,11 +76,24 @@ module.exports = async function handler(req, res) {
   const _jwt = await _veloAuthed(req);
   if (!_jwt) return res.status(401).json({ error: 'No autenticado' });
 
-  const _q = await _veloQuota(_jwt, 'ia');
+  // v1625: dos cupos distintos. `ia` es la conversación con el acompañante
+  // (25/día, ilimitado con Plus); `ia_sys` son las llamadas que hace la app
+  // sola —moderación de cada publicación, detector de crisis, resúmenes,
+  // frase del día— con un techo mucho más alto (200/día).
+  //
+  // En v1621 todo caía en el mismo cupo: alguien que publicaba 25 veces se
+  // quedaba sin poder hablar con el acompañante, y el clasificador de crisis
+  // dejaba de ejecutarse. El cliente ahora manda `kind`; si no lo manda (una
+  // versión vieja en caché) se aplica el cupo estricto, que es el
+  // comportamiento de hoy.
+  const _kind = (req.body && req.body.kind === 'ia_sys') ? 'ia_sys' : 'ia';
+  const _q = await _veloQuota(_jwt, _kind);
   if (!_q.ok) {
     return res.status(429).json({
-      error: 'Llegaste al límite diario de Velo IA',
-      limit: _q.limit, used: _q.used, reason: _q.reason
+      error: _kind === 'ia_sys'
+        ? 'Límite diario de operaciones automáticas alcanzado'
+        : 'Llegaste al límite diario de Velo IA',
+      limit: _q.limit, used: _q.used, reason: _q.reason, kind: _kind
     });
   }
 

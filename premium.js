@@ -271,11 +271,15 @@ function _gText(json){
 // un "no pude responder" seco.
 var _iaQuotaHit = false;
 
-async function _geminiCall(prompt, cfg){
+// v1625: `kind` separa el cupo. Por defecto 'ia_sys' — casi todas las llamadas
+// a _geminiCall las hace la app sola (moderar cada publicación, detectar crisis,
+// armar resúmenes, traer la frase del día), no la persona. Sólo la conversación
+// con el acompañante pasa 'ia', que es el cupo de 25/día que se le muestra.
+async function _geminiCall(prompt, cfg, kind){
   // 1. Gemini proxy
   try{
     var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:_aiHeaders(),
-      body: JSON.stringify({ prompt:prompt, cfg:cfg||{} }) });
+      body: JSON.stringify({ prompt:prompt, cfg:cfg||{}, kind: kind || 'ia_sys' }) });
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
     else {
       var e1={}; try{e1=await pr.json();}catch(x){}
@@ -13398,7 +13402,7 @@ async function _geminiChat(systemPrompt, msgs, cfg){
   // 1. Gemini proxy — primary (multi-turn chat)
   try{
     var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:_aiHeaders(),
-      body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
+      body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{}, kind:'ia' }) });
     if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
     else {
       var e1={}; try{e1=await pr.json();}catch(x){}
@@ -13416,7 +13420,7 @@ async function _geminiChat(systemPrompt, msgs, cfg){
   var fallbackPrompt = systemPrompt
     + '\n\nConversación hasta ahora:\n' + convLines.join('\n')
     + '\n\nAcompañante Velo (respondé en 2-3 oraciones, cálido y específico a lo que el usuario dijo):';
-  return _geminiCall(fallbackPrompt, Object.assign({ temperature:0.88, maxOutputTokens:220 }, cfg||{}));
+  return _geminiCall(fallbackPrompt, Object.assign({ temperature:0.88, maxOutputTokens:220 }, cfg||{}), 'ia'); // respaldo del chat → mismo cupo que el chat
 }
 
 function _calmAILimitNotice(){
@@ -38660,7 +38664,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1624;
+    var _BUILT_V = 1625;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
