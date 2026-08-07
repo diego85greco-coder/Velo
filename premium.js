@@ -7032,6 +7032,47 @@ async function _syncPushSubOnStartup(){
       // No active browser subscription — clear stale LS entry
       safeLS('remove','velo_push_sub');
       safeLS('remove','velo_push_sub_key');
+      // v1626: hasta acá el silencio era total. El servidor borra la
+      // push_subscription cuando el servicio de push responde 410 (la
+      // suscripción caducó: pasa sola cada tanto, sobre todo en iOS al
+      // reinstalar la PWA o al limpiar el navegador). Si además el navegador
+      // ya no tiene ninguna, no quedaba nadie que la volviera a crear: las
+      // notificaciones se cortaban para siempre y la persona sólo se
+      // enteraba días después, por ausencia. Fue exactamente lo que pasó.
+      //
+      // Ahora, si el permiso sigue concedido y la persona NO las apagó a
+      // propósito, se vuelve a suscribir sola. Y si el navegador no deja
+      // (iOS a veces exige un gesto), al menos se avisa en lugar de callar.
+      try{
+        var _permOk = ('Notification' in window) && Notification.permission === 'granted';
+        if(_permOk && safeLS('get','velo_push_optout') !== '1'){
+          console.log('[push sync startup] sin suscripción y con permiso — re-suscribiendo');
+          var _reSub = await _reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+          }).catch(function(_e){
+            console.warn('[push sync startup] re-suscripción automática falló:', _e && _e.message);
+            return null;
+          });
+          if(_reSub){
+            safeLS('set','velo_push_sub', JSON.stringify(_reSub));
+            safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
+            _initSupabase();
+            if(sbClient){
+              try{ await _ensureSbSession(); }catch(_se){}
+              await _savePushSubscriptionToSupabase(_reSub);
+            }
+            safeLS('remove','velo_push_lost_notified'); // se recuperó: el aviso puede volver a darse si vuelve a pasar
+            console.log('[push sync startup] suscripción restaurada sola');
+          } else if(safeLS('get','velo_push_granted') === '1'){
+            // No se pudo restaurar sin intervención: avisar una sola vez.
+            if(safeLS('get','velo_push_lost_notified') !== '1'){
+              safeLS('set','velo_push_lost_notified','1');
+              try{ pToast('🔕','Tus notificaciones se desactivaron solas. Reactivalas desde Ajustes 🔔'); }catch(_t){}
+            }
+          }
+        }
+      }catch(_rs){ console.warn('[push sync startup] re-suscripción:', _rs && _rs.message); }
     }
   }catch(e){ console.warn('[push sync startup]', e && e.message); }
 }
@@ -38664,7 +38705,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1625;
+    var _BUILT_V = 1626;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
