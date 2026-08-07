@@ -132,12 +132,31 @@ funciona sin ello. **[COMPLETAR: confirmar este criterio]**
 | Resend | Correos transaccionales | EE. UU. | ⬜ |
 | Stripe | Pagos (responsable independiente) | EE. UU./UE | ⬜ |
 
-> ⚠️ **Revisar el de Google antes que ninguno.** Si la clave de Gemini está en
-> el nivel gratuito, el contenido enviado **puede usarse para entrenar modelos**.
-> Se le envían conversaciones personales y datos de ánimo. Mientras eso no esté
-> descartado por escrito, **este es el riesgo abierto más grave de toda la
-> evaluación**. Verificar en la consola de Google Cloud que el proyecto tenga
-> facturación activa y modo de pago (no *free tier*).
+> ⚠️ **Estado al 07/08/2026 — verificado a medias.** El responsable tiene una
+> cuenta de facturación activa con tarjeta real, y el proyecto **Velo app2**
+> figura como **«Pagado 1 · Prepago»**: en ese nivel Google **no** usa el
+> contenido para entrenar modelos.
+>
+> **Pero la cuenta tiene varias claves de API, y no todas están en ese
+> proyecto.** Al menos una (`…U7zM`, en *Default Gemini Project*) figura en
+> **nivel gratuito**. Cuál de ellas está configurada en la variable
+> `GEMINI_API_KEY` de Vercel y de GitHub **no se ha podido comprobar** — el
+> conector de Vercel no expone las variables de entorno.
+>
+> **Riesgo:** si la clave en uso fuese la del proyecto gratuito, todo lo enviado
+> hasta hoy —conversaciones con el acompañante, datos de ánimo de los resúmenes,
+> contenido moderado— habría podido usarse para entrenar modelos, pese a existir
+> un proyecto de pago.
+>
+> **Acción:** fijar explícitamente la clave del proyecto **Velo app2** (`…TtNk`)
+> en las dos variables de entorno, en lugar de averiguar cuál está puesta. Así
+> deja de depender de cuál se configuró en su momento.
+>
+> **Aviso operativo:** el crédito es **prepago (9,35 € al 07/08)** y la recarga
+> automática está **desactivada**. Al agotarse, la API deja de responder y con
+> ella el acompañante, la moderación de cada publicación, el clasificador de
+> crisis y los resúmenes — en silencio. Conviene activar la recarga antes de
+> abrir al público.
 
 **Transferencias fuera de la UE:** amparadas en Cláusulas Contractuales Tipo y/o
 el Marco de Privacidad de Datos UE-EE. UU. **[COMPLETAR: confirmar el mecanismo
