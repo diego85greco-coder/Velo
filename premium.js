@@ -323,13 +323,74 @@ var SUPABASE_FN   = SUPABASE_URL + '/functions/v1/stripe-checkout';
 var _supabaseLib = (typeof window !== 'undefined') ? window.supabase : null;
 var sbClient = null;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   v1627 — QUE LOS ERRORES DE LA BASE DEJEN DE SER INVISIBLES
+
+   Éste es el problema de fondo de esta aplicación, y la causa de que
+   convivieran meses cosas como: el formulario de contacto que nunca guardó
+   nada, la búsqueda en Bitácora que jamás devolvió un resultado, o el borrado
+   de momentos que no borraba. Casi todas las llamadas están escritas así:
+
+       try{ await sbClient.from('x').insert({...}); }catch(e){}
+
+   Si falla, la app dice que sí y no pasa nada. Nadie se entera.
+
+   En vez de tocar cientos de sitios (arriesgado y tedioso), se envuelve el
+   `fetch` que usa supabase-js: toda respuesta que no sea 2xx queda registrada
+   con su tabla, su código y el mensaje de Postgres. Un solo punto, cero
+   cambios de comportamiento — la llamada devuelve exactamente lo mismo que
+   antes; sólo deja rastro.
+
+   CÓMO SE USA (para quien retome esto):
+     * Abrir la consola del navegador y buscar `[velo-db]`.
+     * `veloDbErrors()` devuelve los últimos 50 fallos con hora y detalle.
+     * Los 3 códigos que más aparecen y qué significan:
+         42703 / PGRST204 → columna inexistente. La operación NO se guardó.
+         42501            → RLS lo bloqueó. Falta permiso o la policy está mal.
+         23505            → clave duplicada.
+     * Un DELETE o UPDATE que devuelve 200 con 0 filas NO es un error HTTP:
+       eso no lo detecta esto. Para esos casos hay que encadenar `.select()`
+       y comprobar que volvió alguna fila (ver `_btDeletePost`).
+   ══════════════════════════════════════════════════════════════════════════ */
+var _veloDbErrLog = [];
+function veloDbErrors(){ return _veloDbErrLog.slice(); }   // consola: veloDbErrors()
+try{ if(typeof window !== 'undefined') window.veloDbErrors = veloDbErrors; }catch(_){}
+
+function _veloLoudFetch(input, init){
+  var _url = (typeof input === 'string') ? input : (input && input.url) || '';
+  return fetch(input, init).then(function(res){
+    if(res.ok) return res;
+    // Clonar: el cuerpo se consume una sola vez y quien llamó lo necesita intacto.
+    try{
+      res.clone().text().then(function(body){
+        var _what = '';
+        try{
+          var _m = _url.match(/\/rest\/v1\/(?:rpc\/)?([\w-]+)/);
+          _what = _m ? _m[1] : _url.split('?')[0].split('/').slice(-1)[0];
+        }catch(_){ _what = _url; }
+        var _method = (init && init.method) || 'GET';
+        var _entry = { ts:new Date().toISOString(), status:res.status,
+                       tabla:_what, metodo:_method, detalle:String(body).slice(0,400) };
+        _veloDbErrLog.unshift(_entry);
+        if(_veloDbErrLog.length > 50) _veloDbErrLog.length = 50;
+        // 401/403 en /auth/v1 son normales (token vencido y su refresco): no gritar.
+        if((res.status === 401 || res.status === 403) && _url.indexOf('/auth/v1') >= 0) return;
+        console.error('[velo-db] '+_method+' '+_what+' → HTTP '+res.status+' · '+String(body).slice(0,300));
+      }).catch(function(){});
+    }catch(_){}
+    return res;
+  });
+}
+
 function _initSupabase(){
   if(sbClient) return;
   if(!_supabaseLib || !_supabaseLib.createClient){
     _supabaseLib = (typeof window !== 'undefined') ? window.supabase : null;
   }
   if(_supabaseLib && _supabaseLib.createClient){
-    sbClient = _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON);
+    sbClient = _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON, {
+      global: { fetch: _veloLoudFetch }
+    });
     // Cross-account session guard: if another user's token becomes active while this
     // app is running (same browser, second tab, or refresh token swap), detect it and
     // force re-login to prevent one account's data from leaking into another.
@@ -38705,7 +38766,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1626;
+    var _BUILT_V = 1627;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

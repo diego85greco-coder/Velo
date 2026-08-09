@@ -98,8 +98,26 @@ meses cosas como:
 - El informe de una solicitud RGPD decía siempre "0 registros de ánimo" (leía
   una tabla que no existe).
 
-**Si se toca algo, esta es la mejor inversión:** hacer que los errores se vean.
-Un `console.error` mínimo en cada catch ya cambiaría todo.
+### ✅ Ya resuelto (v1627) — pero hay que saber usarlo
+
+En vez de tocar cientos de `catch`, se envolvió el `fetch` que usa supabase-js:
+**toda respuesta que no sea 2xx queda registrada**, con tabla, código y mensaje
+de Postgres. Un solo punto, sin cambiar el comportamiento de ninguna llamada.
+
+- En la consola del navegador, buscar **`[velo-db]`**.
+- **`veloDbErrors()`** devuelve los últimos 50 fallos con hora y detalle.
+- Los códigos que más aparecen:
+
+| Código | Significa | Consecuencia |
+|---|---|---|
+| `42703` / `PGRST204` | columna inexistente | **La operación no se guardó** |
+| `42501` | RLS lo bloqueó | Falta permiso, o la policy está mal |
+| `23505` | clave duplicada | |
+
+⚠️ **Lo que esto NO detecta:** un DELETE o UPDATE que devuelve 200 con **0
+filas** no es un error HTTP. Para esos hay que encadenar `.select()` y
+comprobar que volvió alguna fila — ver `_btDeletePost` como ejemplo. Así fue
+como se descubrió que borrar un momento no borraba nada.
 
 ### La técnica que encontró la mayoría de esos bugs
 
@@ -234,10 +252,36 @@ los endpoints de suscripción, y ésos no son legibles.
 6. Decidir y activar los plazos de conservación: están implementados pero
    desactivados a propósito. `select * from public.velo_retention_report();`
    dice qué se borraría.
-7. Hacer que los errores se vean (punto 3). Es lo de mayor retorno.
-8. Circuito de respuesta y apelación de moderación (obligación DSA).
-9. Probar la app **usándola**. Todo lo verificado hasta ahora fue contra la base
+7. Circuito de respuesta y apelación de moderación (obligación DSA).
+8. Probar la app **usándola**. Todo lo verificado hasta ahora fue contra la base
    de datos. Bugs visuales, de flujo o del PWA en iPhone: sin cubrir.
+
+---
+
+## 8bis. Lentes de revisión ya aplicadas (y su resultado)
+
+Para no repetir trabajo. Todas se pasaron entre el 29/07 y el 07/08:
+
+| Lente | Resultado |
+|---|---|
+| Policies con `USING(true)` | 15 tablas cerradas. Quedan 0 en ALL y DELETE |
+| De-anonimización de publicaciones anónimas | Cerrada y verificada |
+| Columnas escritas que no existen en la base | 9 operaciones rotas, arregladas |
+| Columnas pedidas en `select` que no existen | 4 consultas rotas, arregladas |
+| RPC invocadas que no existen | ninguna |
+| Tablas usadas que no existen | 7 — 3 creadas, 4 de módulos retirados |
+| Funciones JS declaradas dos veces | ninguna |
+| Handlers del HTML que llaman funciones inexistentes | ninguno real |
+| Filtros `.or()` con columnas inexistentes | ninguno |
+| Buckets de Storage y edge functions referenciados | todos existen |
+| Suscripciones en vivo a tablas no publicadas | ninguna |
+| **Contenido de usuarios sin escapar en HTML (XSS)** | **limpio** — usa `_escHtml` |
+| Claves foráneas sin índice | 8, indexadas |
+| Secretos en el historial de git | 1 (VAPID privada) — rotación preparada |
+
+**Lentes que NO se aplicaron y valdría la pena:** usar la app de verdad
+(iPhone/PWA), accesibilidad, y qué pasa con la interfaz cuando la base
+responde lento o falla.
 
 ---
 
