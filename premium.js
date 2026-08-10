@@ -20225,7 +20225,19 @@ function _uploadAvatarToStorage(file, dataUrl, callback){
   try{
     var mimeType = (file && file.type) || (dataUrl.split(',')[0].split(':')[1]||'').split(';')[0] || 'image/jpeg';
     var ext = mimeType.split('/')[1]||'jpg';
-    var path = uid+'.'+ext;
+    // v1628: la ruta era `uid.jpg`, sin carpeta. La regla del bucket `avatars`
+    // exige que el primer tramo de la ruta sea el uuid de quien sube
+    // —storage.foldername(name)[1] = auth.uid()— y en una ruta sin barra ese
+    // valor es NULL, así que la subida SIEMPRE fue rechazada.
+    //
+    // No se notaba porque al fallar se cae al respaldo: guardar la imagen
+    // entera como base64 en `profiles.avatar`. Funcionaba, pero metía ~31 kB
+    // por persona en una columna que se lee en cada consulta de perfil y en
+    // los feeds de la comunidad. El bucket estaba vacío: 0 archivos.
+    //
+    // Ahora usa el mismo formato que vibes y los audios del diario, que sí
+    // funcionan: `uid/archivo`.
+    var path = uid+'/'+uid+'.'+ext;
     // Convert data URL to Blob
     var byteStr = atob(dataUrl.split(',')[1]);
     var ab = new ArrayBuffer(byteStr.length);
@@ -38766,7 +38778,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1627;
+    var _BUILT_V = 1628;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

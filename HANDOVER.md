@@ -255,6 +255,15 @@ select distinct tablename from pg_policies
 11. Usar `upsert` con `onConflict` sobre columnas que no tienen una restricción
     única. Postgres rechaza la operación entera. Pasó con la cola de
     sincronización del diario, que por eso **nunca** funcionó.
+12. Subir a Storage sin respetar la forma de ruta que exige la regla del bucket.
+    Las de `avatars` y `vibes` piden que el primer tramo sea el uuid
+    (`uid/archivo`). El cliente subía el avatar como `uid.jpg`, sin carpeta →
+    rechazado siempre, y caía al respaldo de guardar la imagen como base64 en
+    `profiles.avatar` (~31 kB por persona, leídos en cada consulta de perfil).
+13. Poner una operación que puede fallar **antes** del trabajo real de una
+    función, sin protegerla. `delete_my_account` registraba la baja en su
+    primera línea y eso tumbaba el borrado entero. Lo que puede fallar y no es
+    esencial va envuelto en su propio `begin/exception`.
 
 ---
 
@@ -342,6 +351,15 @@ Para no repetir trabajo. Todas se pasaron entre el 29/07 y el 07/08:
 | **Valores permitidos (CHECK) vs. los que envía el cliente** | **1 — 16 reacciones de Vibes** |
 | Lectura de las 34 secciones como usuario normal | todas responden |
 | Escritura en las 27 secciones como usuario normal | todas pasan |
+
+**Tercera tanda (07/08), lentes nuevas:**
+
+| Lente | Resultado |
+|---|---|
+| **Reglas del almacenamiento vs. la ruta que sube el cliente** | **1 — los avatares nunca se subieron** |
+| **Cobertura real del borrado de cuenta** | **2 — abortaba en la 1ª línea, y dejaba 17 columnas** |
+| Historial de los trabajos programados | 43 ejecuciones, 0 fallos |
+| Restricciones de valores (CHECK) vs. lo que envía el cliente | ya cubierto en la 2ª tanda |
 
 **Lentes que siguen sin aplicarse:** usar la app de verdad (iPhone/PWA),
 accesibilidad, y qué pasa con la interfaz cuando la base responde lento o falla.
