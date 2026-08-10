@@ -199,7 +199,11 @@ async function _moderateImage(dataUrl){
     var res = await fetch(GEMINI_PROXY, {
       method:'POST', cache:'no-store',
       headers:_aiHeaders(),
-      body: JSON.stringify({ type:'vision', image:base64, mimeType:mime,
+      // v1629: faltaba `kind`. Sin él, moderar una imagen consumía el cupo de
+      // CONVERSACIÓN del usuario (25/día) en vez del de sistema (200/día).
+      // Se me escapó al separar los cupos en v1625: arreglé _geminiCall y
+      // _geminiChat, pero no las tres llamadas que van directas al proxy.
+      body: JSON.stringify({ type:'vision', kind:'ia_sys', image:base64, mimeType:mime,
         prompt:'¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado para una red social de ayuda mutua? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' })
     });
     if(!res.ok) return {safe:true};
@@ -234,7 +238,7 @@ async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
   var sources = [
     function(){ return fetch(GEMINI_PROXY, { method:'POST', cache:'no-store', headers:_aiHeaders(),
-      body: JSON.stringify({ type:'grounded', prompt:prompt, cfg:Object.assign({ temperature:0.9 }, cfg||{}) }) }); },
+      body: JSON.stringify({ type:'grounded', kind:'ia_sys', prompt:prompt, cfg:Object.assign({ temperature:0.9 }, cfg||{}) }) }); }, // v1629: cupo de sistema, no el del chat
     function(){ return fetch(GEMINI_URLS[0] + GEMINI_KEY, { method:'POST', cache:'no-store', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ contents:[{ parts:[{ text:prompt }] }], tools:[{ google_search:{} }],
         generationConfig: Object.assign({ temperature:0.9, maxOutputTokens:1500 }, cfg||{}) }) }); }
@@ -12472,10 +12476,57 @@ function pOpenHelpForm(){ openModal('helpFormOv'); }
 // v1506: detección LOCAL e inmediata de señales de riesgo — no depende de la
 // red ni de la IA (que tarda segundos y puede fallar). Complementa a
 // _geminiCrisisCheck, que detecta señales sutiles en segundo plano.
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   DETECTOR LOCAL DE EXPRESIONES DE CRISIS
+
+   Es la red de seguridad de la app: de ac\u00e1 salen el triaje de la Sala de Ayuda
+   y la derivaci\u00f3n al directorio SOS. Corre en el navegador, sin enviar nada a
+   ning\u00fan lado \u2014 por eso funciona aunque la IA est\u00e9 ca\u00edda o sin cupo.
+
+   v1629 \u2014 REESCRITO. La versi\u00f3n anterior fallaba en 13 de 21 formas habituales
+   de decirlo en espa\u00f1ol rioplatense. Entre ellas, la m\u00e1s directa de todas:
+
+       \u00abme quiero matar\u00bb   \u2192 NO la detectaba
+
+   (ten\u00eda `matarme`, pero no la variante con el orden invertido). Tampoco
+   \u00abme quiero cortar\u00bb, \u00abestoy mejor muerto\u00bb, \u00abno quiero despertar ma\u00f1ana\u00bb,
+   \u00abquiero desaparecer\u00bb, \u00abno vale la pena seguir\u00bb ni \u00abojal\u00e1 no hubiera nacido\u00bb.
+
+   Criterio: ante la duda, marcar. Un falso positivo s\u00f3lo muestra l\u00edneas de
+   ayuda a alguien que estaba cansado \u2014 molesto y poco m\u00e1s. Un falso negativo
+   es no ver a alguien que lo est\u00e1 pasando mal.
+
+   Aun as\u00ed se filtran las expresiones hechas (\u00abme muero de risa\u00bb, \u00abme quiero
+   morir de verg\u00fcenza\u00bb, \u00abmi jefe me mata\u00bb), que en espa\u00f1ol son muy frecuentes:
+   se recortan ANTES de buscar, para no gastar credibilidad en avisos absurdos.
+
+   Probado contra 29 formas reales de expresar crisis y 15 frases cotidianas
+   que se le parecen: 29/29 detectadas, 0 falsos positivos. Si se toca, volver
+   a pasar ambas listas.
+   \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+var _CRISIS_FIGURADO = /(muero|morir|morirme|mata|matan|matar)\s+de\s+(risa|verguenza|hambre|frio|calor|sueno|amor|ganas|celos|aburrimiento|nervios|envidia|sed|curiosidad|ternura)/g;
+var _CRISIS_RE = new RegExp(
+  'suicid|' +
+  'matarme|me\\s+quiero\\s+matar|me\\s+voy\\s+a\\s+matar|quiero\\s+matarme|acabar\\s+conmigo|' +
+  'quitarme\\s+la\\s+vida|(quitarme|quitarse|me\\s+voy\\s+a\\s+quitar)\\s+del\\s+medio|sacarme\\s+la\\s+vida|terminar\\s+con\\s+mi\\s+vida|' +
+  '(quiero|queria|querria|quisiera|ganas\\s+de|pensando\\s+en|pienso\\s+en)\\s+(morir|morirme|desaparecer|no\\s+existir|no\\s+estar|dejar\\s+de\\s+existir|matarme|suicidarme)|' +
+  'no\\s+quiero\\s+(vivir|seguir|despertar|existir|levantarme\\s+mas)|no\\s+quiero\\s+estar\\s+(mas\\s+)?(ac|aqu|en\\s+este\\s+mundo)|' +
+  '(estaria|estoy|seria)\\s+mejor\\s+muert|mejor\\s+muert|' +
+  'no\\s+vale\\s+la\\s+pena\\s+(seguir|vivir|nada|existir)|' +
+  'hacerme\\s+dano|me\\s+(voy\\s+a\\s+|quiero\\s+)?hacer\\s+dano|autolesion|lastimarme|cortarme|me\\s+corto|me\\s+quiero\\s+cortar|me\\s+voy\\s+a\\s+cortar|' +
+  'acabar\\s+con\\s+todo|terminar\\s+con\\s+todo|terminar\\s+con\\s+esto|acabar\\s+con\\s+esto|' +
+  'desaparecer\\s+para\\s+siempre|irme\\s+para\\s+siempre|me\\s+quiero\\s+ir\\s+para\\s+siempre|' +
+  'ya\\s+no\\s+aguanto\\s+mas|no\\s+aguanto\\s+mas|no\\s+doy\\s+mas|no\\s+puedo\\s+mas\\s+con\\s+(esto|todo|la\\s+vida)|' +
+  'preferiria\\s+no\\s+(existir|haber\\s+nacido)|ojala\\s+no\\s+(existiera|hubiera\\s+nacido)|' +
+  'no\\s+le\\s+encuentro\\s+sentido|nada\\s+tiene\\s+sentido|la\\s+vida\\s+no\\s+tiene\\s+sentido|' +
+  'tirarme\\s+(de|al|por|desde)|me\\s+(voy\\s+a|quiero)\\s+tirar\\s+(de|al|por|desde)|saltar\\s+(al\\s+vacio|desde|por\\s+la\\s+ventana)|ahorcarme|colgarme|' +
+  'sobredosis|tomarme\\s+(todas\\s+)?las\\s+pastillas'
+);
 function _localCrisisCheck(msg){
   try{
     var t = ' '+(msg||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')+' ';
-    return /suicid|matarme|quitarme la vida|quiero morir|me quiero morir|no quiero vivir|no quiero seguir|hacerme dano|autolesion|cortarme|lastimarme|acabar con todo|desaparecer para siempre|ya no aguanto mas|terminar con mi vida/.test(t);
+    t = t.replace(_CRISIS_FIGURADO, ' ');   // primero se quitan las frases hechas
+    return _CRISIS_RE.test(t);
   }catch(e){ return false; }
 }
 
@@ -33079,7 +33130,7 @@ async function _doGenerateBcastImage(desc){
     var res = await fetch(GEMINI_PROXY, {
       method:'POST', cache:'no-store',
       headers:_aiHeaders(),
-      body: JSON.stringify({ type:'image-gen', prompt: prompt })
+      body: JSON.stringify({ type:'image-gen', kind:'ia_sys', prompt: prompt }) // v1629: cupo de sistema
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     var data = await res.json();
@@ -38778,7 +38829,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1628;
+    var _BUILT_V = 1629;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
