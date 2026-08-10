@@ -1,0 +1,72 @@
+-- ============================================================================
+-- ⚠️ PREPARADA, **NO APLICADA**. Leer entero antes de ejecutar.
+--
+-- EL CONTENIDO DE LA COMUNIDAD SE LEE SIN INICIAR SESIÓN  (detectado 10/08/2026)
+--
+-- Comprobado contra producción con la clave pública —que está en el
+-- repositorio, que es público— y sin ninguna sesión:
+--
+--   GET /rest/v1/help_posts_feed?select=preview,user_name,anon
+--   → 200 OK, devuelve los pedidos de la Sala de Ayuda
+--
+-- Lo mismo con `bitacora_posts_full` y `happy_posts_full`. Es decir: cualquiera
+-- puede descargar todo lo que la gente escribió en la Sala de Ayuda, la
+-- Bitácora y el Muro, sin tener cuenta.
+--
+-- QUÉ **NO** ES: no es una de-anonimización. El arreglo del 29/07 sigue en pie
+-- y se verificó en la misma prueba — las publicaciones anónimas salen con
+-- `user_name: "Usuario Anónimo"` y sin identificador. La identidad está a salvo.
+--
+-- QUÉ SÍ ES: el contenido queda expuesto más allá de lo que la app da a
+-- entender. La Política de Privacidad describe el contenido comunitario como
+-- compartido «entre usuarios», y la Sala de Ayuda es, por definición, gente
+-- contando por qué necesita ayuda. Que sea descargable por cualquiera no
+-- encaja con eso. En las publicaciones NO anónimas se expone además el nombre
+-- que la persona eligió mostrar.
+--
+-- Los grants a `anon` vienen de las migraciones de julio (20260717b, 20260718f,
+-- 20260718h). En su momento fue deliberado para no romper nada; no se revisó
+-- después si seguía siendo necesario.
+--
+-- ══════════════════════════════════════════════════════════════════════════
+-- ⚠️ POR QUÉ NO SE APLICÓ, Y QUÉ HAY QUE HACER ANTES
+--
+-- `pRenderHelp`, `_btLoadTab` y `pRenderHappy` **NO llaman a
+-- `_ensureSbSession()` antes de leer**. Al abrir la app en frío, si la sesión
+-- de Supabase todavía no se restauró, esas lecturas salen como `anon`.
+--
+-- Hoy funcionan porque las vistas están abiertas a `anon`. Si se cierran sin
+-- tocar el cliente, **los tres feeds aparecerán vacíos al arrancar** hasta que
+-- la sesión termine de restaurarse. Sería un fallo visible para todo el mundo.
+--
+-- ORDEN CORRECTO:
+--   1. En el cliente: que `pRenderHelp`, `_btLoadTab` y `pRenderHappy` esperen
+--      a `_ensureSbSession()` antes de la primera lectura (o que reintenten
+--      una vez cuando la sesión quede lista).
+--   2. Desplegar ese cambio y comprobar los feeds en un arranque en frío,
+--      idealmente en iPhone, que es donde la sesión tarda más.
+--   3. Recién entonces aplicar este SQL.
+--   4. Verificar: sin sesión, las tres vistas deben devolver 0 filas; con
+--      sesión, los feeds completos (22 / 3 / 10 al 07/08).
+--
+-- Si se aplica al revés, se rompe. Es justo el error que ya se cometió dos
+-- veces en este proyecto: cerrar un permiso sin auditar quién lo usaba.
+-- ══════════════════════════════════════════════════════════════════════════
+
+revoke select on public.help_posts_feed     from anon;
+revoke select on public.bitacora_posts_full from anon;
+revoke select on public.happy_posts_full    from anon;
+
+-- Se dejan accesibles a `anon` a propósito:
+--   * `bitacora_reported_ids` — sólo ids, sin contenido ni autor.
+--   * `daily_responses_feed`, `dq_comments_feed`, `momento_comments_feed`,
+--     `bitacora_comments_full` — revisar con el mismo criterio en su momento;
+--     no se tocan acá para no ampliar el alcance de un cambio ya delicado.
+
+-- ── VERIFICACIÓN (tras aplicar) ────────────────────────────────────────────
+-- Sin sesión, con la clave pública, las tres deben dar 0 filas:
+--   curl -s "$SUPA/rest/v1/help_posts_feed?select=id&limit=1" -H "apikey: $ANON"
+--   curl -s "$SUPA/rest/v1/bitacora_posts_full?select=id&limit=1" -H "apikey: $ANON"
+--   curl -s "$SUPA/rest/v1/happy_posts_full?select=id&limit=1" -H "apikey: $ANON"
+--
+-- Y con sesión, los feeds tienen que seguir completos.

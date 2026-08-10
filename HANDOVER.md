@@ -361,6 +361,46 @@ Para no repetir trabajo. Todas se pasaron entre el 29/07 y el 07/08:
 | Historial de los trabajos programados | 43 ejecuciones, 0 fallos |
 | Restricciones de valores (CHECK) vs. lo que envía el cliente | ya cubierto en la 2ª tanda |
 
+**Cuarta tanda (10/08) — 10 lentes de código, sin conexión a la base:**
+
+| Lente | Resultado |
+|---|---|
+| **Detector de crisis vs. formas reales de expresarlo** | **fallaba en 13 de 21 — incluida «me quiero matar»** |
+| **Llamadas al proxy de IA sin declarar su cupo** | **3 — regresión propia de v1625** |
+| Claves duplicadas en objetos literales | limpio |
+| Temporizadores sin cancelar / listeners duplicados en renders | limpio |
+| `JSON.parse` sin protección | limpio |
+| `case` repetidos en un switch · `return` dentro de forEach | limpio |
+| Funciones async usadas sin `await` | limpio |
+| `Promise.all` sin captura de error | limpio |
+| Coherencia de las 5 versiones · precache del service worker | limpio |
+| **Exposición sin sesión (por REST, con la clave pública)** | **ver abajo** |
+
+### 🔴 PENDIENTE — el contenido de la comunidad se lee sin iniciar sesión
+
+Con la clave pública (que está en este repositorio) y **sin cuenta**, cualquiera
+puede descargar `help_posts_feed`, `bitacora_posts_full` y `happy_posts_full`:
+los pedidos de la Sala de Ayuda, la Bitácora y el Muro.
+
+**No es una de-anonimización** — las publicaciones anónimas salen con
+«Usuario Anónimo» y sin identificador; eso se verificó en la misma prueba. Pero
+el contenido queda más expuesto de lo que la app da a entender.
+
+⚠️ **No se arregló porque no es un cambio de una línea.** `pRenderHelp`,
+`_btLoadTab` y `pRenderHappy` no esperan a `_ensureSbSession()`, así que al
+arrancar en frío leen como `anon`. Cerrar las vistas sin tocar el cliente
+**deja los tres feeds vacíos al abrir la app**.
+
+El orden correcto y el SQL están en
+`supabase/migrations/PENDIENTE_cerrar_vistas_a_anonimos.sql`.
+
+### ✅ Primera prueba automática del proyecto
+
+`node test/crisis-detector.test.js` — 36 formas de expresar una crisis y 21
+frases cotidianas que se le parecen. Lee el detector del propio `premium.js`,
+así que no puede desincronizarse. **Pasarla siempre que se toque
+`_localCrisisCheck`.**
+
 **Lentes que siguen sin aplicarse:** usar la app de verdad (iPhone/PWA),
 accesibilidad, y qué pasa con la interfaz cuando la base responde lento o falla.
 
