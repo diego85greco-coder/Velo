@@ -244,6 +244,17 @@ select distinct tablename from pg_policies
    copia antes de un cambio masivo.**
 8. Quitar una policy `FOR ALL` sin reponer la de UPDATE: era la única que
    autorizaba editar. Se detectó a tiempo al consolidar diario y ánimos.
+9. Escribir una policy que consulte `auth.users`. El rol `authenticated` no
+   tiene permiso sobre esa tabla y la consulta entera aborta con «permission
+   denied for table users». Para el email usar siempre
+   `auth.jwt() ->> 'email'`, que viene en el token. Esto tuvo los **Círculos
+   completamente rotos** hasta el 07/08.
+10. Añadir opciones en el cliente (reacciones, categorías) sin actualizar la
+    restricción CHECK correspondiente en la base. Pasó con las reacciones de
+    Vibes: 16 de 24 fallaban en silencio.
+11. Usar `upsert` con `onConflict` sobre columnas que no tienen una restricción
+    única. Postgres rechaza la operación entera. Pasó con la cola de
+    sincronización del diario, que por eso **nunca** funcionó.
 
 ---
 
@@ -316,9 +327,24 @@ Para no repetir trabajo. Todas se pasaron entre el 29/07 y el 07/08:
 | Claves foráneas sin índice | 8, indexadas |
 | Secretos en el historial de git | 1 (VAPID privada) — rotación preparada |
 
-**Lentes que NO se aplicaron y valdría la pena:** usar la app de verdad
-(iPhone/PWA), accesibilidad, y qué pasa con la interfaz cuando la base
-responde lento o falla.
+**Segunda tanda de lentes (07/08), tras el traspaso:**
+
+| Lente | Resultado |
+|---|---|
+| Botones construidos en JS que llaman funciones inexistentes | limpio |
+| IDs duplicados en el HTML | limpio |
+| `getElementById` sobre elementos que no existen | 19, todos con `if(el)` — dead code inofensivo |
+| Claves de `localStorage` escritas con un nombre y leídas con otro | limpio |
+| Contenido de usuario en `onclick` sin `_jsAttr` | limpio |
+| Parámetros de las funciones del servidor vs. su firma real | limpio |
+| **`upsert` con columnas que no son únicas** | **1 — el diario** |
+| **Policies que consultan `auth.users`** | **5 — los Círculos no funcionaban** |
+| **Valores permitidos (CHECK) vs. los que envía el cliente** | **1 — 16 reacciones de Vibes** |
+| Lectura de las 34 secciones como usuario normal | todas responden |
+| Escritura en las 27 secciones como usuario normal | todas pasan |
+
+**Lentes que siguen sin aplicarse:** usar la app de verdad (iPhone/PWA),
+accesibilidad, y qué pasa con la interfaz cuando la base responde lento o falla.
 
 ---
 
