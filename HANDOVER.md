@@ -185,11 +185,41 @@ No hay build, ni tests, ni linter. Se edita y se despliega.
 - **`momentos` sin permiso de UPDATE para `authenticated`**: los corazones van
   por el RPC `increment_momento_hearts`. El update directo del cliente es código
   muerto.
-- **113 avisos `auth_rls_initplan`**: rendimiento, no seguridad. El arreglo es
-  mecánico pero toca 113 policies; con 19 MB no cambia nada medible.
+- **9 avisos `auth_rls_initplan` que quedan**: son las policies de `help_posts`,
+  `guardian_requests` e `ia_usage`, dejadas **planas a propósito**. Los otros
+  104 se optimizaron el 07/08. Ver el punto 5bis: optimizarlas rompe la app.
 - **`urgencia` en `help_posts` siempre NULL**: decisión deliberada del 24/07. No
   se conserva quién expresó señales de crisis. El triaje se recalcula en el
   cliente.
+
+---
+
+## 5bis. ⚠️ Las 3 tablas que NO admiten la optimización de policies
+
+`help_posts`, `guardian_requests` e `ia_usage` tienen policies de INSERT cuya
+condición hace una **subconsulta sobre su propia tabla** (los topes diarios del
+plan gratuito: «¿cuántas filas mías hay en las últimas 24 h?»).
+
+Esa subconsulta dispara, a su vez, la policy de SELECT de la misma tabla. Si
+alguna de las policies de esas tablas envuelve `auth.uid()` en un subselect,
+Postgres no puede aplanar la cadena y aborta:
+
+```
+ERROR 42P17: infinite recursion detected in policy for relation "help_posts"
+```
+
+**Efecto: publicar en la Sala de Ayuda deja de funcionar.** Pasó el 07/08 al
+optimizar las 113 policies de golpe; se detectó y revirtió el mismo día.
+
+Revertir sólo la policy del tope **no alcanza**: hay que dejar planas TODAS las
+policies de esas tres tablas.
+
+Antes de tocar policies en masa, excluirlas:
+
+```sql
+select distinct tablename from pg_policies
+ where coalesce(qual,'')||coalesce(with_check,'') like '%FROM '||tablename||' %';
+```
 
 ---
 
@@ -207,6 +237,13 @@ No hay build, ni tests, ni linter. Se edita y se despliega.
    ejecutarse**. Corregido en v1625 con dos cupos.
 6. Asumir que los nombres de policies de los archivos `.sql` coinciden con los
    de producción. **No coinciden.** Consultar siempre `pg_policies` primero.
+7. Optimizar las 113 policies de golpe sin excluir las tablas con subconsultas
+   auto-referentes → recursión infinita, y **publicar en Sala de Ayuda dejó de
+   funcionar**. Ver el punto 5bis. Lo que permitió revertir en minutos fue haber
+   copiado antes las 174 policies a una tabla de respaldo. **Hacer siempre esa
+   copia antes de un cambio masivo.**
+8. Quitar una policy `FOR ALL` sin reponer la de UPDATE: era la única que
+   autorizaba editar. Se detectó a tiempo al consolidar diario y ánimos.
 
 ---
 
