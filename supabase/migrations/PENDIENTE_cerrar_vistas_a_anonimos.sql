@@ -40,11 +40,12 @@
 -- la sesión termine de restaurarse. Sería un fallo visible para todo el mundo.
 --
 -- ORDEN CORRECTO:
---   1. En el cliente: que `pRenderHelp`, `_btLoadTab` y `pRenderHappy` esperen
---      a `_ensureSbSession()` antes de la primera lectura (o que reintenten
---      una vez cuando la sesión quede lista).
---   2. Desplegar ese cambio y comprobar los feeds en un arranque en frío,
---      idealmente en iPhone, que es donde la sesión tarda más.
+--   1. ✅ HECHO en v1630. `pRenderHelp`, `_btLoadTab` y `pRenderHappy` esperan
+--      ahora a `_sessionReady()` antes de su primera lectura. La espera se hace
+--      una sola vez por carga; el render desde caché sigue siendo inmediato.
+--   2. ⬜ FALTA: comprobar los feeds en un arranque en frío con v1630 ya
+--      desplegado, idealmente en iPhone, que es donde la sesión tarda más.
+--      (No se pudo verificar contra la base: el conector estaba caído.)
 --   3. Recién entonces aplicar este SQL.
 --   4. Verificar: sin sesión, las tres vistas deben devolver 0 filas; con
 --      sesión, los feeds completos (22 / 3 / 10 al 07/08).

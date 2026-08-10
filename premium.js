@@ -386,6 +386,40 @@ function _veloLoudFetch(input, init){
   });
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   v1630 — ESPERAR A QUE LA SESIÓN ESTÉ LISTA ANTES DE LEER LOS FEEDS
+
+   Al abrir la app en frío, la sesión de Supabase tarda un momento en
+   restaurarse desde el almacenamiento. Hasta ahora los tres feeds de comunidad
+   —Sala de Ayuda, Bitácora y Muro— leían igual, y esa lectura salía como
+   ANÓNIMA.
+
+   Consecuencia visible: las vistas enmascaran al autor comparando con
+   auth.uid(), que sin sesión es NULL. Así que **tus propias publicaciones
+   anónimas no se reconocían como tuyas**: no aparecían fijadas arriba en la
+   Sala de Ayuda, ni en la pestaña «mío» de Bitácora. Se arreglaba solo al
+   cambiar de sección, cuando la sesión ya estaba lista — por eso costaba verlo.
+
+   Es además el requisito previo para cerrar las vistas a los no registrados
+   (ver supabase/migrations/PENDIENTE_cerrar_vistas_a_anonimos.sql): si se
+   cierran sin esto, los feeds aparecerían vacíos al arrancar.
+
+   La espera se hace UNA vez por carga: en cuanto hay sesión, `_sbSessionOk`
+   corta y no vuelve a costar nada. Si falla, se reintenta en la llamada
+   siguiente en lugar de quedar bloqueado.
+   ══════════════════════════════════════════════════════════════════════════ */
+var _sbSessionOk = false, _sbSessionP = null;
+function _sessionReady(){
+  if(_sbSessionOk) return Promise.resolve(true);
+  if(!_sbSessionP){
+    _sbSessionP = Promise.resolve()
+      .then(function(){ return (typeof _ensureSbSession === 'function') ? _ensureSbSession() : false; })
+      .then(function(ok){ _sbSessionOk = !!ok; _sbSessionP = null; return _sbSessionOk; })
+      .catch(function(){ _sbSessionP = null; return false; });
+  }
+  return _sbSessionP;
+}
+
 function _initSupabase(){
   if(sbClient) return;
   if(!_supabaseLib || !_supabaseLib.createClient){
@@ -11572,6 +11606,8 @@ async function pRenderHelp(){
 
   var posts, usingSB = false;
   var myHelpId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
+  await _sessionReady(); // v1630: sin esto, tus pedidos anónimos no se reconocen como tuyos
+  if(_navToken !== _tok) return;
   var sbRows = await _sbLoad('help_posts_feed', function(q){
     var since = new Date(Date.now() - 48*60*60*1000).toISOString();
     // Exclude closed posts (received a support message)
@@ -19340,6 +19376,7 @@ async function pRenderHappy(){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
     return q.gte('created_at',cutoff).order('created_at',{ascending:false}).limit(50);
   };
+  await _sessionReady(); // v1630: sin sesión, tus momentos anónimos no se reconocen como tuyos
   var sbRows = await _sbLoad('happy_posts_full', _happyQ1);       // vista con máscara
   if(sbRows === null) sbRows = await _sbLoad('happy_posts', _happyQ1); // fallback si la vista no existe aún
   if(_navToken !== _tok) return;
@@ -37681,6 +37718,7 @@ function _btSwitchTab(type){
   _btLoadTab(type,false);
 }
 
+var _btSessionWaited = false;
 function _btLoadTab(type,refresh){
   if(!sbClient) return;
   var feed=document.getElementById('btFeed');
@@ -37690,6 +37728,14 @@ function _btLoadTab(type,refresh){
   } else if(!_btLoading&&feed&&_btCurrentTab===type){
     var _ldCl=!document.body.classList.contains('r-dark')?'rgba(40,75,55,.50)':'rgba(180,200,190,.40)';
     feed.innerHTML='<div style="text-align:center;padding:40px 0;color:'+_ldCl+';font-family:Jost,sans-serif;font-size:15px">Cargando...</div>';
+  }
+  // v1630: esperar a la sesión antes de consultar (ver _sessionReady). El
+  // render desde caché de arriba ya ocurrió, así que la espera no se nota.
+  // Una sola vez por carga: si la sesión no llega, se sigue igual que antes.
+  if(!_sbSessionOk && !_btSessionWaited){
+    _btSessionWaited = true;
+    _sessionReady().then(function(){ _btLoadTab(type, refresh); });
+    return;
   }
   if(_btLoading){ return; }
   _btLoading=true;
@@ -38829,7 +38875,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1629;
+    var _BUILT_V = 1630;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
