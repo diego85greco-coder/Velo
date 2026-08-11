@@ -3333,6 +3333,23 @@ async function pOpenMonthlyWrapped(){
   var yr = target.getFullYear(), mo = target.getMonth();
   var mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var daysInMonth = new Date(yr, mo+1, 0).getDate();
+
+  /* v1634 — QUE EL BOTÓN RESPONDA AL INSTANTE
+     Antes de pintar nada, esta función hace varias consultas a Supabase. Desde
+     acá cada ida y vuelta son un par de cientos de milisegundos, así que el
+     botón se quedaba mudo unos segundos y parecía que no había pasado nada.
+     El Wrapped anual ya mostraba una pantalla de carga; el mensual no. */
+  var _wLoad = document.createElement('div');
+  _wLoad.id = 'wrappedOv';
+  _wLoad.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Jost,sans-serif';
+  _wLoad.innerHTML = '<button onclick="var o=document.getElementById(\'wrappedOv\');if(o)o.remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:rgba(255,255,255,.50);font-size:26px;cursor:pointer;line-height:1">×</button>'
+    + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,255,220,.72);text-transform:uppercase;margin-bottom:16px">✨ WRAPPED — '+mNames[mo]+' '+yr+'</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:rgba(255,255,255,.90);margin-bottom:24px">Armando tu mes…</div>'
+    + '<div class="velo-breath-orb" style="width:100px;height:100px"></div>';
+  document.body.appendChild(_wLoad);
+  // Quitarla justo antes de pintar el resultado, sea cual sea el camino.
+  var _wQuitarCarga = function(){ if(_wLoad && _wLoad.parentNode) _wLoad.parentNode.removeChild(_wLoad); };
+
   // Cargar moods del mes
   var moodMap = {};
   for(var _d=1; _d<=daysInMonth; _d++){
@@ -3391,6 +3408,7 @@ async function pOpenMonthlyWrapped(){
           + '<button onclick="document.getElementById(\'wrappedOv\').remove();pOpenMoodQuickView&&pOpenMoodQuickView()" style="padding:13px 28px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:100px;color:#071409;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 18px rgba(116,198,157,.35)">🌿 Registrar mi ánimo de hoy</button>'
         + '</div>'
       + '</div>';
+    _wQuitarCarga();
     document.body.appendChild(mkOv);
     return;
   }
@@ -3408,26 +3426,51 @@ async function pOpenMonthlyWrapped(){
   var uid = safeLS('get','velo_user_id') || '';
   var comm = { btPosts:0, momentos:0, helped:0, dqAnswered:0, vibes:0, vibeRx:0, btRx:0 };
   if(sbClient && uid){
-    try{
-      var monthStart = new Date(yr, mo, 1).toISOString();
-      var monthEnd = new Date(yr, mo+1, 0, 23,59,59).toISOString();
-      var _btP = await sbClient.from('bitacora_posts').select('id').eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd);
-      if(!_btP.error && _btP.data){ comm.btPosts = _btP.data.length;
-        var _btIds = _btP.data.map(function(p){return p.id;});
-        if(_btIds.length){ try{ var _btRx = await sbClient.from('bitacora_reactions').select('id').in('post_id',_btIds); if(!_btRx.error && _btRx.data) comm.btRx = _btRx.data.length; }catch(e){} }
-      }
-      var _mo = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_mo.error) comm.momentos = _mo.count||0;
-      var _dq = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_dq.error) comm.dqAnswered = _dq.count||0;
-      try{ var _gr = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at',monthStart); if(!_gr.error) comm.helped = _gr.count||0; }catch(e){}
-      // Vibes de hoy (grupos + instantáneos) + reacciones recibidas
-      try{
-        var _vb = await sbClient.from('vibes').select('id').eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd);
-        if(!_vb.error && _vb.data){ comm.vibes = _vb.data.length;
-          var _vbIds = _vb.data.map(function(v){return v.id;});
-          if(_vbIds.length){ var _vRx = await sbClient.from('vibe_reactions').select('vibe_id').in('vibe_id',_vbIds); if(!_vRx.error && _vRx.data) comm.vibeRx = _vRx.data.length; } // v1623: vibe_reactions no tiene columna id
-        }
-      }catch(e){}
-    }catch(e){}
+    /* v1634 — ESTAS CONSULTAS IBAN EN CADENA
+       Cada una esperaba a que terminara la anterior aunque no dependen entre
+       sí. Seis idas y vueltas en fila, más la de los ánimos: eso es lo que
+       hacía que el Wrapped tardara segundos en aparecer.
+
+       Ahora salen todas a la vez. Las dos únicas dependencias reales se
+       encadenan DENTRO de su propia rama —hay que conocer los ids de las
+       publicaciones para contar sus reacciones, y lo mismo con las vibes—, así
+       que el tiempo total pasa a ser el de la consulta más lenta y no la suma
+       de todas. Cada rama se traga sus errores por separado: que falle una no
+       puede dejar el resto del Wrapped sin datos. */
+    var monthStart = new Date(yr, mo, 1).toISOString();
+    var monthEnd = new Date(yr, mo+1, 0, 23,59,59).toISOString();
+    var _rama = function(consulta, alLlegar){
+      return Promise.resolve(consulta).then(alLlegar).catch(function(){});
+    };
+    await Promise.all([
+      _rama(sbClient.from('bitacora_posts').select('id').eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd),
+        function(r){
+          if(r.error || !r.data) return;
+          comm.btPosts = r.data.length;
+          var ids = r.data.map(function(p){ return p.id; });
+          if(!ids.length) return;
+          return sbClient.from('bitacora_reactions').select('id').in('post_id',ids).then(function(rx){
+            if(!rx.error && rx.data) comm.btRx = rx.data.length;
+          });
+        }),
+      _rama(sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd),
+        function(r){ if(!r.error) comm.momentos = r.count||0; }),
+      _rama(sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd),
+        function(r){ if(!r.error) comm.dqAnswered = r.count||0; }),
+      _rama(sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at',monthStart),
+        function(r){ if(!r.error) comm.helped = r.count||0; }),
+      _rama(sbClient.from('vibes').select('id').eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd),
+        function(r){
+          if(r.error || !r.data) return;
+          comm.vibes = r.data.length;
+          var ids = r.data.map(function(v){ return v.id; });
+          if(!ids.length) return;
+          // v1623: vibe_reactions no tiene columna id — se pide vibe_id.
+          return sbClient.from('vibe_reactions').select('vibe_id').in('vibe_id',ids).then(function(rx){
+            if(!rx.error && rx.data) comm.vibeRx = rx.data.length;
+          });
+        })
+    ]);
   }
   var uName = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
   var totalGestures = comm.btPosts + comm.momentos + comm.helped + comm.dqAnswered + comm.vibes;
@@ -3664,6 +3707,7 @@ async function pOpenMonthlyWrapped(){
     + '<div id="wrappedSlider" style="flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:8px;padding:8px 16px;box-sizing:border-box">'+slideHtml+'</div>'
     + '<div style="display:flex;justify-content:center;gap:5px;padding:12px 0;flex-shrink:0">'+dotsHtml+'</div>'
     + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="pShareWrapped('+_jsAttr(monthTitle)+','+_jsAttr(domEmoji)+','+_jsAttr(domLabel)+','+nReg+','+streak+','+(comm.btPosts+comm.momentos+comm.helped)+','+avgScore.toFixed(2)+','+_jsAttr(uName)+')" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">📤 Compartir en Stories</button><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
+  _wQuitarCarga();
   document.body.appendChild(ov);
   try{ setTimeout(function(){ _maybeShowFeatureHints('wrapped'); }, 800); }catch(e){}
   // Dots syncing con scroll
@@ -38926,7 +38970,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1633;
+    var _BUILT_V = 1634;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
