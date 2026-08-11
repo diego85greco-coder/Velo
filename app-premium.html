@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1635">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1635">
+  <link rel="stylesheet" href="premium.css?v=20260626-1636">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1636">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -3049,7 +3049,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                       <div style="font-size:13px;font-weight:600;color:var(--ink)">🔔 Notificaciones</div>
                       <div id="profilePushStatus" style="font-size:11px;color:var(--ink4);margin-top:3px">No activadas</div>
                     </div>
-                    <button id="profilePushBtn" onclick="pTogglePushNotifications()" style="flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)">Activar</button>
+                    <button id="profilePushBtn" onclick="pTogglePushNotifications()" style="flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:var(--btn-ok-bg);color:var(--btn-ok-tx)">Activar</button>
                   </div>
                 </div>
                 <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pSignOut()">↩️ Cerrar sesión</button>
@@ -4189,7 +4189,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
             <div style="font-size:13px;color:var(--ink2);font-weight:600">Recordatorio diario</div>
             <div id="editPushStatus" style="font-size:11px;color:var(--ink4);margin-top:2px;line-height:1.4">Un aviso por día para registrar tu ánimo</div>
           </div>
-          <button id="editPushBtn" onclick="pTogglePushNotifications()" style="flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)">Activar</button>
+          <button id="editPushBtn" onclick="pTogglePushNotifications()" style="flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:var(--btn-ok-bg);color:var(--btn-ok-tx)">Activar</button>
         </div>
       </div>
     </div>
@@ -4548,8 +4548,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1635"></script>
-<script src="premium-redesign.js?v=20260626-1635"></script>
+<script src="premium.js?v=20260626-1636"></script>
+<script src="premium-redesign.js?v=20260626-1636"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

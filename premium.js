@@ -21172,24 +21172,24 @@ function _updateEditPushUI(){
     if(perm === 'unavailable'){
       status.textContent = 'Agregá Velo a tu pantalla de inicio para activar notificaciones';
       btn.textContent = '¿Cómo?'; btn.disabled = false;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(116,198,157,.15);color:rgba(80,160,110,.9)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:var(--btn-ok-bg);color:var(--btn-ok-tx)';
     } else if(perm === 'denied'){
       status.textContent = 'Bloqueadas — activálas en ajustes del navegador';
       btn.textContent = '—'; btn.disabled = true;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:var(--btn-off-bg);color:var(--btn-off-tx)';
     } else if(perm === 'granted' && hasSub){
       status.textContent = 'Activadas — recibís 3 avisos por día ✓';
       btn.textContent = 'Desactivar'; btn.disabled = false;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:var(--btn-danger-bg);color:var(--btn-danger-tx)';
     } else if(perm === 'granted' && !hasSub){
       status.textContent = 'Permiso concedido — tocá Activar para recibirlas';
       btn.textContent = 'Activar'; btn.disabled = false;
       btn.onclick = function(){ _tryRecoverPushSub(); };
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:var(--btn-ok-bg);color:var(--btn-ok-tx)';
     } else {
       status.textContent = 'No activadas — te avisamos 3 veces al día';
       btn.textContent = 'Activar'; btn.disabled = false;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:var(--btn-ok-bg);color:var(--btn-ok-tx)';
     }
   });
 }
@@ -38970,7 +38970,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1635;
+    var _BUILT_V = 1636;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

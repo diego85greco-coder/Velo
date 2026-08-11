@@ -5549,6 +5549,57 @@ body.r-dark #pg-pick-username input#pickUsernameInput {
   border-color: rgba(116,198,157,.35) !important;
 }
 
+/* ── v1636: Modo oscuro — las superficies «crema» tenían que ser oscuras ──
+   `--cream…` son los fondos de las cajitas que van DENTRO de una tarjeta: el
+   recuadro del correo en Perfil, la fila de notificaciones, y unas sesenta más.
+
+   Estaban definidas en `:root` (crema claro) y redefinidas para
+   `body:not(.r-dark)`… pero NUNCA para `body.r-dark`. En modo oscuro caían al
+   valor de `:root`, o sea un recuadro casi blanco, mientras el texto de encima
+   usaba `--ink` (#e8f5ee, casi blanco también). Resultado: ilegible. Se veía en
+   Perfil → Cuenta, con el correo y la fila de notificaciones.
+
+   Sí estaban corregidas dentro de `.p-sheet`, `.p-dialog` y tres overlays
+   sueltos, que es por lo que el fallo no saltaba en los modales — sólo en las
+   páginas. Los valores de acá son los mismos que ya usaba la regla de las
+   hojas, subidos apenas para que la cajita se distinga del fondo de su tarjeta.
+
+   Las reglas de los overlays llevan `!important` y siguen ganando ahí. */
+body.r-dark {
+  --cream:  rgba(255,255,255,.07);
+  --cream2: rgba(255,255,255,.055);
+  --cream3: rgba(255,255,255,.09);
+  --cream4: rgba(255,255,255,.12);
+}
+
+/* ── v1636: el botón de las notificaciones no se leía en NINGÚN tema ──
+   Sus cinco estados llevaban el color escrito a mano en el JS, pensado para un
+   fondo que ya no era el suyo. Medido sobre la fila real:
+
+     «¿Cómo?» / «Activar»  2.49–2.85:1 en oscuro · 2.11–2.25:1 en claro
+     «Desactivar»          2.19:1 en oscuro · 3.30:1 en claro
+
+   El mínimo legible es 4.5:1, así que fallaban los seis casos. Ahora el color
+   sale de estas variables, que cambian con el tema; los valores están elegidos
+   midiendo el contraste ya compuesto sobre la píldora translúcida, no a ojo.
+   Quedan entre 4.87:1 y 6.31:1. */
+:root {
+  --btn-ok-bg:     rgba(30,110,70,.14);
+  --btn-ok-tx:     #14663f;
+  --btn-danger-bg: rgba(190,40,40,.12);
+  --btn-danger-tx: #a81f1f;
+  --btn-off-bg:    rgba(120,120,120,.14);
+  --btn-off-tx:    #465f50;
+}
+body.r-dark {
+  --btn-ok-bg:     rgba(116,198,157,.18);
+  --btn-ok-tx:     #9be3bd;
+  --btn-danger-bg: rgba(255,120,110,.14);
+  --btn-danger-tx: #ff8a80;
+  --btn-off-bg:    rgba(255,255,255,.10);
+  --btn-off-tx:    #a8c4b4;
+}
+
 /* ── v250: Light mode — soft pastel green palette ───────────────── */
 body:not(.r-dark) {
   --cream:  #EDF7F1;
