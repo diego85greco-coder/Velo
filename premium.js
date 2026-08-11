@@ -23443,17 +23443,30 @@ function _storyReact(vibeId, key){
    una bandera y había que adivinar si era «Orgullo» o «Con vos». Ahora la
    reacción va escrita debajo del nombre, con su emoji al lado. Quien sólo pasó
    a verla no lleva segunda línea. */
-function _storyActivityRow(av, name, rxEmoji, ts, soft, rxLabel){
+function _storyActivityRow(av, name, rxEmoji, ts, soft, rxLabel, uid){
   var when = ts ? ((typeof _timeAgoDM==='function') ? _timeAgoDM(new Date(ts).getTime()) : '') : '';
   var op = soft ? '.62' : '1';
   var nameCol = soft ? 'rgba(210,230,220,.6)' : 'rgba(230,245,235,.95)';
+
+  /* v1642 — la fila lleva al perfil público.
+     Antes era estática: se veía quién había reaccionado o pasado, y tocarlo no
+     hacía nada. Se usa el mismo criterio que las tarjetas de la Sala de Ayuda
+     (`canClickProfile`): hace falta un id, no puede ser uno mismo, y no se
+     abre para quien figura como anónimo — `pQuickProfile` ya lo contempla,
+     pero mejor no ofrecer siquiera el gesto. */
+  var _yo = (typeof safeLS === 'function') ? (safeLS('get','velo_user_id') || '') : '';
+  var _anon = !name || name === 'Usuario Anónimo' || name === 'Anónimo' || name === 'Alguien';
+  var _abre = uid && String(uid) !== String(_yo) && !_anon;
+  var _click = _abre
+    ? ' onclick="pQuickProfile('+_jsAttr(name)+','+_jsAttr(av||'🧑')+',\'\',\'\','+_jsAttr(uid)+')"'
+    : '';
   var sub = rxEmoji
     ? '<div style="font-size:11.5px;color:rgba(150,230,185,.88);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
       + '<span style="font-size:13px">'+rxEmoji+'</span> '
       + _escHtml(rxLabel || 'Reaccionó')
       + '</div>'
     : '';
-  return '<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(180,220,195,.08);font-family:Jost,sans-serif;opacity:'+op+'">'
+  return '<div'+_click+' style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(180,220,195,.08);font-family:Jost,sans-serif;opacity:'+op+(_abre?';cursor:pointer':'')+'">'
     + '<span style="flex-shrink:0">'+_avInline(av||'🧑',30)+'</span>'
     + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:13.5px;font-weight:'+(soft?'600':'700')+';color:'+nameCol+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name||'Alguien')+'</div>'
@@ -23506,9 +23519,9 @@ async function _storyOpenActivity(vibeId){
     };
     var accompanied = reacts.map(function(r){
       var nm = _nameOf(r.user_id);
-      return _storyActivityRow(nm.a, nm.n, rxEmoji[r.reaction]||'💚', nm.ts, false, rxLabel[r.reaction]);
+      return _storyActivityRow(nm.a, nm.n, rxEmoji[r.reaction]||'💚', nm.ts, false, rxLabel[r.reaction], r.user_id);
     });
-    var justViewed = views.filter(function(v){ return !reactedSet[v.viewer_id]; }).map(function(v){ return _storyActivityRow(v.viewer_av, v.viewer_name, '', v.created_at, true); });
+    var justViewed = views.filter(function(v){ return !reactedSet[v.viewer_id]; }).map(function(v){ return _storyActivityRow(v.viewer_av, v.viewer_name, '', v.created_at, true, '', v.viewer_id); });
     var out = '';
     if(accompanied.length){
       out += '<div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(150,230,185,.9);margin:2px 0 8px">💚 Te acompañaron · '+accompanied.length+'</div>' + accompanied.join('');
@@ -39010,7 +39023,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1641;
+    var _BUILT_V = 1642;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
