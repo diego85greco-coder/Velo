@@ -22843,7 +22843,7 @@ async function _vibeHandleVideoInput(f){
   try{ vUrl = URL.createObjectURL(useFile); }catch(_){}
   var _mb = (useFile.size/1048576).toFixed(0);
   _vibeVideoPreviewMeta = (dur>0?Math.round(dur)+'s · ':'') + _mb + ' MB';
-  area.innerHTML = '<div style="position:relative"><video src="'+vUrl+'" controls playsinline muted preload="metadata" onerror="_vibeVideoPreviewError(this)" style="width:100%;max-height:360px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block;background:#000"></video><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
+  area.innerHTML = '<div style="position:relative"><video src="'+vUrl+'" controls playsinline muted preload="metadata" onerror="_vibeVideoPreviewError(this)" style="width:100%;max-height:360px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block;background:#000"></video><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:7px 14px;background:rgba(0,0,0,.78);border:1px solid rgba(255,255,255,.38);border-radius:100px;-webkit-appearance:none;appearance:none;color:#fff !important;-webkit-text-fill-color:#fff !important;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.2px;cursor:pointer;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:2">Cambiar</button></div>';
   pToast('✓', dur>0 ? 'Video listo ('+Math.round(dur)+'s)' : 'Video listo');
 }
 var _vibeVideoPreviewMeta = '';
@@ -22859,7 +22859,7 @@ function _vibeVideoPreviewError(videoEl){
       + '<div style="font-size:40px">🎬</div>'
       + '<div style="font-size:14.5px;font-weight:800;color:#eafff2 !important">✅ Video listo para compartir</div>'
       + '<div style="font-size:11.5px;color:#bfe6d1 !important;text-align:center;padding:0 16px">'+_escHtml(_vibeVideoPreviewMeta)+' · no se ve acá, pero se sube perfecto</div>'
-      + '</div><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.35);border-radius:100px;color:#fff !important;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
+      + '</div><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:7px 14px;background:rgba(0,0,0,.78);border:1px solid rgba(255,255,255,.38);border-radius:100px;-webkit-appearance:none;appearance:none;color:#fff !important;-webkit-text-fill-color:#fff !important;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.2px;cursor:pointer;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.6)">Cambiar</button></div>';
   }catch(_){}
 }
 async function _vibeHandleImageInput(input){
@@ -22875,7 +22875,7 @@ async function _vibeHandleImageInput(input){
     _vibePendingImage = b64;
     _vibePendingVideo = null;
     var area = document.getElementById('vibeImgArea'); if(!area) return;
-    area.innerHTML = '<div style="position:relative"><img id="vibePreviewImg" style="width:100%;max-height:360px;object-fit:cover;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block"><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer">Cambiar</button></div>';
+    area.innerHTML = '<div style="position:relative"><img id="vibePreviewImg" style="width:100%;max-height:360px;object-fit:cover;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block"><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:7px 14px;background:rgba(0,0,0,.78);border:1px solid rgba(255,255,255,.38);border-radius:100px;-webkit-appearance:none;appearance:none;color:#fff !important;-webkit-text-fill-color:#fff !important;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.2px;cursor:pointer;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.6)">Cambiar</button></div>';
     // Blob URL para iOS
     try{
       var arr = b64.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
@@ -38970,7 +38970,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1634;
+    var _BUILT_V = 1635;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
