@@ -304,6 +304,20 @@ los endpoints de suscripción, y ésos no son legibles.
 4. Rellenar los `[COMPLETAR]` de `LEGAL-DPIA.md` y del registro de tratamiento
    (datos societarios) y firmar la DPIA.
 
+**SQL escrito y probado, esperando a que vuelva el conector de Supabase.**
+Los cuatro se probaron levantando un PostgreSQL 16 local y replicando el
+esquema; ninguno se aplicó a ciegas. Aplicar **en este orden**:
+
+| # | Archivo | Qué arregla |
+|---|---|---|
+| 1 | `PENDIENTE_crear_tablas_que_faltan.sql` | «Vela por ti» y las notas clínicas escriben en tablas que no existen |
+| 2 | `PENDIENTE_borrado_notas_clinicas.sql` | el borrado de cuenta no alcanzaba `pro_patient_notes` ni las listas de otras personas |
+| 3 | `PENDIENTE_tope_global_ia.sql` | el cliente elige su propio cupo de IA (`kind` va en el cuerpo de la petición) |
+| 4 | el `revoke select` de la sección 8bis | Momentos, Vibes y Círculos se leen sin cuenta |
+
+El 4 ya no necesita cambio de cliente: la espera de sesión de v1631 lo cubre.
+Verificar cada uno con el bloque de comprobación que lleva al final.
+
 **Técnico:**
 5. Terminar la rotación VAPID (punto 7).
 6. Decidir y activar los plazos de conservación: están implementados pero
@@ -315,7 +329,14 @@ los endpoints de suscripción, y ésos no son legibles.
 9. Cerrar a los anónimos Momentos, Vibes, Círculos y los feeds de comentarios
    (ver 8bis). Requiere antes el cambio de cliente; el SQL es de tres líneas,
    el trabajo está en auditar los ~100 puntos de lectura.
-10. **El límite diario de la Sala de Ayuda no funciona.** `help_posts_daily_limit`
+10bis. `script.js`, `app.html` y `velo.js` están **huérfanos**: nada del
+   repositorio los enlaza (`index.html` redirige a `app-premium.html`, y el
+   service worker sólo cachea ése). Son ~1 MB de código de la aplicación
+   anterior que sigue desplegado y accesible. No estorban, pero confunden a
+   cualquiera que audite el proyecto — y a las herramientas: la mitad de los
+   falsos positivos de esta revisión salieron de ahí.
+
+11. **El límite diario de la Sala de Ayuda no funciona.** `help_posts_daily_limit`
    (4 al día, ilimitado con Plus) convive con `help_insert_auth`, que permite
    `true`; las policies permisivas se combinan con OR, así que el límite nunca
    se aplica. Arreglarlo es fácil —mover el conteo a una función
