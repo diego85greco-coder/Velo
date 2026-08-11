@@ -13631,6 +13631,23 @@ body.r-lavender:not(.r-dark) .p-back-btn {
    fondo, por debajo del mínimo de 3:1. El botón estaba —y funcionaba— pero no
    se veía, así que las pantallas parecían no tener salida. Afecta al «volver»
    de todas las páginas, no a una sola. Con este color queda en 13.8:1. */
+/* ── v1639: el botón que la instrucción SEÑALA era el que no se veía ──
+   En «Activar notificaciones en iPhone» se dibuja la barra de Safari y se
+   destaca el botón Compartir con un aro verde. Ese verde era el mismo sage
+   claro del panel sobre el que va, así que en modo claro quedaba en 1.08–1.47:1
+   — o sea, invisible justo el elemento al que apunta el paso 1.
+
+   El sage funciona bien sobre el panel OSCURO (6.23:1); el problema es sólo el
+   claro. Por eso va por variable en vez de cambiarlo a secas. */
+:root {
+  --inst-hl:      #0d5a36;
+  --inst-hl-soft: rgba(13,90,54,.16);
+}
+body.r-dark {
+  --inst-hl:      rgba(150,230,185,.95);
+  --inst-hl-soft: rgba(116,198,157,.18);
+}
+
 body.r-dark .p-back-btn {
   color: rgba(210,245,225,.92) !important;
   border-color: rgba(120,200,155,.42) !important;
