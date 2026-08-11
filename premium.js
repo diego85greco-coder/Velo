@@ -9339,7 +9339,7 @@ async function pOpenShareCard(){
   var _hasMoods = false;
   for(var _mi=0;_mi<7;_mi++){
     var _md=new Date(); _md.setDate(_md.getDate()-_mi);
-    if(safeLS('get','velo_mood_'+_md.toISOString().slice(0,10))){ _hasMoods=true; break; }
+    if(safeLS('get','velo_mood_'+_dateKey(_md))){ _hasMoods=true; break; }
   }
   if(!_hasMoods){
     _initSupabase();
@@ -9385,7 +9385,7 @@ async function pOpenShareCard(){
     var _mc={};
     for(var _mi3=0;_mi3<7;_mi3++){
       var _md3=new Date(); _md3.setDate(_md3.getDate()-_mi3);
-      var _raw3=safeLS('get','velo_mood_'+_md3.toISOString().slice(0,10));
+      var _raw3=safeLS('get','velo_mood_'+_dateKey(_md3));
       if(_raw3){ try{ var _obj3=JSON.parse(_raw3); var _e3=_obj3.emoji||_obj3||''; if(_e3) _mc[_e3]=(_mc[_e3]||0)+1; }catch(e3){} }
     }
     var _moodLbl2={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Angustiado/a','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía','😍':'Enamorado/a','🥰':'Agradecido/a','💔':'Desamorado/a','😬':'Nervioso/a','😨':'Con miedo','😡':'Con bronca','😴':'Agotado/a','🤒':'Enfermo/a','🤔':'Confundido/a'};
@@ -9524,7 +9524,7 @@ function _renderShareCard(canvas, logoImg){
   var days7=[], dayLabels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'], moodCounts={};
   for(var i=6;i>=0;i--){
     var d=new Date(); d.setDate(d.getDate()-i);
-    var k=d.toISOString().slice(0,10);
+    var k=_dateKey(d);
     var raw=safeLS('get','velo_mood_'+k), emoji='';
     if(raw){ try{ var obj=JSON.parse(raw); emoji=obj.emoji||obj||''; }catch(e){ emoji=raw; } }
     days7.push({day:dayLabels[d.getDay()===0?6:d.getDay()-1],emoji:emoji});
@@ -38926,7 +38926,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1631;
+    var _BUILT_V = 1632;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.

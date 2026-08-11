@@ -477,6 +477,29 @@ así que cualquier tabla nueva entra sola; sólo se excluye lo listado, con su
 motivo escrito, y si el descubrimiento fallara usa la lista de reserva **y
 avisa** en vez de guardar un backup incompleto en silencio.
 
+### ✅ v1632 (11/08) — dos funciones que nunca funcionaron, y la semana emocional corrida
+
+**«Vela por ti» no guardaba nada.** `pSendVela` inserta en
+`solidarity_requests`… que **no existe en la base** (`PGRST205`). El `insert`
+está dentro de un `try/catch` que se traga el error y a continuación muestra
+«Solicitud enviada. Te contactaremos en 7-14 días 💚». Alguien que pide terapia
+que no puede pagar se queda esperando una respuesta que nadie va a poder dar,
+porque el panel lee esa misma tabla y siempre la ve vacía. Lo mismo con
+`pro_patient_notes`: las notas clínicas de los profesionales nunca se
+sincronizaron, viven sólo en el navegador.
+
+Se detectó **de rebote**: al pasar el backup a descubrir las tablas del esquema
+en vez de una lista a mano, avisó de que esas dos «ya no existen». Nunca
+existieron. Migración escrita con las columnas sacadas del propio cliente y
+probada en un PostgreSQL local: `PENDIENTE_crear_tablas_que_faltan.sql`.
+
+**La semana emocional se veía corrida.** Los ánimos se guardan con `_dateKey()`
+—hora local— y tres sitios de la tarjeta semanal los leían con `toISOString()`
+—UTC—. En el Río de la Plata coinciden 21 horas al día y difieren las otras 3:
+de 21:00 a medianoche, el emoji que salía bajo «Lun» era el del domingo, y el
+ánimo registrado ese mismo día aparecía vacío. Por eso llevaba meses sin que
+nadie lo viera: de día funciona. `test/fechas-locales.test.js` lo fija.
+
 ### 🟡 QUEDA ABIERTO — la misma exposición en las secciones que faltan
 
 Sin cuenta todavía se pueden leer: `momentos` (15), `vibes` (17),

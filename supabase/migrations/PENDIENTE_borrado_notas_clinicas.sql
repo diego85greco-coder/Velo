@@ -1,6 +1,13 @@
 -- ============================================================================
 -- ⚠️ PREPARADA Y PROBADA, **NO APLICADA** (el conector de Supabase estaba
---    caído el 11/08). Aplicar en cuanto vuelva.
+--    caído el 11/08). Aplicar en cuanto vuelva, y DESPUÉS de
+--    `PENDIENTE_crear_tablas_que_faltan.sql`.
+--
+--    Nota de orden: al escribir esto se creía que `pro_patient_notes` existía.
+--    No existe — nunca se creó, y por eso la sincronización de notas de los
+--    profesionales llevaba desde siempre fallando en silencio. Aplicar esto
+--    antes de crear la tabla no rompe nada (el borrado va dentro de un bloque
+--    que captura la excepción), pero tampoco sirve de nada.
 --
 -- PROBADA DE VERDAD, no sólo escrita: se levantó un PostgreSQL 16 local, se
 -- replicaron las 22 tablas implicadas y `auth.uid()`/`auth.jwt()`, y se corrió
