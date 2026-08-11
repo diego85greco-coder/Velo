@@ -23438,15 +23438,28 @@ function _storyReact(vibeId, key){
 }
 
 // Actividad de MI historia: quién la vio y con qué reacción (solo el dueño).
-function _storyActivityRow(av, name, rxEmoji, ts, soft){
+/* v1640 — la fila decía QUIÉN pero no QUÉ.
+   Mostraba sólo el emoji suelto a la derecha, sin nombre de la reacción: se veía
+   una bandera y había que adivinar si era «Orgullo» o «Con vos». Ahora la
+   reacción va escrita debajo del nombre, con su emoji al lado. Quien sólo pasó
+   a verla no lleva segunda línea. */
+function _storyActivityRow(av, name, rxEmoji, ts, soft, rxLabel){
   var when = ts ? ((typeof _timeAgoDM==='function') ? _timeAgoDM(new Date(ts).getTime()) : '') : '';
   var op = soft ? '.62' : '1';
   var nameCol = soft ? 'rgba(210,230,220,.6)' : 'rgba(230,245,235,.95)';
+  var sub = rxEmoji
+    ? '<div style="font-size:11.5px;color:rgba(150,230,185,.88);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      + '<span style="font-size:13px">'+rxEmoji+'</span> '
+      + _escHtml(rxLabel || 'Reaccionó')
+      + '</div>'
+    : '';
   return '<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(180,220,195,.08);font-family:Jost,sans-serif;opacity:'+op+'">'
     + '<span style="flex-shrink:0">'+_avInline(av||'🧑',30)+'</span>'
-    + '<span style="flex:1;min-width:0;font-size:13.5px;font-weight:'+(soft?'600':'700')+';color:'+nameCol+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name||'Alguien')+'</span>'
-    + (when ? '<span style="font-size:10.5px;color:rgba(180,220,195,.5)">'+when+'</span>' : '')
-    + (rxEmoji ? '<span style="font-size:18px;flex-shrink:0">'+rxEmoji+'</span>' : '')
+    + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13.5px;font-weight:'+(soft?'600':'700')+';color:'+nameCol+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name||'Alguien')+'</div>'
+      + sub
+    + '</div>'
+    + (when ? '<span style="font-size:10.5px;color:rgba(180,220,195,.5);flex-shrink:0;align-self:flex-start;margin-top:2px">'+when+'</span>' : '')
     + '</div>';
 }
 async function _storyOpenActivity(vibeId){
@@ -23474,7 +23487,8 @@ async function _storyOpenActivity(vibeId){
     var rres = await sbClient.from('vibe_reactions').select('user_id,reaction').eq('vibe_id', vibeId);
     var reacts = (rres&&rres.data)||[];
     var rxByUser = {}; reacts.forEach(function(r){ rxByUser[r.user_id]=r.reaction; });
-    var rxEmoji = {}; VIBE_REACTIONS.forEach(function(r){ rxEmoji[r.key]=r.emoji; });
+    var rxEmoji = {}, rxLabel = {};
+    VIBE_REACTIONS.forEach(function(r){ rxEmoji[r.key]=r.emoji; rxLabel[r.key]=r.label; });
     var seenIds = {}; views.forEach(function(v){ seenIds[v.viewer_id]=1; });
     var missing = reacts.map(function(r){ return r.user_id; }).filter(function(id){ return id && !seenIds[id]; });
     missing = missing.filter(function(v,i,a){ return a.indexOf(v)===i; });
@@ -23490,7 +23504,10 @@ async function _storyOpenActivity(vibeId){
       var nm = nameMap[uid]||{n:'Alguien',a:''};
       return { a:nm.a||'🧑', n:nm.n, ts:null };
     };
-    var accompanied = reacts.map(function(r){ var nm=_nameOf(r.user_id); return _storyActivityRow(nm.a, nm.n, rxEmoji[r.reaction]||'💚', nm.ts, false); });
+    var accompanied = reacts.map(function(r){
+      var nm = _nameOf(r.user_id);
+      return _storyActivityRow(nm.a, nm.n, rxEmoji[r.reaction]||'💚', nm.ts, false, rxLabel[r.reaction]);
+    });
     var justViewed = views.filter(function(v){ return !reactedSet[v.viewer_id]; }).map(function(v){ return _storyActivityRow(v.viewer_av, v.viewer_name, '', v.created_at, true); });
     var out = '';
     if(accompanied.length){
@@ -38993,7 +39010,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1639;
+    var _BUILT_V = 1640;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
