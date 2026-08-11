@@ -312,6 +312,18 @@ los endpoints de suscripción, y ésos no son legibles.
 7. Circuito de respuesta y apelación de moderación (obligación DSA).
 8. Probar la app **usándola**. Todo lo verificado hasta ahora fue contra la base
    de datos. Bugs visuales, de flujo o del PWA en iPhone: sin cubrir.
+9. Cerrar a los anónimos Momentos, Vibes, Círculos y los feeds de comentarios
+   (ver 8bis). Requiere antes el cambio de cliente; el SQL es de tres líneas,
+   el trabajo está en auditar los ~100 puntos de lectura.
+10. **El límite diario de la Sala de Ayuda no funciona.** `help_posts_daily_limit`
+   (4 al día, ilimitado con Plus) convive con `help_insert_auth`, que permite
+   `true`; las policies permisivas se combinan con OR, así que el límite nunca
+   se aplica. Arreglarlo es fácil —mover el conteo a una función
+   `SECURITY DEFINER` y dejarla como única policy de INSERT— pero **no se hizo
+   sin preguntar**: activarlo significa que una persona que ya publicó 4 veces
+   en 24 h no puede pedir ayuda una quinta. En una app de salud mental eso es
+   una decisión del titular, no técnica. (Si se toca: la subconsulta va sí o sí
+   dentro de una función definer, o vuelve el `42P17` del punto 5bis.)
 
 ---
 
@@ -376,23 +388,69 @@ Para no repetir trabajo. Todas se pasaron entre el 29/07 y el 07/08:
 | Coherencia de las 5 versiones · precache del service worker | limpio |
 | **Exposición sin sesión (por REST, con la clave pública)** | **ver abajo** |
 
-### 🔴 PENDIENTE — el contenido de la comunidad se lee sin iniciar sesión
+### ✅ RESUELTO (11/08) — la API pública estaba abierta de par en par
 
-Con la clave pública (que está en este repositorio) y **sin cuenta**, cualquiera
-puede descargar `help_posts_feed`, `bitacora_posts_full` y `happy_posts_full`:
-los pedidos de la Sala de Ayuda, la Bitácora y el Muro.
+Lo que empezó como «cerrar tres vistas a los anónimos» destapó, al auditar los
+permisos que se iban a tocar, cuatro agujeros de los que **tres eran graves**.
+Todo comprobado contra producción con la clave pública del repositorio y sin
+ninguna cuenta, y todo verificado después por HTTP.
 
-**No es una de-anonimización** — las publicaciones anónimas salen con
-«Usuario Anónimo» y sin identificador; eso se verificó en la misma prueba. Pero
-el contenido queda más expuesto de lo que la app da a entender.
+**1. Se podía vaciar la base entera.** Las vistas son auto-actualizables,
+pertenecen a `postgres` y las tablas base no tienen `FORCE ROW LEVEL SECURITY`,
+así que escribir a través de ellas **no evaluaba ninguna política RLS**. Medido
+con rollback: `delete from help_posts_feed` habría borrado 22 filas;
+`happy_posts_full` 10; `daily_responses_feed` 23; `momento_comments_feed` 7;
+`dq_comments_feed` 4. Una sola petición HTTP, sin registrarse.
+→ `20260811_revoke_write_on_views.sql`
 
-⚠️ **No se arregló porque no es un cambio de una línea.** `pRenderHelp`,
-`_btLoadTab` y `pRenderHappy` no esperan a `_ensureSbSession()`, así que al
-arrancar en frío leen como `anon`. Cerrar las vistas sin tocar el cliente
-**deja los tres feeds vacíos al abrir la app**.
+**2. Se podía reescribir toda la Sala de Ayuda.** `help_update_auth` y
+`happy_update_auth` estaban `to {anon,authenticated} using (true)`. Medido:
+`update help_posts set preview='VANDALIZADO'` → 22 filas; marcar los 22 pedidos
+como atendidos → 22 filas. También se podía publicar sin cuenta.
+El `true` existía por una razón real (las reacciones del Muro viven en columnas
+de la propia publicación, y otra persona marca tu pedido como tomado), así que
+la solución no fue «sólo el dueño» sino **limitar qué columnas** se pueden
+tocar: `taken/taken_by/closed` y `reactions/comments`, nada más. Ahora ni una
+cuenta registrada puede reescribir el texto de una publicación ajena.
+→ `20260811b_cerrar_escritura_anonima.sql`
 
-El orden correcto y el SQL están en
-`supabase/migrations/PENDIENTE_cerrar_vistas_a_anonimos.sql`.
+**3. El directorio de usuarios era público.** `profiles_select` incluía a
+`anon`: nombre, usuario, lema, avatar, estado, a quién bloqueó cada persona, su
+buddy — y el `role`, o sea qué cuenta es la de administración. `email` y
+`push_subscription` **no** estaban expuestos (la migración de julio ya los había
+protegido por columna).
+→ `20260811c_cerrar_directorio_usuarios.sql`
+
+**4. Funciones `SECURITY DEFINER` llamables sin cuenta.** La única con impacto
+real era `increment_momento_hearts`, que no comprueba nada: se podían inflar
+corazones en bucle. Las demás eran funciones de trigger expuestas de más.
+→ `20260811d_revocar_funciones_a_anonimos.sql`
+
+**Y lo que motivó todo:** las tres vistas de contenido ya no se leen sin sesión.
+→ `20260811_cerrar_vistas_a_anonimos.sql`
+
+**Cómo se verificó sin poder abrir la app.** Simulando lo que hace PostgREST:
+`set local role anon|authenticated` + `set_config('request.jwt.claims', …)` con
+un id de usuario real, y las escrituras dentro de un bloque que lanza una
+excepción al final, de modo que la subtransacción **revierte y no se toca ni una
+fila**. Es la forma de medir «cuántas filas habría borrado» sin borrarlas.
+Después de cada migración: recuento de filas intacto (22/10/3/11/23/15/17/5).
+
+### 🟡 QUEDA ABIERTO — la misma exposición en las secciones que faltan
+
+Sin cuenta todavía se pueden leer: `momentos` (15), `vibes` (17),
+`vibe_comments`, `vibe_groups`, `vibe_reactions`, `circles` (5),
+`daily_responses_feed` (23), `dq_comments_feed`, `momento_comments_feed`,
+`bitacora_comments_full`, `reviews`, `guardian_presence` y las tablas de
+reacciones. Lo privado **sí** está protegido: mensajes directos, sesiones,
+notificaciones, peticiones de guardián, bloqueos y perfiles dan 0 filas.
+
+**No se cerró en la misma tanda a propósito.** Vibes tiene 39 puntos de lectura,
+Momentos 16 y Círculos 14: hay que darles antes el mismo tratamiento que v1630
+le dio a los otros tres feeds (esperar a `_sessionReady()` antes de la primera
+consulta) o esas secciones aparecerán vacías al arrancar en frío. Es exactamente
+el error que este proyecto ya cometió dos veces. Orden correcto: cambio de
+cliente → desplegar → comprobar → recién ahí `revoke select … from anon`.
 
 ### ✅ Primera prueba automática del proyecto
 

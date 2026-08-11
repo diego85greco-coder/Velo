@@ -1,5 +1,5 @@
 -- ============================================================================
--- ⚠️ PREPARADA, **NO APLICADA**. Leer entero antes de ejecutar.
+-- ✅ APLICADA el 11/08/2026. Verificada en las dos direcciones (ver el final).
 --
 -- EL CONTENIDO DE LA COMUNIDAD SE LEE SIN INICIAR SESIÓN  (detectado 10/08/2026)
 --
@@ -43,15 +43,20 @@
 --   1. ✅ HECHO en v1630. `pRenderHelp`, `_btLoadTab` y `pRenderHappy` esperan
 --      ahora a `_sessionReady()` antes de su primera lectura. La espera se hace
 --      una sola vez por carga; el render desde caché sigue siendo inmediato.
---   2. ⬜ FALTA: comprobar los feeds en un arranque en frío con v1630 ya
---      desplegado, idealmente en iPhone, que es donde la sesión tarda más.
---      (No se pudo verificar contra la base: el conector estaba caído.)
---   3. Recién entonces aplicar este SQL.
---   4. Verificar: sin sesión, las tres vistas deben devolver 0 filas; con
---      sesión, los feeds completos (22 / 3 / 10 al 07/08).
+--   2. ✅ 11/08. En lugar del arranque en frío en el teléfono —que no se puede
+--      hacer desde acá— se comprobó contra la base simulando exactamente lo que
+--      hace PostgREST con cada rol (`set local role` + `request.jwt.claims`).
+--      Antes de aplicar: anon 22/3/10 y authenticated 22/3/10.
+--      Después:          anon BLOQUEADO y authenticated 22/3/10 — sin cambios.
+--   3. ✅ Aplicada.
+--   4. ✅ Verificada también por HTTP con la clave pública: las tres vistas
+--      devuelven 401 `permission denied` sin sesión.
 --
--- Si se aplica al revés, se rompe. Es justo el error que ya se cometió dos
--- veces en este proyecto: cerrar un permiso sin auditar quién lo usaba.
+-- QUEDA UNA COMPROBACIÓN QUE SÓLO SE PUEDE HACER EN EL TELÉFONO: que en un
+-- arranque en frío la sesión se restaure antes de la primera lectura. Si algún
+-- feed apareciera vacío al abrir la app, se revierte en un segundo con:
+--   grant select on public.help_posts_feed, public.bitacora_posts_full,
+--                    public.happy_posts_full to anon;
 -- ══════════════════════════════════════════════════════════════════════════
 
 revoke select on public.help_posts_feed     from anon;
