@@ -13625,6 +13625,21 @@ body.r-lavender:not(.r-dark) .p-back-btn {
   color: var(--ink3) !important;
 }
 
+/* ── v1638: la flecha de «volver» casi no se veía en modo oscuro ──
+   `.p-back-btn` hereda un verde oscuro (rgb(45,106,79)) pensado para fondo
+   claro, y en modo oscuro nada lo cambiaba: quedaba a 2.54:1 sobre su propio
+   fondo, por debajo del mínimo de 3:1. El botón estaba —y funcionaba— pero no
+   se veía, así que las pantallas parecían no tener salida. Afecta al «volver»
+   de todas las páginas, no a una sola. Con este color queda en 13.8:1. */
+body.r-dark .p-back-btn {
+  color: rgba(210,245,225,.92) !important;
+  border-color: rgba(120,200,155,.42) !important;
+}
+body.r-dark .p-back-btn:hover {
+  color: #fff !important;
+  border-color: rgba(150,230,185,.70) !important;
+}
+
 /* Topbar Estilo/Donar/Plus/Guía button labels */
 body.r-theme-green:not(.r-dark) #topbarEstiloLbl,
 body.r-lavender:not(.r-dark) #topbarEstiloLbl {
