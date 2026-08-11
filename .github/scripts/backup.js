@@ -31,22 +31,64 @@ if (!SUPA_URL || !SERVICE) {
 const fs = require('fs');
 const path = require('path');
 
-const TABLES = [
+/**
+ * LAS TABLAS SE DESCUBREN SOLAS  (corregido 11/08/2026)
+ *
+ * Antes había acá una lista escrita a mano de 54 nombres. El problema de una
+ * lista a mano es que no avisa cuando se queda corta: se comprobó que dejaba
+ * fuera `pro_patient_notes` —las notas clínicas que los profesionales escriben
+ * sobre sus pacientes, el dato más sensible de la aplicación—, `data_requests`
+ * (las peticiones de acceso y borrado del RGPD), `deleted_accounts` (el
+ * registro de bajas, que es la prueba de que se atendió un borrado) y
+ * `velo_retention_policy`. El backup decía «54/54 tablas» y parecía completo.
+ *
+ * Ahora se lee el esquema que PostgREST publica en su raíz, así que cualquier
+ * tabla nueva entra sola. Sólo se excluye lo que está listado abajo, y el
+ * motivo queda escrito. Si el descubrimiento fallara, se usa la lista de
+ * reserva y el proceso avisa — pero nunca se guarda un backup incompleto
+ * creyendo que está entero.
+ */
+
+// Vistas: no son datos, son consultas sobre las tablas que ya se copian.
+const ES_VISTA = /(_full|_feed|_ids)$/;
+
+// Excluidas a propósito, con su motivo.
+const EXCLUIR = new Set([
+  'ia_usage',            // contador efímero, se borra solo a las 48 h
+  'velo_api_usage',      // idem
+  '_policy_backup_'      // copia temporal de policies del incidente del 07/08
+]);
+
+// Sólo se usa si el descubrimiento falla. No hace falta mantenerla al día:
+// existe para que un fallo de red no deje la noche sin copia.
+const RESERVA = [
   'admin_news', 'bitacora_comment_reactions', 'bitacora_comments', 'bitacora_posts',
   'bitacora_reactions', 'bitacora_reports', 'bookings', 'bottle_reactions',
   'bottle_replies', 'bottles', 'broadcasts', 'buddy_requests', 'circle_members',
   'circle_messages', 'circles', 'contacts', 'content_reports', 'daily_responses',
-  'diary_entries', 'direct_messages', 'donations', 'dq_comments', 'dq_reactions',
-  'guardian_presence', 'guardian_requests', 'happy_history', 'happy_posts',
-  'help_posts', 'moderation_flags', 'momento_comments', 'momentos', 'mood_entries',
-  'news_reactions', 'plus_grants', 'profiles', 'push_history', 'quote_reactions',
-  'referrals', 'reportes', 'reviews', 'sessions', 'support_matches', 'surveys',
-  'terms_acceptance', 'usage_events', 'user_blocks', 'user_favorites',
-  'velo_notifications', 'vibe_comment_reactions', 'vibe_comments', 'vibe_groups',
-  'vibe_reactions', 'vibe_views', 'vibes'
+  'data_requests', 'deleted_accounts', 'diary_entries', 'direct_messages',
+  'donations', 'dq_comments', 'dq_reactions', 'guardian_presence',
+  'guardian_requests', 'happy_history', 'happy_posts', 'help_posts',
+  'moderation_flags', 'momento_comments', 'momentos', 'mood_entries',
+  'news_reactions', 'plus_grants', 'pro_patient_notes', 'profiles', 'push_history',
+  'quote_reactions', 'referrals', 'reportes', 'reviews', 'sessions',
+  'solidarity_requests', 'support_matches', 'surveys', 'terms_acceptance',
+  'usage_events', 'user_blocks', 'user_favorites', 'velo_notifications',
+  'velo_retention_policy', 'vibe_comment_reactions', 'vibe_comments',
+  'vibe_groups', 'vibe_reactions', 'vibe_views', 'vibes'
 ];
-// Se omiten a propósito: ia_usage y velo_api_usage (contadores efímeros que se
-// borran solos a las 48 h — no hay nada que restaurar ahí).
+
+async function descubrirTablas() {
+  const r = await fetch(`${SUPA_URL}/rest/v1/`, {
+    headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, Accept: 'application/openapi+json' }
+  });
+  if (!r.ok) throw new Error(`raíz de PostgREST: HTTP ${r.status}`);
+  const spec = await r.json();
+  const defs = spec.definitions || (spec.components && spec.components.schemas) || {};
+  const nombres = Object.keys(defs).filter(n => !ES_VISTA.test(n) && !EXCLUIR.has(n));
+  if (nombres.length < 20) throw new Error(`sólo ${nombres.length} tablas descubiertas, parece incompleto`);
+  return nombres.sort();
+}
 
 const PAGE = 1000;
 
@@ -77,6 +119,21 @@ async function dumpTable(name) {
   const outDir = path.join(process.cwd(), 'backup');
   fs.mkdirSync(outDir, { recursive: true });
 
+  let TABLES, origen;
+  try {
+    TABLES = await descubrirTablas();
+    origen = 'descubiertas de PostgREST';
+    const nuevas = TABLES.filter(t => !RESERVA.includes(t));
+    if (nuevas.length) console.log(`  · tablas nuevas desde la última revisión: ${nuevas.join(', ')}`);
+    const idas = RESERVA.filter(t => !TABLES.includes(t));
+    if (idas.length) console.log(`  · ya no existen: ${idas.join(', ')}`);
+  } catch (e) {
+    TABLES = RESERVA;
+    origen = 'lista de reserva (falló el descubrimiento: ' + e.message + ')';
+    console.error(`  ⚠️  ${origen}`);
+  }
+  console.log(`${TABLES.length} tablas — ${origen}\n`);
+
   const summary = [];
   let failed = 0;
 
@@ -99,6 +156,7 @@ async function dumpTable(name) {
     tablas: summary.length,
     filas_totales: total,
     tablas_con_error: failed,
+    origen_del_listado: origen,
     nota: 'No incluye Storage (audios/imagenes) ni auth.users.',
     detalle: summary
   }, null, 2));

@@ -436,6 +436,47 @@ excepción al final, de modo que la subtransacción **revierte y no se toca ni u
 fila**. Es la forma de medir «cuántas filas habría borrado» sin borrarlas.
 Después de cada migración: recuento de filas intacto (22/10/3/11/23/15/17/5).
 
+### ✅ v1631 (11/08) — XSS almacenado, y la carrera de sesión resuelta de raíz
+
+**XSS almacenado en Círculos y en los perfiles profesionales.** El nombre y la
+descripción de un círculo —que escribe quien lo crea— y el nombre, la biografía
+y la especialidad de un profesional se insertaban en `innerHTML` **sin
+escapar**. Un círculo llamado `<img src=x onerror=…>` ejecutaba código en el
+navegador de todas las personas que abrieran la lista. Con el token de sesión
+en el almacenamiento, eso es tomar la cuenta entera: mensajes privados
+incluidos. Se corrigieron 8 sitios (perfiles profesionales, círculos, buzón y
+cuerpo de notificaciones) y se comprobó con cuatro cargas de ataque reales que
+quedan inertes. El resto de lo que marcaba el escáner eran valores de color
+(`col.label`, `hCol.label`), no contenido de personas.
+
+**La carrera de sesión, arreglada en un solo sitio.** v1630 había puesto
+`_sessionReady()` en tres pantallas, pero los puntos de lectura son ~100. Como
+`_veloLoudFetch` ya envuelve el `fetch` de supabase-js —y sólo ése—, la espera
+se puso ahí: la **primera** consulta a `/rest/v1` aguarda a que la sesión esté
+restaurada, y con eso quedan cubiertas todas las secciones a la vez.
+
+Tres cuidados, porque está en el camino de toda consulta: las llamadas a
+`/auth/v1` pasan derecho (si no, la restauración se bloquearía a sí misma); se
+espera una sola vez por carga, con o sin éxito (si no, quien no tiene cuenta
+reintentaría en cada consulta); y hay tope de 3 s (si la restauración se
+colgara, la app sigue como antes en vez de quedarse esperando).
+
+`test/session-gate.test.js` cubre los cuatro modos de fallar. **Correrlo antes
+de tocar `_veloLoudFetch` o `_sessionReady`.**
+
+Con esto, cerrar las secciones que faltan ya no necesita cambiar el cliente.
+
+### ✅ (11/08) — el backup decía «54/54» y dejaba fuera lo más sensible
+
+`backup.js` tenía la lista de tablas escrita a mano. Una lista a mano no avisa
+cuando se queda corta: dejaba fuera **`pro_patient_notes`** —las notas clínicas
+que los profesionales escriben sobre sus pacientes—, `data_requests` (las
+peticiones de acceso y borrado del RGPD), `deleted_accounts` y
+`velo_retention_policy`. Ahora las descubre del esquema que publica PostgREST,
+así que cualquier tabla nueva entra sola; sólo se excluye lo listado, con su
+motivo escrito, y si el descubrimiento fallara usa la lista de reserva **y
+avisa** en vez de guardar un backup incompleto en silencio.
+
 ### 🟡 QUEDA ABIERTO — la misma exposición en las secciones que faltan
 
 Sin cuenta todavía se pueden leer: `momentos` (15), `vibes` (17),
@@ -445,12 +486,25 @@ Sin cuenta todavía se pueden leer: `momentos` (15), `vibes` (17),
 reacciones. Lo privado **sí** está protegido: mensajes directos, sesiones,
 notificaciones, peticiones de guardián, bloqueos y perfiles dan 0 filas.
 
-**No se cerró en la misma tanda a propósito.** Vibes tiene 39 puntos de lectura,
-Momentos 16 y Círculos 14: hay que darles antes el mismo tratamiento que v1630
-le dio a los otros tres feeds (esperar a `_sessionReady()` antes de la primera
-consulta) o esas secciones aparecerán vacías al arrancar en frío. Es exactamente
-el error que este proyecto ya cometió dos veces. Orden correcto: cambio de
-cliente → desplegar → comprobar → recién ahí `revoke select … from anon`.
+**El cambio de cliente que hacía falta ya está hecho** (la espera en
+`_veloLoudFetch`, v1631). Sólo queda aplicar el SQL, cuando v1631 lleve un rato
+desplegado y se haya comprobado que las secciones cargan:
+
+```sql
+revoke select on public.momentos, public.vibes, public.vibe_comments,
+                 public.vibe_groups, public.vibe_reactions, public.circles,
+                 public.daily_responses_feed, public.dq_comments_feed,
+                 public.momento_comments_feed, public.bitacora_comments_full,
+                 public.reviews, public.guardian_presence,
+                 public.bitacora_reactions, public.bitacora_comment_reactions,
+                 public.dq_reactions, public.news_reactions,
+                 public.quote_reactions, public.bottle_reactions
+  from anon;
+```
+
+Verificar después con la clave pública: las 18 deben dar 401, y con sesión los
+feeds tienen que seguir completos. Se revierte con un `grant select` si algo
+apareciera vacío.
 
 ### ✅ Primera prueba automática del proyecto
 

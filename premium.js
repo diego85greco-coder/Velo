@@ -360,8 +360,41 @@ var _veloDbErrLog = [];
 function veloDbErrors(){ return _veloDbErrLog.slice(); }   // consola: veloDbErrors()
 try{ if(typeof window !== 'undefined') window.veloDbErrors = veloDbErrors; }catch(_){}
 
+/* ══════════════════════════════════════════════════════════════════════════
+   v1631 — LA PRIMERA CONSULTA ESPERA A QUE LA SESIÓN ESTÉ RESTAURADA
+
+   Al abrir la app en frío, `sbClient` existe antes de que Supabase termine de
+   restaurar la sesión desde el almacenamiento. Toda lectura que salga en ese
+   hueco viaja como `anon`. Mientras las vistas estaban abiertas a `anon` eso
+   no se notaba; desde que se cerraron (11/08) una lectura temprana devuelve
+   cero filas y la sección aparece vacía.
+
+   En v1630 se arregló llamando a `_sessionReady()` en tres pantallas (Sala de
+   Ayuda, Bitácora, Muro). Pero los puntos de lectura son ~100 repartidos por
+   Momentos, Vibes, Círculos, la Pregunta del día y los comentarios: parchear
+   uno por uno es justo el tipo de arreglo que deja la mitad sin hacer.
+
+   Como el `fetch` de supabase-js ya está envuelto acá —y **sólo** el de
+   supabase-js, es su opción `global.fetch`—, la espera se pone en este único
+   sitio y vale para todas las secciones a la vez.
+
+   TRES CUIDADOS, porque esto está en el camino de TODA consulta:
+     * Sólo se espera para `/rest/v1`. Las de `/auth/v1` pasan derecho: es
+       `_ensureSbSession` quien las hace, y esperarlas se bloquearía a sí mismo.
+     * Se espera UNA sola vez por carga (`_sbSessionDone`), con o sin éxito. Si
+       no, quien no tiene cuenta reintentaría el refresco en cada consulta.
+     * Con tope de 3 segundos. Si la restauración se colgara, la app sigue
+       —como hacía antes— en vez de quedarse esperando para siempre.
+   ══════════════════════════════════════════════════════════════════════════ */
 function _veloLoudFetch(input, init){
   var _url = (typeof input === 'string') ? input : (input && input.url) || '';
+  if(!_sbSessionDone && _url.indexOf('/rest/v1') >= 0){
+    return _sbWaitForSession().then(function(){ return _veloFetchAndLog(input, init, _url); });
+  }
+  return _veloFetchAndLog(input, init, _url);
+}
+
+function _veloFetchAndLog(input, init, _url){
   return fetch(input, init).then(function(res){
     if(res.ok) return res;
     // Clonar: el cuerpo se consume una sola vez y quien llamó lo necesita intacto.
@@ -408,16 +441,34 @@ function _veloLoudFetch(input, init){
    corta y no vuelve a costar nada. Si falla, se reintenta en la llamada
    siguiente en lugar de quedar bloqueado.
    ══════════════════════════════════════════════════════════════════════════ */
-var _sbSessionOk = false, _sbSessionP = null;
+var _sbSessionOk = false, _sbSessionP = null, _sbSessionDone = false, _sbSessionWaitP = null;
 function _sessionReady(){
   if(_sbSessionOk) return Promise.resolve(true);
   if(!_sbSessionP){
     _sbSessionP = Promise.resolve()
       .then(function(){ return (typeof _ensureSbSession === 'function') ? _ensureSbSession() : false; })
-      .then(function(ok){ _sbSessionOk = !!ok; _sbSessionP = null; return _sbSessionOk; })
-      .catch(function(){ _sbSessionP = null; return false; });
+      .then(function(ok){ _sbSessionOk = !!ok; _sbSessionDone = true; _sbSessionP = null; return _sbSessionOk; })
+      .catch(function(){ _sbSessionDone = true; _sbSessionP = null; return false; });
   }
   return _sbSessionP;
+}
+
+/* Espera acotada que usa `_veloLoudFetch` antes de la primera consulta REST.
+   A diferencia de `_sessionReady`, ésta se resuelve TAMBIÉN cuando no hay
+   sesión (quien no inició sesión no puede quedarse esperando) y como mucho
+   tarda 3 s. `_sessionReady` sigue reintentando en sus tres llamadas
+   explícitas; esto sólo evita que la carrera del arranque vacíe una pantalla. */
+function _sbWaitForSession(){
+  if(_sbSessionDone) return Promise.resolve();
+  if(!_sbSessionWaitP){
+    _sbSessionWaitP = new Promise(function(resolve){
+      var listo = false;
+      var fin = function(){ if(!listo){ listo = true; resolve(); } };
+      setTimeout(fin, 3000);
+      try{ _sessionReady().then(fin, fin); }catch(_){ fin(); }
+    });
+  }
+  return _sbSessionWaitP;
 }
 
 function _initSupabase(){
@@ -8724,7 +8775,7 @@ function _renderDmActivityItems(items){
       +'<span style="font-size:22px;flex-shrink:0;line-height:1.25">'+_avInline(it.av,22)+'</span>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.90);font-family:Jost,sans-serif;line-height:1.35;margin-bottom:3px">'+_escHtml(it.name)+' te escribió</div>'
-      +'<div style="font-size:14px;color:rgba(255,255,255,.40);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+it.text+'"')+'</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.40);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+_escHtml(it.text)+'"')+'</div>'
       +'<div style="font-size:12px;color:rgba(255,255,255,.25);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(it.ts)+'<span style="margin-left:8px;color:rgba(116,198,157,.55);font-size:11px">Ver →</span></div>'
       +'</div>'
       +'</div>';
@@ -8851,7 +8902,7 @@ function _renderVeloNotifs(notifs){
       +'<span style="font-size:22px;flex-shrink:0;line-height:1.25">'+icon+'</span>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:15px;font-weight:'+(unread?'700':'500')+';color:rgba(255,255,255,'+(unread?'.90':'.50')+');font-family:Jost,sans-serif;line-height:1.35;margin-bottom:3px">'+_escHtml(n.title||'')+'</div>'
-      +(n.body?'<div style="font-size:14px;color:rgba(255,255,255,.40);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+n.body+'"')+'</div>':'')
+      +(n.body?'<div style="font-size:14px;color:rgba(255,255,255,.40);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+_escHtml(n.body)+'"')+'</div>':'')
       +'<div style="font-size:12px;color:rgba(255,255,255,.25);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(n.created_at||'')+(canNav?'<span style="margin-left:8px;color:rgba(116,198,157,.55);font-size:11px">Ver →</span>':'')+'</div>'
       +'</div>'
       +'</div>';
@@ -11525,7 +11576,7 @@ function pRenderProfessionals(){
   function _proCard(p){
     var spec = p.spec || p.specialty || 'Especialista';
     var solidBadge = p.solidarity ? '<span style="font-size:12px;font-weight:700;color:#3a7bd5;background:rgba(58,123,213,.1);border:1px solid rgba(58,123,213,.25);border-radius:100px;padding:2px 8px;margin-left:6px">💙 Solidario/a</span>' : '';
-    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span>'+solidBadge+'</div><span class="pro-rate">$'+p.rate+' <span style="font-size:15px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:14px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenBookPro(\''+p.id+'\')">📅 Reservar</button></div></div></div></div>';
+    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+_escHtml(p.name)+'</span>'+solidBadge+'</div><span class="pro-rate">$'+p.rate+' <span style="font-size:15px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:14px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+_escHtml(p.bio)+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenBookPro(\''+p.id+'\')">📅 Reservar</button></div></div></div></div>';
   }
 
   // Waitlist CTA for users who can't afford sessions
@@ -11562,7 +11613,7 @@ function pOpenProSession(id){
       +'<strong>Política de protección de la plataforma:</strong> Queda estrictamente prohibido el intercambio de datos de contacto (teléfono, WhatsApp, Instagram, correo personal) entre usuarios y profesionales dentro de Velo. Todas las sesiones deben realizarse exclusivamente a través de la videollamada de Velo. El incumplimiento puede resultar en la suspensión de la cuenta.'
       +'</div></div>'
       // Pro info
-      +'<div class="p-card" style="padding:22px;margin-bottom:14px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><div style="font-size:52px">'+p.av+'</div><div><div style="font-size:18px;font-weight:700;color:var(--ink)">'+p.name+'</div><div style="font-size:15px;color:var(--sage3);font-weight:600">'+p.spec+'</div><div style="font-size:15px;color:var(--ink4);margin-top:2px">⭐ '+p.rating+' · '+p.sessions+' sesiones</div></div></div><p style="font-size:15px;color:var(--ink3);line-height:1.6;margin-bottom:18px">'+p.bio+'</p><div class="p-divider-line"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0"><span style="font-size:14px;color:var(--ink3)">Precio por sesión</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+p.rate+' '+p.currency+'</span></div><div class="p-divider-line"></div><div style="font-size:14px;color:var(--ink4);margin:12px 0">🔒 Pago seguro vía Stripe · Videollamada privada en Velo · 80% al profesional</div><button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStripeCheckout(\''+p.id+'\')">Reservar con Stripe 💳</button><div style="height:8px"></div><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo(\'professionals\')">Volver</button></div>';
+      +'<div class="p-card" style="padding:22px;margin-bottom:14px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><div style="font-size:52px">'+p.av+'</div><div><div style="font-size:18px;font-weight:700;color:var(--ink)">'+_escHtml(p.name)+'</div><div style="font-size:15px;color:var(--sage3);font-weight:600">'+_escHtml(p.spec)+'</div><div style="font-size:15px;color:var(--ink4);margin-top:2px">⭐ '+p.rating+' · '+p.sessions+' sesiones</div></div></div><p style="font-size:15px;color:var(--ink3);line-height:1.6;margin-bottom:18px">'+_escHtml(p.bio)+'</p><div class="p-divider-line"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0"><span style="font-size:14px;color:var(--ink3)">Precio por sesión</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+p.rate+' '+p.currency+'</span></div><div class="p-divider-line"></div><div style="font-size:14px;color:var(--ink4);margin:12px 0">🔒 Pago seguro vía Stripe · Videollamada privada en Velo · 80% al profesional</div><button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStripeCheckout(\''+p.id+'\')">Reservar con Stripe 💳</button><div style="height:8px"></div><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo(\'professionals\')">Volver</button></div>';
   }
   pGoTo('pro-session');
 }
@@ -18555,8 +18606,8 @@ function _circleCardHtml(c, memberCounts){
     +'<div style="display:flex;align-items:center;gap:13px">'
     +imgHtml
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
-    +'<div style="font-size:14px;color:var(--ink2);margin-bottom:5px">'+c.desc+'</div>'
+    +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(c.name)+'</div>'
+    +'<div style="font-size:14px;color:var(--ink2);margin-bottom:5px">'+_escHtml(c.desc)+'</div>'
     +'<div style="height:5px"></div>'
     +'<div style="display:flex;align-items:center;gap:6px">'
     +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':col.strip.replace(/[\d.]+\)$/,'0.85)'))+';border-radius:100px"></div></div>'
@@ -25149,8 +25200,8 @@ function pRenderInbox(){
       +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
       +'<div class="p-inbox-ic" style="background:'+(m.tipo==='encuesta'?'rgba(116,198,157,.12)':'var(--sage7)')+'">'+m.icon+'</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div>'
-      +'<div style="font-size:13px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(m.asunto)+'</div>'
+      +'<div style="font-size:13px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(m.extracto)+'</div>'
       +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+m.fecha+(hasCuerpo&&!isRead?' · <span style="color:var(--sage)">Toca para leer →</span>':'')+'</div>'
       +actionBtn
       +'</div>'+_xBtnL+'</div>';
@@ -38875,7 +38926,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1630;
+    var _BUILT_V = 1631;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
