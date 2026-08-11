@@ -2,7 +2,7 @@
 
 Documento para quien retome el desarrollo de esta aplicación (otra persona, otro
 asistente). Escrito el 07/08/2026, actualizado el 11/08/2026.
-Versión en producción **v1632**.
+Versión en producción **v1639**.
 
 Está ordenado por lo que más caro sale ignorar.
 
@@ -171,7 +171,24 @@ heyvelo.app  →  Vercel (estático + funciones en /api)
 | `supabase/migrations/*.sql` | Cada una explica el fallo, el arreglo y su verificación |
 | `LEGAL-*.md`, `LANZAMIENTO-CHECKLIST.md` | Estado legal y de lanzamiento |
 
-No hay build, ni tests, ni linter. Se edita y se despliega.
+No hay build ni linter: se edita y se despliega. **Sí hay pruebas**, y son
+rápidas — conviene correrlas antes de cada despliegue:
+
+```bash
+for t in test/*.test.js; do node "$t" || break; done
+```
+
+| Prueba | Qué protege |
+|---|---|
+| `crisis-detector` | 36 formas de expresar una crisis. Es la red de seguridad de la app |
+| `session-gate` | la espera de sesión que envuelve TODAS las consultas (v1631) |
+| `fechas-locales` | que los ánimos no se lean con la fecha en UTC |
+| `restore-order` | que la restauración no falle por claves ajenas |
+| `wrapped-paralelo` | que las consultas del Wrapped no vuelvan a ir en cadena |
+| `reacciones` | que ninguna reacción se quede sin su emoji |
+
+Todas leen el código **del propio `premium.js`** en vez de una copia, así que no
+pueden desincronizarse.
 
 ---
 
