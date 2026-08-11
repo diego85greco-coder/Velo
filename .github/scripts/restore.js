@@ -83,6 +83,36 @@ async function insertRows(table, rows) {
   return ok;
 }
 
+/**
+ * EL ORDEN DE RESTAURACIÓN IMPORTA  (corregido 11/08/2026)
+ *
+ * Antes se restauraba en orden alfabético (`files.sort()`). Hay 15 tablas con
+ * clave ajena contra `profiles`, y alfabéticamente `profiles` va DESPUÉS de casi
+ * todas: bookings, circles, contacts, diary_entries, direct_messages, momentos…
+ * Todas habrían fallado con violación de clave ajena. Lo mismo en la cadena de
+ * Vibes: `vibe_comments` depende de `vibes`, que alfabéticamente va última, y
+ * `vibe_comment_reactions` depende de `vibe_comments`.
+ *
+ * O sea: la restauración se rompía justo el día que hiciera falta usarla, que es
+ * el único día que importa. Nadie lo había notado porque restaurar de verdad no
+ * se había probado nunca.
+ *
+ * Las que no dependen de nadie van primero, en el orden en que hay que
+ * insertarlas; el resto sigue alfabético. Como la inserción usa
+ * `resolution=ignore-duplicates`, volver a pasar una tabla es inofensivo.
+ */
+// El orden de esta lista ES la dependencia: cada una antes de las que la citan.
+// `vibe_groups` va antes que `vibes`, y `vibes` antes que `vibe_comments`.
+const PRIMERO = ['profiles', 'vibe_groups', 'vibes', 'vibe_comments',
+                 'bitacora_posts', 'momentos', 'circles'];
+
+function ordenar(files) {
+  const nombre = f => f.replace(/\.json$/, '');
+  const cabeza = PRIMERO.map(t => t + '.json').filter(f => files.includes(f));
+  const resto  = files.filter(f => !cabeza.includes(f)).sort();
+  return cabeza.concat(resto);
+}
+
 (async function main() {
   const manifestPath = path.join(dir, '_manifest.json');
   if (fs.existsSync(manifestPath)) {
@@ -99,7 +129,7 @@ async function insertRows(table, rows) {
 
   let totalFaltan = 0, totalRestauradas = 0, errores = 0;
 
-  for (const f of files.sort()) {
+  for (const f of ordenar(files)) {
     const table = f.replace(/\.json$/, '');
     let rows;
     try { rows = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); }
