@@ -1,5 +1,5 @@
 -- ============================================================================
--- ⚠️ PREPARADA Y PROBADA, **NO APLICADA** (conector de Supabase caído el 11/08).
+-- ✅ APLICADA el 11/08/2026 y verificada contra producción.
 --
 -- EL CLIENTE ELIGE CONTRA QUÉ CUPO SE LE COBRA  (detectado 11/08/2026)
 --

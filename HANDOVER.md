@@ -1,7 +1,8 @@
 # Traspaso de Velo — lo que hay que saber antes de tocar nada
 
 Documento para quien retome el desarrollo de esta aplicación (otra persona, otro
-asistente). Escrito el 07/08/2026, versión en producción **v1626**.
+asistente). Escrito el 07/08/2026, actualizado el 11/08/2026.
+Versión en producción **v1632**.
 
 Está ordenado por lo que más caro sale ignorar.
 
@@ -182,6 +183,15 @@ No hay build, ni tests, ni linter. Se edita y se despliega.
 - **2 policies de UPDATE con `USING(true)`** en `help_posts` y `happy_posts`:
   a propósito. El guardián cierra el pedido de otra persona y las reacciones se
   escriben en el post ajeno.
+  ⚠️ **Corregido el 11/08 a medias, y hay que entender por qué.** El `USING(true)`
+  sigue —hace falta— pero esas policies estaban declaradas `to {anon,
+  authenticated}` y `anon` tenía el grant de UPDATE: sin cuenta se podía
+  reescribir el texto de los 22 pedidos de la Sala de Ayuda. Ahora son sólo para
+  `authenticated`, y **el permiso se limita por columna** (`taken`, `taken_by`,
+  `closed` en `help_posts`; `reactions`, `comments` en `happy_posts`). Así el
+  tercero puede hacer lo que necesita sin poder tocar el texto ajeno. Si alguna
+  vez el cliente necesita escribir otra columna de esas tablas, hay que añadirla
+  al `grant update (...)` — si no, falla con `42501`.
 - **`momentos` sin permiso de UPDATE para `authenticated`**: los corazones van
   por el RPC `increment_momento_hearts`. El update directo del cliente es código
   muerto.
@@ -304,20 +314,6 @@ los endpoints de suscripción, y ésos no son legibles.
 4. Rellenar los `[COMPLETAR]` de `LEGAL-DPIA.md` y del registro de tratamiento
    (datos societarios) y firmar la DPIA.
 
-**SQL escrito y probado, esperando a que vuelva el conector de Supabase.**
-Los cuatro se probaron levantando un PostgreSQL 16 local y replicando el
-esquema; ninguno se aplicó a ciegas. Aplicar **en este orden**:
-
-| # | Archivo | Qué arregla |
-|---|---|---|
-| 1 | `PENDIENTE_crear_tablas_que_faltan.sql` | «Vela por ti» y las notas clínicas escriben en tablas que no existen |
-| 2 | `PENDIENTE_borrado_notas_clinicas.sql` | el borrado de cuenta no alcanzaba `pro_patient_notes` ni las listas de otras personas |
-| 3 | `PENDIENTE_tope_global_ia.sql` | el cliente elige su propio cupo de IA (`kind` va en el cuerpo de la petición) |
-| 4 | el `revoke select` de la sección 8bis | Momentos, Vibes y Círculos se leen sin cuenta |
-
-El 4 ya no necesita cambio de cliente: la espera de sesión de v1631 lo cubre.
-Verificar cada uno con el bloque de comprobación que lleva al final.
-
 **Técnico:**
 5. Terminar la rotación VAPID (punto 7).
 6. Decidir y activar los plazos de conservación: están implementados pero
@@ -326,9 +322,7 @@ Verificar cada uno con el bloque de comprobación que lleva al final.
 7. Circuito de respuesta y apelación de moderación (obligación DSA).
 8. Probar la app **usándola**. Todo lo verificado hasta ahora fue contra la base
    de datos. Bugs visuales, de flujo o del PWA en iPhone: sin cubrir.
-9. Cerrar a los anónimos Momentos, Vibes, Círculos y los feeds de comentarios
-   (ver 8bis). Requiere antes el cambio de cliente; el SQL es de tres líneas,
-   el trabajo está en auditar los ~100 puntos de lectura.
+9. ~~Cerrar a los anónimos Momentos, Vibes y Círculos~~ — hecho el 11/08.
 10bis. `script.js`, `app.html` y `velo.js` están **huérfanos**: nada del
    repositorio los enlaza (`index.html` redirige a `app-premium.html`, y el
    service worker sólo cachea ése). Son ~1 MB de código de la aplicación
@@ -521,7 +515,50 @@ de 21:00 a medianoche, el emoji que salía bajo «Lun» era el del domingo, y el
 ánimo registrado ese mismo día aparecía vacío. Por eso llevaba meses sin que
 nadie lo viera: de día funciona. `test/fechas-locales.test.js` lo fija.
 
-### 🟡 QUEDA ABIERTO — la misma exposición en las secciones que faltan
+### ✅ CERRADO DEL TODO (11/08) — sin cuenta ya no se lee nada
+
+Los cuatro SQL pendientes se aplicaron y se verificaron contra producción:
+crear `solidarity_requests` y `pro_patient_notes`, completar el borrado de
+cuenta, poner techo al cupo de IA, y cerrar las 18 cosas que seguían abiertas
+(Momentos, Vibes, Círculos, respuestas del día, feeds de comentarios, reseñas,
+presencia de guardianes y reacciones).
+
+**Barrido final como `anon`: no queda ninguna tabla ni vista de `public` que
+devuelva una sola fila.** Y por HTTP con la clave pública del repositorio, 401
+en todo.
+
+Lo que sigue funcionando sin cuenta, comprobado uno por uno porque tiene que
+seguir así: el formulario de contacto (`contacts`), el registro anti-bot
+(`bot_attempts`) y la aceptación de términos al darse de alta
+(`terms_acceptance`).
+
+«Vela por ti» ya guarda: se probó el `insert` con el payload exacto que manda
+`pSendVela`, y el intento de escribir una nota clínica a nombre de otro
+profesional se rechaza. Recuentos intactos: 22/10/3/15/17/5/11.
+
+### 📖 Cómo se verificó, para repetirlo
+
+Cada cierre de permiso se midió **antes y después, con los dos roles**,
+simulando lo que hace PostgREST:
+
+```sql
+set local role anon;              -- o authenticated
+perform set_config('request.jwt.claims',
+  json_build_object('sub','<uid real>','role','authenticated')::text, true);
+select count(*) from public.<lo_que_sea>;
+```
+
+Y las escrituras se midieron dentro de un bloque que lanza una excepción al
+final, de modo que la subtransacción revierte: así se sabe **cuántas filas
+habría borrado** un ataque sin borrar ninguna. Ese es el método; si hay que
+tocar permisos otra vez, usarlo.
+
+Cuando el conector de Supabase no esté disponible, se puede probar SQL
+levantando un PostgreSQL local (`initdb` + `pg_ctl`, hay que correrlo como el
+usuario `postgres`) y replicando las tablas implicadas más `auth.uid()` y
+`auth.jwt()`. Así se probaron estas cuatro migraciones antes de aplicarlas.
+
+### ~~🟡 QUEDA ABIERTO — la misma exposición en las secciones que faltan~~ (resuelto arriba)
 
 Sin cuenta todavía se pueden leer: `momentos` (15), `vibes` (17),
 `vibe_comments`, `vibe_groups`, `vibe_reactions`, `circles` (5),

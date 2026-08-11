@@ -1,7 +1,6 @@
 -- ============================================================================
--- ⚠️ PREPARADA Y PROBADA, **NO APLICADA** (el conector de Supabase estaba
---    caído el 11/08). Aplicar en cuanto vuelva, y DESPUÉS de
---    `PENDIENTE_crear_tablas_que_faltan.sql`.
+-- ✅ APLICADA el 11/08/2026 y verificada contra producción.
+--    Se aplicó después de 20260811e, que crea la tabla.
 --
 --    Nota de orden: al escribir esto se creía que `pro_patient_notes` existía.
 --    No existe — nunca se creó, y por eso la sincronización de notas de los

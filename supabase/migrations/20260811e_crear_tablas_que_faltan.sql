@@ -1,7 +1,6 @@
 -- ============================================================================
--- ⚠️ PREPARADA Y PROBADA, **NO APLICADA** (conector de Supabase caído el 11/08).
---    APLICAR ANTES que `PENDIENTE_borrado_notas_clinicas.sql`, que da por hecho
---    que `pro_patient_notes` existe.
+-- ✅ APLICADA el 11/08/2026 y verificada contra producción.
+--    Se aplicó antes que 20260811f, que da por hecho que pro_patient_notes existe.
 --
 -- DOS TABLAS QUE EL CLIENTE USA Y QUE NUNCA SE CREARON  (detectado 11/08/2026)
 --
