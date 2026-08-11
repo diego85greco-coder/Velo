@@ -3645,7 +3645,7 @@ async function pOpenMonthlyWrapped(){
       + '<div style="font-size:72px;line-height:1;margin-bottom:16px;filter:drop-shadow(0 4px 20px rgba(116,198,157,.40))">✨</div>'
       + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:32px;color:#fff;line-height:1.2;margin-bottom:14px;padding:0 12px">Fue '+scoreLabel+'</div>'
       + '<div style="font-size:14px;color:rgba(200,240,215,.72);line-height:1.6;font-family:Jost,sans-serif;padding:0 12px;margin-bottom:26px">'+_escHtml(uName)+', apareciste, registraste, compartiste. Este mes también fuiste vos cuidándote 💚</div>'
-      + '<div style="width:100%;max-width:320px;padding:14px 18px;background:rgba(180,255,220,.10);border:1px solid rgba(180,255,220,.28);border-radius:16px"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(180,255,220,.72);text-transform:uppercase;margin-bottom:6px">Próximo capítulo</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:#fff;line-height:1.35">Nos vemos en '+mNames[(mo+1)%12]+' 🌿</div></div>'
+      + '<div style="width:100%;max-width:320px;padding:14px 18px;background:rgba(180,255,220,.10);border:1px solid rgba(180,255,220,.28);border-radius:16px"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(180,255,220,.72);text-transform:uppercase;margin-bottom:6px">Próximo capítulo</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:#fff;line-height:1.35">Tu resumen de '+mNames[(mo+1)%12].toLowerCase()+', el 1 de '+mNames[(mo+2)%12].toLowerCase()+' 🌿</div></div>'
   });
   var slideHtml = slides.map(function(s, i){
     return '<div class="wrapped-slide" data-i="'+i+'" style="min-width:calc(100% - 16px);scroll-snap-align:center;background:'+s.bg+';border-radius:26px;padding:44px 24px 60px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:560px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)">'
@@ -4039,7 +4039,7 @@ async function pOpenAnnualWrapped(){
       + '<div style="font-size:82px;line-height:1;margin-bottom:20px;filter:drop-shadow(0 4px 20px rgba(220,180,80,.45))">🎊</div>'
       + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:36px;color:#fff;line-height:1.15;margin-bottom:18px;padding:0 12px">Un año caminando con vos</div>'
       + '<div style="font-size:14.5px;color:rgba(220,215,240,.75);line-height:1.6;font-family:Jost,sans-serif;padding:0 12px;margin-bottom:30px">'+_escHtml(uName)+', gracias por confiarle a Velo tus emociones durante '+year+'. Cada registro fue un gesto de cuidarte 💚</div>'
-      + '<div style="width:100%;max-width:320px;padding:14px 18px;background:rgba(220,180,80,.10);border:1px solid rgba(220,180,80,.28);border-radius:16px"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(240,220,180,.72);text-transform:uppercase;margin-bottom:6px">Próximo capítulo</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:20px;color:#fff;line-height:1.35">Nos vemos en '+(year+1)+' 🌿</div></div>'
+      + '<div style="width:100%;max-width:320px;padding:14px 18px;background:rgba(220,180,80,.10);border:1px solid rgba(220,180,80,.28);border-radius:16px"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(240,220,180,.72);text-transform:uppercase;margin-bottom:6px">Próximo capítulo</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:20px;color:#fff;line-height:1.35">Tu resumen de '+(year+1)+', el 20 de diciembre 🌿</div></div>'
   });
   var slideHtml = slides.map(function(s){
     return '<div class="wrapped-slide" style="min-width:calc(100% - 16px);scroll-snap-align:center;background:'+s.bg+';border-radius:26px;padding:44px 24px 60px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:560px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.55)">'
@@ -38926,7 +38926,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1632;
+    var _BUILT_V = 1633;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
