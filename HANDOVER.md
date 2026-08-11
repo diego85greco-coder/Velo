@@ -515,6 +515,30 @@ de 21:00 a medianoche, el emoji que salía bajo «Lun» era el del domingo, y el
 ánimo registrado ese mismo día aparecía vacío. Por eso llevaba meses sin que
 nadie lo viera: de día funciona. `test/fechas-locales.test.js` lo fija.
 
+### 🟡 PENDIENTE DE APLICAR — reacciones de las vibes instantáneas
+
+`supabase/migrations/PENDIENTE_reacciones_vibes_instantaneas.sql`, escrita y
+probada en local, sin aplicar porque el conector se cayó.
+
+Al abrir «Quién te acompañó» en un momento, quien había reaccionado salía en
+«pasaron a verla» y no en «te acompañaron». No era el cliente: RLS filtraba la
+consulta entera.
+
+Las vibes nacieron sólo dentro de grupos, así que todas las políticas hacían
+`join vibe_groups on g.id = v.group_id`. Cuando se añadieron las **instantáneas**
+—que no tienen grupo y dejan `group_id` en NULL— la migración 20260703b
+actualizó `vibes_select` y `vibes_insert`, y las de comentarios nacieron ya
+contemplándolas. **`vibe_reactions_select` fue la única que se quedó atrás.**
+Con `group_id` NULL el INNER JOIN no devuelve nada y las reacciones quedan
+invisibles para todos, incluida la autora. Efecto curioso: en un momento
+instantáneo se ven los comentarios, e incluso las reacciones *a* los
+comentarios, pero no las reacciones al momento.
+
+El arreglo no copia los tres casos de `vibes_select` —duplicar esa lógica es lo
+que produjo el desajuste—: pregunta «¿puedo ver la vibe?» y deja que RLS de
+`vibes` responda. Probado con seis combinaciones; la de «ajena en instantánea
+privada» sigue dando 0, o sea que no abre nada.
+
 ### ✅ CERRADO DEL TODO (11/08) — sin cuenta ya no se lee nada
 
 Los cuatro SQL pendientes se aplicaron y se verificaron contra producción:
