@@ -532,10 +532,10 @@ de 21:00 a medianoche, el emoji que salía bajo «Lun» era el del domingo, y el
 ánimo registrado ese mismo día aparecía vacío. Por eso llevaba meses sin que
 nadie lo viera: de día funciona. `test/fechas-locales.test.js` lo fija.
 
-### 🟡 PENDIENTE DE APLICAR — reacciones de las vibes instantáneas
+### ✅ (11/08) — reacciones de las vibes instantáneas
 
-`supabase/migrations/PENDIENTE_reacciones_vibes_instantaneas.sql`, escrita y
-probada en local, sin aplicar porque el conector se cayó.
+`supabase/migrations/20260811i_reacciones_vibes_instantaneas.sql`. Probada en
+local y aplicada desde el editor SQL, porque el conector MCP estaba caído.
 
 Al abrir «Quién te acompañó» en un momento, quien había reaccionado salía en
 «pasaron a verla» y no en «te acompañaron». No era el cliente: RLS filtraba la

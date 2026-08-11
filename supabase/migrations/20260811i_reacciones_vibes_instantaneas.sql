@@ -1,5 +1,6 @@
 -- ============================================================================
--- ⚠️ PREPARADA Y PROBADA, **NO APLICADA** (el conector de Supabase estaba caído).
+-- ✅ APLICADA el 11/08/2026 desde el editor SQL (el conector MCP estaba caído).
+--    Confirmada: `pg_policies` ya no muestra el join contra `vibe_groups`.
 --
 -- LAS REACCIONES A UNA VIBE INSTANTÁNEA NO SE VEÍAN NUNCA  (11/08/2026)
 --
