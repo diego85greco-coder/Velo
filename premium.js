@@ -23502,26 +23502,55 @@ async function _storyOpenActivity(vibeId){
     var rxByUser = {}; reacts.forEach(function(r){ rxByUser[r.user_id]=r.reaction; });
     var rxEmoji = {}, rxLabel = {};
     VIBE_REACTIONS.forEach(function(r){ rxEmoji[r.key]=r.emoji; rxLabel[r.key]=r.label; });
-    var seenIds = {}; views.forEach(function(v){ seenIds[v.viewer_id]=1; });
-    var missing = reacts.map(function(r){ return r.user_id; }).filter(function(id){ return id && !seenIds[id]; });
-    missing = missing.filter(function(v,i,a){ return a.indexOf(v)===i; });
-    var nameMap = {};
-    if(missing.length){ try{ var pr = await sbClient.from('profiles').select('id,nombre,username,avatar').in('id', missing); (pr.data||[]).forEach(function(p){ nameMap[p.id]={n:p.nombre||p.username||'Alguien', a:(p.avatar&&!String(p.avatar).startsWith('data:'))?p.avatar:''}; }); }catch(_){} }
+    /* v1643 — quien tiene el MODO INCÓGNITO puesto se muestra como anónimo.
+       `vibe_views` guarda el nombre y el avatar en el momento de mirar, así que
+       la fila los mostraba aunque después la persona activara el incógnito. Y
+       desde v1642 encima su perfil se abría de un toque.
+
+       Se consulta `incognito` para TODA la gente que aparece —quien reaccionó y
+       quien sólo miró—, en la misma consulta que ya se hacía para los nombres
+       que faltaban. Antes se pedían sólo los que no estaban en `views`; ahora se
+       piden todos, que sigue siendo UNA sola consulta y de paso trae el nombre
+       actual en vez del que quedó congelado al mirar.
+
+       Enmascarar acá es suficiente: `_storyActivityRow` ya trata «Usuario
+       Anónimo» como no pulsable, así que el perfil tampoco se abre. */
+    var nameMap = {}, incognito = {};
+    var todos = reacts.map(function(r){ return r.user_id; })
+      .concat(views.map(function(v){ return v.viewer_id; }))
+      .filter(function(id){ return !!id; });
+    todos = todos.filter(function(v,i,a){ return a.indexOf(v)===i; });
+    if(todos.length){
+      try{
+        var pr = await sbClient.from('profiles').select('id,nombre,username,avatar,incognito').in('id', todos);
+        (pr.data||[]).forEach(function(p){
+          nameMap[p.id] = { n:p.nombre||p.username||'Alguien',
+                            a:(p.avatar&&!String(p.avatar).startsWith('data:'))?p.avatar:'' };
+          if(p.incognito === true) incognito[p.id] = 1;
+        });
+      }catch(_){}
+    }
     var listEl = document.getElementById('storyActivityList'); if(!listEl) return;
     // Separar: los que TE ACOMPAÑARON (reaccionaron) van primero y con cariño;
     // los que solo pasaron a verla, después y suave (sin ansiedad de "visto").
     var reactedSet = {}; reacts.forEach(function(r){ reactedSet[r.user_id]=1; });
     var _nameOf = function(uid){
+      if(incognito[uid]) return { a:'🧑', n:'Usuario Anónimo', ts:null, oculto:true };
       var v = views.filter(function(x){ return x.viewer_id===uid; })[0];
-      if(v) return { a:v.viewer_av||'🧑', n:v.viewer_name||'Alguien', ts:v.created_at };
-      var nm = nameMap[uid]||{n:'Alguien',a:''};
+      var nm = nameMap[uid];
+      if(v) return { a:(nm&&nm.a)||v.viewer_av||'🧑', n:(nm&&nm.n)||v.viewer_name||'Alguien', ts:v.created_at };
+      nm = nm||{n:'Alguien',a:''};
       return { a:nm.a||'🧑', n:nm.n, ts:null };
     };
     var accompanied = reacts.map(function(r){
       var nm = _nameOf(r.user_id);
-      return _storyActivityRow(nm.a, nm.n, rxEmoji[r.reaction]||'💚', nm.ts, false, rxLabel[r.reaction], r.user_id);
+      return _storyActivityRow(nm.a, nm.n, rxEmoji[r.reaction]||'💚', nm.ts, false, rxLabel[r.reaction],
+                               nm.oculto ? '' : r.user_id);
     });
-    var justViewed = views.filter(function(v){ return !reactedSet[v.viewer_id]; }).map(function(v){ return _storyActivityRow(v.viewer_av, v.viewer_name, '', v.created_at, true, '', v.viewer_id); });
+    var justViewed = views.filter(function(v){ return !reactedSet[v.viewer_id]; }).map(function(v){
+      var nm = _nameOf(v.viewer_id);
+      return _storyActivityRow(nm.a, nm.n, '', v.created_at, true, '', nm.oculto ? '' : v.viewer_id);
+    });
     var out = '';
     if(accompanied.length){
       out += '<div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(150,230,185,.9);margin:2px 0 8px">💚 Te acompañaron · '+accompanied.length+'</div>' + accompanied.join('');
@@ -39023,7 +39052,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1642;
+    var _BUILT_V = 1643;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
