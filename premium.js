@@ -23514,7 +23514,7 @@ async function _storyOpenActivity(vibeId){
       out += '<div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(150,230,185,.9);margin:2px 0 8px">💚 Te acompañaron · '+accompanied.length+'</div>' + accompanied.join('');
     }
     if(justViewed.length){
-      out += '<div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(180,220,195,.5);margin:'+(accompanied.length?'16px':'2px')+' 0 8px">👀 Pasaron a verla · '+justViewed.length+'</div>' + justViewed.join('');
+      out += '<div style="font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(180,220,195,.5);margin:'+(accompanied.length?'16px':'2px')+' 0 8px">👀 Pasaron a verlo · '+justViewed.length+'</div>' + justViewed.join('');
     }
     listEl.innerHTML = out || '<div style="text-align:center;padding:24px;color:rgba(200,230,215,.5);font-family:Jost,sans-serif;font-size:13px;font-style:italic">Todavía nadie pasó por tu momento 🌱</div>';
   }catch(e){ var le=document.getElementById('storyActivityList'); if(le) le.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(220,120,120,.7);font-family:Jost,sans-serif">No se pudo cargar la actividad</div>'; }
@@ -39010,7 +39010,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1640;
+    var _BUILT_V = 1641;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
