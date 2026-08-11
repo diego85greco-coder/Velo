@@ -24149,6 +24149,11 @@ function _vibeSummaryPhrase(counts){
   });
   if(total === 0) return '';
   if(distinct >= 5) return 'Recibió mucho amor 💚';
+  /* v1637 — este mapa también cubría sólo las 8 reacciones de la fila rápida.
+     Para las otras quince devolvía cadena vacía, así que un momento cuya
+     reacción principal fuera Orgullo, Aplausos o Un abrazo grande se quedaba
+     sin resumen. Ahora, si no hay frase redactada, se arma con la etiqueta y el
+     emoji de la propia reacción — que salen de VIBE_REACTIONS. */
   var phrase = {
     alegria: 'Recibió mucha alegría 🌞',
     abrazo: 'Muchos abrazos 🤗',
@@ -24158,7 +24163,11 @@ function _vibeSummaryPhrase(counts){
     me_hace_bien: 'Le hizo bien a muchos ✨',
     animos: 'Muchos ánimos 💚',
     me_inspira: 'Inspiró a muchos 🌱'
-  }[dominant] || '';
+  }[dominant];
+  if(!phrase){
+    var d = VIBE_REACTIONS.filter(function(r){ return r.key === dominant; })[0];
+    phrase = d ? ('Sobre todo: '+d.label+' '+d.emoji) : '';
+  }
   return phrase;
 }
 function _vibeCardHtml(v){
@@ -24687,19 +24696,33 @@ async function pVibeReact(vibeId, reactionKey, btnEl){
       await sbClient.from('vibe_reactions').upsert({ vibe_id: vibeId, user_id: myId, reaction: reactionKey }, { onConflict: 'vibe_id,user_id' });
       // Toast personalizado según reacción — "Enviaste un abrazo", etc.
       try{
-        var _sent = {
-          alegria:     ['🌞','Enviaste alegría'],
-          abrazo:      ['🤗','Enviaste un abrazo'],
-          acompano:    ['🕊️','Le dijiste "te acompaño"'],
-          fuerzas:     ['💪','Le mandaste fuerzas'],
-          gracias:     ['🙏','Le agradeciste por compartir'],
-          me_hace_bien:['✨','Le dijiste que te hace bien'],
-          animos:      ['💚','Le mandaste ánimos'],
-          me_inspira:  ['🌱','Le dijiste que te inspira']
-        }[reactionKey] || ['💚','Enviaste tu reacción'];
-        pToast(_sent[0], _sent[1]);
+        /* v1637 — el emoji sale de VIBE_REACTIONS, no de una lista aparte.
+           Antes había acá un mapa escrito a mano con OCHO entradas: las de la
+           fila rápida. Las otras quince (Orgullo, Con vos, Aplausos, Uf…)
+           caían al valor por defecto, así que reaccionabas con 🏳️‍🌈 y la
+           pantalla se llenaba de corazones verdes.
+
+           El texto sigue siendo el redactado a mano donde lo hay; para el resto
+           se usa la etiqueta de la propia reacción. El emoji, en cambio, se
+           resuelve SIEMPRE desde la lista: es la única fuente de verdad y así
+           no se puede volver a desincronizar al añadir reacciones nuevas. */
+        var _rxDef = (typeof VIBE_REACTIONS !== 'undefined')
+          ? VIBE_REACTIONS.filter(function(r){ return r.key === reactionKey; })[0]
+          : null;
+        var _emoji = (_rxDef && _rxDef.emoji) || '💚';
+        var _frase = {
+          alegria:     'Enviaste alegría',
+          abrazo:      'Enviaste un abrazo',
+          acompano:    'Le dijiste "te acompaño"',
+          fuerzas:     'Le mandaste fuerzas',
+          gracias:     'Le agradeciste por compartir',
+          me_hace_bien:'Le dijiste que te hace bien',
+          animos:      'Le mandaste ánimos',
+          me_inspira:  'Le dijiste que te inspira'
+        }[reactionKey] || (_rxDef ? 'Enviaste «'+_rxDef.label+'»' : 'Enviaste tu reacción');
+        pToast(_emoji, _frase);
         // Burst animado por toda la pantalla
-        _vibeReactBurst(_sent[0]);
+        _vibeReactBurst(_emoji);
       }catch(_){}
       // Avisarle al dueño del momento (Actividad) — v1375
       // v1380: incluir CUÁL fue la reacción (emoji + label) en la notif
@@ -38970,7 +38993,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1636;
+    var _BUILT_V = 1637;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
