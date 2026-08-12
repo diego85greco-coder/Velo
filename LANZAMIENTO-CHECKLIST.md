@@ -147,10 +147,16 @@ correo 11 se cortan.
 Si la base no responde, se **deja pasar**: no vale cortarle la IA a todo el
 mundo por un fallo de conexión.
 
-### 10. Obligaciones de moderación (DSA)
-Con usuarios en la UE y contenido publicado por terceros, conviene: explicar por
-qué se retira un contenido, permitir apelar, y publicar un punto de contacto.
-Ya existe el sistema de reportes — falta el circuito de respuesta.
+### ~~10. Obligaciones de moderación (DSA)~~ ✅ RESUELTO (v1648)
+Al moderar se avisa al **autor** con el motivo, y desde ese mismo aviso puede
+pedir revisión. «Contenido OK» no genera aviso; sin autor identificado no se
+inventa destinatario. La apelación entra en `reportes` con
+`categoria:'apelacion'`, que es la bandeja que el panel ya lista — sin tabla ni
+pantalla nuevas. El punto de contacto (`consultas@heyvelo.app`) ya está
+publicado en la pantalla de Contacto.
+
+Cubierto por `test/dsa-moderacion.test.js`, incluido que un guardado fallido
+**no** se celebre.
 
 ---
 
