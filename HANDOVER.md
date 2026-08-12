@@ -347,15 +347,28 @@ los endpoints de suscripción, y ésos no son legibles.
    cualquiera que audite el proyecto — y a las herramientas: la mitad de los
    falsos positivos de esta revisión salieron de ahí.
 
-11. **El límite diario de la Sala de Ayuda no funciona.** `help_posts_daily_limit`
-   (4 al día, ilimitado con Plus) convive con `help_insert_auth`, que permite
-   `true`; las policies permisivas se combinan con OR, así que el límite nunca
-   se aplica. Arreglarlo es fácil —mover el conteo a una función
-   `SECURITY DEFINER` y dejarla como única policy de INSERT— pero **no se hizo
-   sin preguntar**: activarlo significa que una persona que ya publicó 4 veces
-   en 24 h no puede pedir ayuda una quinta. En una app de salud mental eso es
-   una decisión del titular, no técnica. (Si se toca: la subconsulta va sí o sí
-   dentro de una función definer, o vuelve el `42P17` del punto 5bis.)
+11. ~~El límite diario de la Sala de Ayuda no funciona.~~ **FALSO — lo comprobé
+   mal el 11/08 y lo dejé escrito acá.** Sí funciona: al quinto pedido en 24 h
+   la base lo rechaza con
+   `new row violates row-level security policy "help_posts_daily_limit"`.
+
+   **La lección importa más que el dato.** Yo razoné que `help_posts_daily_limit`
+   convivía con `help_insert_auth` (que permite `true`) y que, como las policies
+   se combinan con OR, el límite quedaba anulado. Eso vale para las
+   **PERMISSIVE**. `help_posts_daily_limit` es **RESTRICTIVE**, y las
+   restrictivas se combinan con **AND**: acotan aunque otra permita.
+
+   Antes de afirmar que una policy no se aplica, mirar la columna `permissive`
+   de `pg_policies` — y mejor todavía, probarlo:
+
+   ```sql
+   set local role authenticated;
+   perform set_config('request.jwt.claims', '{"sub":"<uid>","role":"authenticated"}', true);
+   insert into public.help_posts(...) values (...);   -- ¿al quinto falla?
+   ```
+
+   Lo mismo pasa con `ia_usage_daily_limit` (25 llamadas de IA al día): también
+   es RESTRICTIVE, también se aplica.
 
 ---
 

@@ -7150,11 +7150,14 @@ async function _savePushSubscriptionToSupabase(sub){
       sub: sub,
       tz: _tz || 'America/Argentina/Buenos_Aires',
       clientPubKey: _VAPID_PUBLIC_KEY,
-      buildV: 1325,
+      // v1646: iba escrito a mano como 1325. Este campo existe para que el
+      // servidor detecte suscripciones viejas, y congelado en un número fijo no
+      // podía detectar nada: llevaba meses diciendo 1325 en cada envío.
+      buildV: (typeof window !== 'undefined' && window._VELO_BUILD) || 0,
     });
     var {error:_pErr} = await sbClient.from('profiles').update({ push_subscription: _payload }).eq('id', _uid);
     if(_pErr) console.warn('[push sub save]', _pErr.message);
-    else console.log('[push sub save] OK for uid', _uid, 'tz:', _tz, 'buildV:1325');
+    else console.log('[push sub save] OK for uid', _uid, 'tz:', _tz, 'buildV:', (typeof window!=='undefined' && window._VELO_BUILD)||0);
   }catch(e){ console.warn('[push sub save]', e && e.message); }
 }
 
@@ -39134,7 +39137,10 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1646;
+    var _BUILT_V = 1647;
+    // v1646: se expone para que la suscripción push registre la versión REAL.
+    // No es un sexto sitio que mantener: lee de _BUILT_V, no repite el número.
+    try{ window._VELO_BUILD = _BUILT_V; }catch(_){}
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
