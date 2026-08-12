@@ -444,7 +444,13 @@ function _veloFetchAndLog(input, init, _url){
            ══════════════════════════════════════════════════════════════════ */
         try{
           var _esEscritura = (_method === 'POST' || _method === 'PATCH' || _method === 'PUT' || _method === 'DELETE');
-          if(_esEscritura && _url.indexOf('/rest/v1') >= 0 && res.status !== 409){
+          /* v1651 — la telemetría no le habla al usuario.
+             Estas tablas se escriben SOLAS, en segundo plano, sin que la persona
+             haya pedido nada. Un fallo ahí seguía registrándose en veloDbErrors()
+             —que es donde tiene que verse— pero avisarlo en pantalla sería un
+             cartel de «no se pudo guardar» por algo que nadie hizo. */
+          var _enSilencio = /\/rest\/v1\/(usage_events|ia_usage|velo_api_usage|bot_attempts|vibe_views|push_history|guardian_presence|circle_members)\b/.test(_url);
+          if(_esEscritura && !_enSilencio && _url.indexOf('/rest/v1') >= 0 && res.status !== 409){
             var _ahora = Date.now();
             if(_ahora - _veloUltimoAvisoEscritura > 6000){
               _veloUltimoAvisoEscritura = _ahora;
@@ -39272,7 +39278,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1650;
+    var _BUILT_V = 1651;
     // v1646: se expone para que la suscripción push registre la versión REAL.
     // No es un sexto sitio que mantener: lee de _BUILT_V, no repite el número.
     try{ window._VELO_BUILD = _BUILT_V; }catch(_){}

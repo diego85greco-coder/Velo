@@ -98,6 +98,14 @@ const AUTH = 'https://x.supabase.co/auth/v1/token';
       'el login ya muestra su propio mensaje');
   }
 
+  // ── La telemetría no le habla al usuario ─────────────────────────────────
+  for (const t of ['usage_events', 'ia_usage', 'vibe_views', 'bot_attempts']) {
+    const r = await escenario({ metodo: 'POST', url: `https://x.supabase.co/rest/v1/${t}`, status: 500 });
+    comprobar(`${t} falla en silencio`, r.avisos.length === 0,
+      'se escribe sola, en segundo plano: nadie pidió nada');
+    comprobar(`  …pero queda registrada`, r.registro.length === 1);
+  }
+
   // ── El acelerador ────────────────────────────────────────────────────────
   {
     const r = await escenario({ metodo: 'POST', url: REST, status: 500, esperaDelay: true });
