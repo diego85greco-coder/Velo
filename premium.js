@@ -10930,7 +10930,7 @@ async function pConfirmAskGuardian(){
         +'</div>'
         +'<textarea id="gdNoRespMsg" rows="3" placeholder="Escribí tu mensaje para '+_escHtml(_noRespGuardianName)+'…" maxlength="500" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border2);border-radius:12px;font-size:15px;font-family:\'Jost\',sans-serif;background:var(--cream);color:var(--ink);resize:none;outline:none;margin-bottom:10px"></textarea>'
         +'<div style="display:flex;flex-direction:column;gap:8px">'
-        +'<button id="gdSendNoRespBtn" style="padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">💌 Enviar mensaje al Buzón Velo</button>'
+        +'<button id="gdSendNoRespBtn" style="padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:15px;font-weight:700;color:var(--on-sage);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">💌 Enviar mensaje al Buzón Velo</button>'
         +'<button id="gdCancelNoRespBtn" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:15px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Intentar en otro momento</button>'
         +'</div></div>';
       // Wire buttons after DOM insertion
@@ -27664,7 +27664,7 @@ function pSendKindMessageToInbox(peerId, peerName, peerAv){
       + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);font-style:italic">💌 Mensaje al Buzón Velo</div>'
       + '<div style="font-size:12.5px;color:var(--ink4);margin-top:4px;font-family:Jost,sans-serif;line-height:1.5">Cuando <strong>'+_escHtml(peerName||'este contacto')+'</strong> no está disponible, podés dejarle un mensaje de aliento acá.<br>Le llega a su buzón privado para leerlo cuando pueda.</div>'
     + '</div>'
-    + '<textarea id="kindMsgInput" placeholder="Un mensaje de cariño, apoyo, agradecimiento…" rows="4" maxlength="600" style="width:100%;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:14px;color:var(--ink);font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5;margin-bottom:12px"></textarea>'
+    + '<textarea id="kindMsgInput" placeholder="Un mensaje de cariño, apoyo, agradecimiento…" rows="4" maxlength="600" style="width:100%;padding:12px 14px;background:var(--cream);border:1.5px solid var(--border);border-radius:14px;color:var(--ink);font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5;margin-bottom:12px"></textarea>'
     + '<div style="display:flex;gap:8px">'
       + '<button onclick="document.getElementById(\'kindMsgOv\').remove()" style="flex:1;padding:12px;background:rgba(0,0,0,.05);border:1.5px solid var(--border);border-radius:12px;color:var(--ink4);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Cancelar</button>'
       + '<button onclick="_doSendKindMsg('+_jsAttr(peerId)+','+_jsAttr(peerName||'')+','+_jsAttr(myName)+','+_jsAttr(myAv)+')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">💌 Enviar al Buzón</button>'
@@ -29069,7 +29069,7 @@ function pSelectBookDate(dateStr){
   slotsEl.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--ink4);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">'+dateLabel+'</div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
     +dy.freeSlots.map(function(s){
-      return '<button id="bkslot-'+s.replace(':','')+'" onclick="pSelectBookSlot(\''+s+'\')" style="padding:9px 15px;border-radius:10px;border:1.5px solid var(--border2);background:rgba(255,255,255,.9);color:var(--ink);font-size:15px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+s+'</button>';
+      return '<button id="bkslot-'+s.replace(':','')+'" onclick="pSelectBookSlot(\''+s+'\')" style="padding:9px 15px;border-radius:10px;border:1.5px solid var(--border2);background:var(--cream);color:var(--ink);font-size:15px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+s+'</button>';
     }).join('')
     +'</div>';
   var ca = document.getElementById('proBookConfirmArea');
@@ -32826,7 +32826,7 @@ function pAdminMassMessage(target){
     +'<div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.4">Velo · Acompañamiento emocional entre pares<br><span style="font-size:11px;opacity:.7">Firma automática incluida en todos los mensajes</span></div>'
     +'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="pSendMassMessage(\''+target+'\')" style="flex:1;padding:11px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📤 Enviar a todos los '+label+'</button>'
+    +'<button onclick="pSendMassMessage(\''+target+'\')" style="flex:1;padding:11px;background:var(--sage2);border:none;border-radius:14px;color:var(--on-sage);font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📤 Enviar a todos los '+label+'</button>'
     +'<button onclick="document.getElementById(\'massMessageOv\').remove()" style="padding:11px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:15px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
     +'</div>'
     +'</div>';
@@ -33577,7 +33577,7 @@ async function _doGenerateBcastImage(desc){
       +'<img src="data:'+mime+';base64,'+base64+'" style="max-width:100%;max-height:55vh;border-radius:16px;border:2px solid rgba(116,198,157,.3);box-shadow:0 8px 40px rgba(0,0,0,.6);object-fit:contain">'
       +'<p style="font-size:14px;color:rgba(255,255,255,.5);margin:14px 0 18px;text-align:center;line-height:1.5">¿Querés usar esta imagen en el mensaje?</p>'
       +'<div style="display:flex;gap:12px;width:100%;max-width:320px">'
-      +'<button onclick="pBcastImgConfirm()" style="flex:1;padding:13px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Usar esta imagen</button>'
+      +'<button onclick="pBcastImgConfirm()" style="flex:1;padding:13px;background:var(--sage2);border:none;border-radius:14px;color:var(--on-sage);font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Usar esta imagen</button>'
       +'<button onclick="pBcastImgDiscard()" style="padding:13px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:15px;font-family:\'Jost\',sans-serif;cursor:pointer">🗑️ Descartar</button>'
       +'</div>';
     document.body.appendChild(ov);
@@ -39272,7 +39272,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1649;
+    var _BUILT_V = 1650;
     // v1646: se expone para que la suscripción push registre la versión REAL.
     // No es un sexto sitio que mantener: lee de _BUILT_V, no repite el número.
     try{ window._VELO_BUILD = _BUILT_V; }catch(_){}

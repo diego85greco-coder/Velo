@@ -5572,6 +5572,16 @@ body.r-dark {
   --cream4: rgba(255,255,255,.12);
 }
 
+/* ── v1650: texto sobre el verde de marca ──
+   `--sage` es verde OSCURO en las pantallas (#1B5E3A) pero se redefine a verde
+   CLARO (#72e0a6) dentro de las hojas modales en modo oscuro. Un botón con
+   `color:#fff` encima queda en 7.75:1 en la pantalla y en 1.62:1 dentro de una
+   hoja: blanco sobre verde claro. Este token lo resuelve solo. */
+:root { --on-sage: #fff; }
+body.r-dark .p-modal-ov .p-sheet,
+body.r-dark .p-dialog,
+body.r-dark #gdWaitOv .p-sheet { --on-sage: #0a2417; }
+
 /* ── v1636: el botón de las notificaciones no se leía en NINGÚN tema ──
    Sus cinco estados llevaban el color escrito a mano en el JS, pensado para un
    fondo que ya no era el suyo. Medido sobre la fila real:
