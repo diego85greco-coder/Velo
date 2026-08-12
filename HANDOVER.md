@@ -2,7 +2,7 @@
 
 Documento para quien retome el desarrollo de esta aplicación (otra persona, otro
 asistente). Escrito el 07/08/2026, actualizado el 11/08/2026.
-Versión en producción **v1639**.
+Versión en producción **v1648**.
 
 Está ordenado por lo que más caro sale ignorar.
 
@@ -186,6 +186,8 @@ for t in test/*.test.js; do node "$t" || break; done
 | `restore-order` | que la restauración no falle por claves ajenas |
 | `wrapped-paralelo` | que las consultas del Wrapped no vuelvan a ir en cadena |
 | `reacciones` | que ninguna reacción se quede sin su emoji |
+| `escritura-fallida` | que un guardado que falla se VEA, y que no avise de más |
+| `dsa-moderacion` | el circuito de moderación: aviso al autor y apelación |
 
 Todas leen el código **del propio `premium.js`** en vez de una copia, así que no
 pueden desincronizarse.
@@ -320,7 +322,10 @@ los endpoints de suscripción, y ésos no son legibles.
 
 ## 8. Qué queda pendiente
 
-**Requiere las cuentas del titular:**
+**Requiere las cuentas del titular:** → consolidado en
+`PENDIENTE-DEL-TITULAR.md`, con qué hay que hacer y dónde va cada dato.
+Se deja el resumen acá:
+
 1. Fijar en `GEMINI_API_KEY` (Vercel + GitHub) la clave del proyecto **Velo
    app2** (`…TtNk`, nivel Pagado). Hay otras claves en nivel **gratuito**, y en
    ese nivel Google puede usar el contenido para entrenar modelos.
@@ -336,16 +341,20 @@ los endpoints de suscripción, y ésos no son legibles.
 6. Decidir y activar los plazos de conservación: están implementados pero
    desactivados a propósito. `select * from public.velo_retention_report();`
    dice qué se borraría.
-7. Circuito de respuesta y apelación de moderación (obligación DSA).
+7. ~~Circuito de respuesta y apelación de moderación (DSA)~~ — hecho en v1648.
+   Al moderar se avisa al AUTOR con el motivo, y desde ese mismo aviso puede
+   pedir revisión. La apelación entra en `reportes` con `categoria:'apelacion'`,
+   que es la bandeja que el panel ya lista — sin tabla ni pantalla nuevas.
+   `test/dsa-moderacion.test.js` lo cubre, incluido que un guardado fallido NO
+   se celebre.
 8. Probar la app **usándola**. Todo lo verificado hasta ahora fue contra la base
    de datos. Bugs visuales, de flujo o del PWA en iPhone: sin cubrir.
 9. ~~Cerrar a los anónimos Momentos, Vibes y Círculos~~ — hecho el 11/08.
-10bis. `script.js`, `app.html` y `velo.js` están **huérfanos**: nada del
-   repositorio los enlaza (`index.html` redirige a `app-premium.html`, y el
-   service worker sólo cachea ése). Son ~1 MB de código de la aplicación
-   anterior que sigue desplegado y accesible. No estorban, pero confunden a
-   cualquiera que audite el proyecto — y a las herramientas: la mitad de los
-   falsos positivos de esta revisión salieron de ahí.
+10bis. ~~`script.js`, `app.html` y `velo.js` huérfanos~~ — hecho en v1648.
+   `velo.js` y `script.js` se eliminaron (11.645 líneas). `app.html` no se borró:
+   quedó como redirección de 1 KB a `app-premium.html`, para no romper un
+   marcador viejo. Antes se comprobó que nada los enlazara: ni el HTML, ni el
+   service worker, ni los enlaces de las notificaciones o los correos.
 
 11. ~~El límite diario de la Sala de Ayuda no funciona.~~ **FALSO — lo comprobé
    mal el 11/08 y lo dejé escrito acá.** Sí funciona: al quinto pedido en 24 h

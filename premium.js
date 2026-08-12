@@ -8968,7 +8968,7 @@ function _veloNotifsEmptyState(){
     +'</div>';
 }
 function _renderVeloNotifs(notifs){
-  var typeIcon={dq_comment:'💬',dq_reaction:'💚',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️',buddy_request:'🌱',buddy_matched:'🤝',bt_comment:'📓',bt_reaction:'💚'};
+  var typeIcon={moderacion:'🛡️',dq_comment:'💬',dq_reaction:'💚',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️',buddy_request:'🌱',buddy_matched:'🤝',bt_comment:'📓',bt_reaction:'💚'};
   var typeNavigable={dq_comment:true, dq_reaction:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true, buddy_request:true, buddy_matched:true, bt_comment:true, bt_reaction:true};
   if(!notifs||!notifs.length) return '';
   return notifs.map(function(n){
@@ -8989,6 +8989,14 @@ function _renderVeloNotifs(notifs){
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:15px;font-weight:'+(unread?'700':'500')+';color:rgba(255,255,255,'+(unread?'.90':'.50')+');font-family:Jost,sans-serif;line-height:1.35;margin-bottom:3px">'+_escHtml(n.title||'')+'</div>'
       +(n.body?'<div style="font-size:14px;color:rgba(255,255,255,.40);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+_escHtml(n.body)+'"')+'</div>':'')
+      /* v1648 (DSA): una decision de moderacion se puede apelar desde aca mismo.
+         El aviso explica que paso; este boton es la otra mitad de la obligacion. */
+      +(n.type==='moderacion'
+        ? '<button onclick="event.stopPropagation();pAbrirApelacion()" style="margin-top:9px;padding:7px 14px;border-radius:100px;'
+          +'background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);-webkit-appearance:none;appearance:none;'
+          +'color:#9be3bd !important;-webkit-text-fill-color:#9be3bd !important;font-family:Jost,sans-serif;font-size:12.5px;'
+          +'font-weight:700;cursor:pointer">Pedir que lo revisemos</button>'
+        : '')
       +'<div style="font-size:12px;color:rgba(255,255,255,.25);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(n.created_at||'')+(canNav?'<span style="margin-left:8px;color:rgba(116,198,157,.55);font-size:11px">Ver →</span>':'')+'</div>'
       +'</div>'
       +'</div>';
@@ -32477,6 +32485,90 @@ function _filterConsentLog(query){
     }).join('');
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   v1648 — CIRCUITO DE MODERACIÓN DEL DSA
+
+   Con usuarios en la UE, retirar contenido de terceros obliga a tres cosas:
+   decir POR QUÉ se retiró, dejar APELAR, y publicar un punto de contacto.
+   Había sistema de reportes y de retirada, pero el aro se cerraba en el panel:
+   la persona a la que le borraban algo no se enteraba de nada.
+
+   No hace falta tabla nueva. La apelación entra en `reportes` con
+   `categoria:'apelacion'`, y el panel ya lista todo lo que esté en estado
+   `abierto` — así que aparece sola, sin pantalla nueva que mantener.
+   ══════════════════════════════════════════════════════════════════════════ */
+var _DSA_MOTIVOS = {
+  alert:       'Recibimos un reporte sobre algo que publicaste y te escribimos para avisarte.',
+  'delete':    'Retiramos algo que publicaste porque, tras revisarlo, no encaja con las pautas de la comunidad.',
+  alertdelete: 'Retiramos algo que publicaste porque no encaja con las pautas de la comunidad, y queríamos avisarte.'
+};
+
+async function _dsaAvisarModeracion(flagId, action){
+  try{
+    _initSupabase(); if(!sbClient) return;
+    var f = await sbClient.from('moderation_flags').select('user_id,section,tipo').eq('id', flagId).maybeSingle();
+    var autor = f && f.data && f.data.user_id;
+    if(!autor) return;                       // sin autor identificado no hay a quién avisar
+    var donde = (f.data.section ? ' en '+f.data.section : '');
+    var cuerpo = (_DSA_MOTIVOS[action] || _DSA_MOTIVOS['delete']) + donde + '.\n\n'
+      + 'Si creés que fue un error, podés pedir que lo revisemos otra vez desde tu Buzón. '
+      + 'Lo mira una persona, no un sistema automático.';
+    _createVeloNotif(autor, 'moderacion', 'Sobre algo que publicaste', cuerpo, String(flagId));
+  }catch(_){}
+}
+
+/* La apelación de la persona. Se guarda en `reportes` para que caiga en la
+   bandeja que el panel ya revisa. Devuelve true si se guardó — acá NO se
+   celebra a ciegas: si falla, la persona tiene que enterarse. */
+async function pApelarModeracion(){
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var txt = (document.getElementById('dsaApelacionTexto')||{}).value || '';
+  txt = txt.trim();
+  if(txt.length < 10){ pToast('⚠️','Contanos un poco más para poder revisarlo'); return; }
+  var btn = document.getElementById('dsaApelarBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando…'; }
+  try{
+    var u = await sbClient.auth.getUser();
+    var uid = u && u.data && u.data.user ? u.data.user.id : null;
+    var res = await sbClient.from('reportes').insert({
+      user_id: uid, mensaje: '[APELACIÓN]\n\n'+txt,
+      categoria: 'apelacion', estado: 'abierto', created_at: new Date().toISOString()
+    });
+    if(res && res.error){
+      if(btn){ btn.disabled = false; btn.textContent = 'Pedir revisión'; }
+      pToast('⚠️','No se pudo enviar. Probá de nuevo.');
+      return;
+    }
+    var ov = document.getElementById('dsaApelacionOv'); if(ov) ov.remove();
+    pToast('💚','Lo vamos a revisar. Te respondemos por el Buzón.');
+  }catch(e){
+    if(btn){ btn.disabled = false; btn.textContent = 'Pedir revisión'; }
+    pToast('⚠️','No se pudo enviar. Probá de nuevo.');
+  }
+}
+
+function pAbrirApelacion(){
+  var prev = document.getElementById('dsaApelacionOv'); if(prev) prev.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'dsaApelacionOv';
+  ov.style.zIndex = '10070';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
+    + '<div style="text-align:center;padding:4px 0 14px">'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:21px;color:var(--ink)">Pedir que lo revisemos</div>'
+      + '<div style="font-size:12.5px;color:var(--ink4);margin-top:4px;line-height:1.5">Contanos por qué creés que fue un error. Lo lee una persona.</div>'
+    + '</div>'
+    + '<textarea id="dsaApelacionTexto" rows="5" placeholder="Lo que publicaste, y por qué pensás que no incumplía las pautas…" '
+      + 'style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border2);'
+      + 'background:var(--cream2);color:var(--ink);font-family:Jost,sans-serif;font-size:14px;resize:vertical"></textarea>'
+    + '<button id="dsaApelarBtn" class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:12px" onclick="pApelarModeracion()">Pedir revisión</button>'
+    + '<button class="p-btn p-btn--secondary p-btn--md p-btn--full" style="margin-top:8px" onclick="document.getElementById(\'dsaApelacionOv\').remove()">Ahora no</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
 // action: 'accept' (contenido OK) · 'alert' (alertar al usuario) · 'delete' (eliminar) · 'alertdelete'
 function pAdminModerateFlag(id, action){
   _initSupabase();
@@ -32489,6 +32581,8 @@ function pAdminModerateFlag(id, action){
       var card = document.getElementById('modflag-'+id);
       if(card) card.remove();
       pToast('✅', labels[action] || 'Reporte resuelto');
+      // v1648 (DSA): avisarle a la persona QUÉ pasó con su contenido y CÓMO apelar.
+      if(action !== 'accept') _dsaAvisarModeracion(id, action);
       // Audit trail — log action in local audit log
       var _al=[]; try{_al=JSON.parse(safeLS('get','velo_audit_log')||'[]');}catch(e){}
       _al.unshift({tipo:'admin_moderation',ts:Date.now(),motivo:'Acción "'+action+'" en flag '+String(id).slice(0,8),detail:labels[action]||''});
@@ -39137,7 +39231,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1647;
+    var _BUILT_V = 1648;
     // v1646: se expone para que la suscripción push registre la versión REAL.
     // No es un sexto sitio que mantener: lee de _BUILT_V, no repite el número.
     try{ window._VELO_BUILD = _BUILT_V; }catch(_){}
