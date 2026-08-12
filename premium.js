@@ -24752,7 +24752,34 @@ async function pVibeReact(vibeId, reactionKey, btnEl){
       if(prev){ counts[prev] = Math.max(0, (counts[prev]||1)-1); }
       counts[reactionKey] = (counts[reactionKey]||0)+1;
       _vibeMyReactions[vibeId] = reactionKey;
-      await sbClient.from('vibe_reactions').upsert({ vibe_id: vibeId, user_id: myId, reaction: reactionKey }, { onConflict: 'vibe_id,user_id' });
+
+      /* v1644 — NO celebrar lo que no se guardó.
+         supabase-js NO lanza excepción cuando PostgREST devuelve un error: te
+         entrega `{data, error}`. Este `upsert` no miraba el resultado, así que
+         si el guardado fallaba —RLS, restricción, red— la app mostraba igual el
+         aviso «Enviaste tu reacción» y la lluvia de emojis por toda la pantalla.
+         La persona veía una confirmación entusiasta de algo que no había
+         ocurrido, y quien recibía el momento no veía ninguna reacción.
+
+         Se detectó siguiendo un caso real: alguien reaccionó, vio la lluvia de
+         emojis, y en «Quién te acompañó» figuraba sólo como que había pasado a
+         verlo. La reacción nunca llegó a la base.
+
+         Es el fallo de fondo de esta aplicación (ver HANDOVER §3) en su forma
+         más engañosa: no es que falle en silencio, es que MIENTE. */
+      var _rxRes = await sbClient.from('vibe_reactions')
+        .upsert({ vibe_id: vibeId, user_id: myId, reaction: reactionKey }, { onConflict: 'vibe_id,user_id' });
+      if(_rxRes && _rxRes.error){
+        console.warn('[vibe-react] no se guardó:', _rxRes.error.message);
+        // Deshacer el conteo optimista: que la pantalla no mienta.
+        counts[reactionKey] = Math.max(0, (counts[reactionKey]||1)-1);
+        if(prev){ counts[prev] = (counts[prev]||0)+1; }
+        if(prev){ _vibeMyReactions[vibeId] = prev; } else { delete _vibeMyReactions[vibeId]; }
+        _vibeReactionAgg[vibeId] = counts;
+        try{ _refreshVibeCard(vibeId); }catch(_){}   // que la tarjeta vuelva a lo real
+        try{ pToast('⚠️','No se pudo enviar tu reacción. Probá de nuevo.'); }catch(_){}
+        return;
+      }
       // Toast personalizado según reacción — "Enviaste un abrazo", etc.
       try{
         /* v1637 — el emoji sale de VIBE_REACTIONS, no de una lista aparte.
@@ -25686,6 +25713,13 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'quickProfileOv';
+  /* v1644 — el perfil se abría DEBAJO de lo que lo invocaba.
+     `.p-modal-ov` está en z-index 800, pero los overlays de las historias van de
+     10001 para arriba (la hoja de «Quién te acompañó», en 10040). Al tocar una
+     fila el perfil se creaba y se llenaba bien, sólo que tapado: parecía que el
+     botón no hacía nada. Como es un modal, al abrirse le toca ir encima de lo
+     que haya; 10070 está por encima del máximo que usa la app (10060). */
+  ov.style.zIndex = '10070';
   ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
     +'<div id="qpBody" style="text-align:center;padding:30px 0;color:var(--ink5);font-size:15px">Cargando perfil…</div>'
@@ -39052,7 +39086,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1643;
+    var _BUILT_V = 1644;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
