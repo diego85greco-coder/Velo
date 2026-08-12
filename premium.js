@@ -357,6 +357,7 @@ var sbClient = null;
        y comprobar que volvió alguna fila (ver `_btDeletePost`).
    ══════════════════════════════════════════════════════════════════════════ */
 var _veloDbErrLog = [];
+var _veloUltimoAvisoEscritura = 0;   // v1646: acelerador del aviso de escritura fallida
 function veloDbErrors(){ return _veloDbErrLog.slice(); }   // consola: veloDbErrors()
 try{ if(typeof window !== 'undefined') window.veloDbErrors = veloDbErrors; }catch(_){}
 
@@ -413,6 +414,44 @@ function _veloFetchAndLog(input, init, _url){
         // 401/403 en /auth/v1 son normales (token vencido y su refresco): no gritar.
         if((res.status === 401 || res.status === 403) && _url.indexOf('/auth/v1') >= 0) return;
         console.error('[velo-db] '+_method+' '+_what+' → HTTP '+res.status+' · '+String(body).slice(0,300));
+
+        /* ══════════════════════════════════════════════════════════════════
+           v1646 — QUE UNA ESCRITURA FALLIDA SE VEA, NO SÓLO SE REGISTRE
+
+           v1627 puso acá el registro de todo fallo, y eso destapó un montón de
+           cosas. Pero sólo lo ve quien abre la consola: para la persona que usa
+           la app, un guardado que falla sigue siendo indistinguible de uno que
+           funciona. Repartidos por el archivo hay 57 sitios que hacen
+
+               await sbClient.from('x').insert({...});
+               pToast('✓','Publicado');
+
+           sin mirar el resultado — y supabase-js NO lanza excepción cuando
+           PostgREST devuelve error: entrega `{data, error}`. Así estuvo meses el
+           formulario de contacto diciendo «enviado» sin guardar una sola fila.
+
+           Arreglar los 57 a mano sería un diff enorme y arriesgado. Como el
+           registro ya pasa por acá, el aviso también: si una ESCRITURA vuelve
+           con error, se avisa. Un solo sitio, y cubre los 57.
+
+           Con tres cuidados:
+             * Sólo escrituras (POST/PATCH/PUT/DELETE) a `/rest/v1`. Las
+               lecturas fallidas no se le anuncian a nadie: la pantalla ya se ve
+               vacía y un aviso ahí sería ruido.
+             * 409 no cuenta: es el conflicto normal de un upsert.
+             * Como mucho un aviso cada 6 s, para que una ráfaga de fallos no
+               encadene diez carteles.
+           ══════════════════════════════════════════════════════════════════ */
+        try{
+          var _esEscritura = (_method === 'POST' || _method === 'PATCH' || _method === 'PUT' || _method === 'DELETE');
+          if(_esEscritura && _url.indexOf('/rest/v1') >= 0 && res.status !== 409){
+            var _ahora = Date.now();
+            if(_ahora - _veloUltimoAvisoEscritura > 6000){
+              _veloUltimoAvisoEscritura = _ahora;
+              if(typeof pToast === 'function') pToast('⚠️','No se pudo guardar. Revisá tu conexión e intentá de nuevo.');
+            }
+          }
+        }catch(_){}
       }).catch(function(){});
     }catch(_){}
     return res;
@@ -31542,7 +31581,9 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
           activity.vibesPosted = _vb.data.length;
           var _vbIds = _vb.data.map(function(v){return v.id;});
           if(_vbIds.length){
-            var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds).gte('created_at', weekISO);
+            // v1646: `vibe_reactions` NO tiene columna id — pedirla hacía que PostgREST
+            // rechazara la consulta entera (42703) y el contador quedara siempre en 0.
+            var _vRx = await sbClient.from('vibe_reactions').select('vibe_id').in('vibe_id',_vbIds).gte('created_at', weekISO);
             if(!_vRx.error && _vRx.data) activity.vibeReactionsReceived = _vRx.data.length;
           }
         }
@@ -33015,7 +33056,7 @@ async function _generateMonthlySummary(month, mName, year){
     try{
       var _mv=await sbClient.from('vibes').select('id').eq('user_id',myId).gte('created_at',cutStart).lte('created_at',cutEnd);
       if(_mv.data){ monthAct.vibes=_mv.data.length; var _mvIds=_mv.data.map(function(v){return v.id;});
-        if(_mvIds.length){ var _mvRx=await sbClient.from('vibe_reactions').select('id').in('vibe_id',_mvIds); if(_mvRx.data) monthAct.vibeRx=_mvRx.data.length; } }
+        if(_mvIds.length){ var _mvRx=await sbClient.from('vibe_reactions').select('vibe_id').in('vibe_id',_mvIds); if(_mvRx.data) monthAct.vibeRx=_mvRx.data.length; } }
     }catch(e){}
     try{
       var _mb=await sbClient.from('bitacora_posts').select('id').eq('user_id',myId).gte('created_at',cutStart).lte('created_at',cutEnd);
@@ -34390,7 +34431,9 @@ async function _buildWeekActivity(refTs, moodScoreMap){
         activity.vibesPosted = _vb.data.length;
         var _vbIds = _vb.data.map(function(v){return v.id;});
         if(_vbIds.length){
-          var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds).gte('created_at', weekISO);
+          // v1646: `vibe_reactions` NO tiene columna id — pedirla hacía que PostgREST
+            // rechazara la consulta entera (42703) y el contador quedara siempre en 0.
+            var _vRx = await sbClient.from('vibe_reactions').select('vibe_id').in('vibe_id',_vbIds).gte('created_at', weekISO);
           if(!_vRx.error && _vRx.data) activity.vibeReactionsReceived = _vRx.data.length;
         }
       }
@@ -36961,8 +37004,13 @@ async function _execDeleteAccount(reason){
 
       if(uid){
         // Log deletion request (best-effort)
+        /* v1646 — se quita `email`. `deleted_accounts` no tiene esa columna, y no
+           la tiene A PROPÓSITO: guardar el correo de una cuenta borrada seria
+           contradecir el borrado que la persona acaba de pedir. Pedirla hacía
+           que PostgREST rechazara el INSERT entero (PGRST204), así que esta
+           constancia de baja no se guardaba nunca. */
         try{ sbClient.from('deleted_accounts').insert({
-          email: email, user_id: uid, reason: reason||null, deleted_at: new Date().toISOString()
+          user_id: uid, reason: reason||null, deleted_at: new Date().toISOString()
         }).catch(function(){}); }catch(e){}
 
         // 0) Intentar Edge Function `delete-account` (service-role → borra auth.users → libera email)
@@ -39086,7 +39134,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1645;
+    var _BUILT_V = 1646;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
