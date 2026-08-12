@@ -12501,6 +12501,7 @@ async function pSendHelpChatMsg(){
     if(child){ msgEl.appendChild(child); _hLastBubble = child; }
     msgEl.scrollTop = msgEl.scrollHeight;
   }
+  _crisisRedLocal(text);        // v1649: red local, no espera a la IA
   _geminiCrisisCheck(text);
   // Insert to Supabase → real-time delivers message to the other party
   _initSupabase();
@@ -12786,6 +12787,45 @@ async function pSendHelp(){
   // Gemini crisis detection and urgency classification — run silently in background
   _geminiCrisisCheck(msg);
   _geminiClassifyUrgency(msg, 'hu'+ts, _risky);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v1649 — LA RED DE SEGURIDAD NO PUEDE DEPENDER DE UN SERVICIO DE PAGO
+
+   `_geminiCrisisCheck` es quien abre el SOS, deja el mensaje en el Buzón y
+   registra el evento para moderación. Empieza así:
+
+       var result = await _geminiCall(prompt);
+       if(!result) return;          ← si la IA no responde, no pasa NADA
+
+   Se llama desde tres sitios. Sólo uno —publicar en la Sala de Ayuda— tenía
+   además el detector local (v1506), que corre en el navegador y no depende de
+   nada. Los otros dos son **chats**: el del guardián y el del acompañante de
+   IA. Justamente donde alguien escribe «me quiero matar», porque se siente una
+   conversación.
+
+   En esos dos, con el crédito de Gemini agotado —es prepago— o la API caída,
+   la persona no veía ninguna línea de crisis. El detector local ya existía,
+   está probado con 36 formas de decirlo, y no estaba enchufado ahí.
+
+   Acá se enchufa. Con un tope de una vez cada 10 minutos: en un chat la
+   persona escribe varias veces seguidas, y repetirle el mismo cartel en cada
+   mensaje lo convierte en ruido que se aprende a ignorar. */
+var _crisisSOSUltimo = 0;
+function _crisisRedLocal(texto){
+  try{
+    if(typeof _localCrisisCheck !== 'function' || !_localCrisisCheck(texto || '')) return false;
+    var ahora = Date.now();
+    if(ahora - _crisisSOSUltimo < 600000) return true;   // ya se le ofreció hace poco
+    _crisisSOSUltimo = ahora;
+    setTimeout(function(){
+      try{ pOpenSOS(); }catch(_){}
+      try{ pToast('💙','Velo no es un servicio de emergencia. Si estás en peligro, llamá ahora a una de estas líneas.'); }catch(_){}
+    }, 700);
+    // Que moderación lo vea aunque la IA no conteste.
+    try{ _sbSaveCrisisEvent('local', 'detector local del navegador', String(texto||'').slice(0,200), ahora); }catch(_){}
+    return true;
+  }catch(_){ return false; }
 }
 
 async function _geminiCrisisCheck(msg){
@@ -13858,6 +13898,7 @@ async function pSendCalmAIMsg(){
     _calmAIAddMsg(reply, false);
   }
   _saveCalmSession(); // Feature: persist session for today
+  _crisisRedLocal(text);        // v1649: red local, no espera a la IA
   _geminiCrisisCheck(text);
 }
 
@@ -39231,7 +39272,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1648;
+    var _BUILT_V = 1649;
     // v1646: se expone para que la suscripción push registre la versión REAL.
     // No es un sexto sitio que mantener: lee de _BUILT_V, no repite el número.
     try{ window._VELO_BUILD = _BUILT_V; }catch(_){}
