@@ -21725,7 +21725,7 @@ var VIBE_REACTIONS = [
   { key:'uf',           emoji:'🥶', label:'Uf',                  tint:'#9cc8e0' },
   { key:'intenso',      emoji:'🥵', label:'Qué intenso',         tint:'#e8877c' },
   { key:'orgullo',      emoji:'🏳️‍🌈', label:'Orgullo',           tint:'#d09ce0' },
-  { key:'con_vos',      emoji:'🏳️‍⚧️', label:'Con vos',           tint:'#9cc8e0' }
+  { key:'con_vos',      emoji:'🏳️‍⚧️', label:'Orgullo trans',     tint:'#9cc8e0' }
 ];
 var _VIBE_REACTIONS_QUICK = 8; // las primeras N van en la fila; el resto en el picker ＋
 // v1533 — Estados de ánimo OPCIONALES para las historias (la emoción como
@@ -39086,7 +39086,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1644;
+    var _BUILT_V = 1645;
     // Label de version REAL en el menu — antes estaba hardcodeado ("v1548") y
     // quedaba congelado build tras build, haciendo creer que la app no se
     // actualizaba. Ahora refleja la version corriendo de verdad.
