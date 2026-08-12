@@ -379,6 +379,40 @@ Se deja el resumen acá:
    Lo mismo pasa con `ia_usage_daily_limit` (25 llamadas de IA al día): también
    es RESTRICTIVE, también se aplica.
 
+12. **Revocar un permiso a `anon` a secas no siempre surte efecto.** Las
+   funciones nacen en Postgres con `EXECUTE` concedido a `PUBLIC`, y `anon` lo
+   hereda por ahí. El 12/08, al cerrar `velo_is_premium(text)`, el
+   `revoke ... from anon` se aplicó sin error y
+   `has_function_privilege('anon', ...)` siguió devolviendo **true**. Hay que
+   quitar el grant de `PUBLIC` y devolvérselo explícitamente a `authenticated`
+   y `service_role`.
+
+   Regla: después de cualquier revoke, comprobarlo. Y comprobarlo contra el
+   endpoint público real, con la clave que va en el HTML, no sólo con
+   `has_*_privilege`:
+
+   ```
+   curl -s -o /dev/null -w "%{http_code}\n" \
+     -X POST "$SUPABASE_URL/rest/v1/rpc/<fn>" \
+     -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
+     -H "Content-Type: application/json" -d '{}'
+   ```
+   401 con `42501 permission denied` = cerrado de verdad.
+
+13. **El linter de Supabase (`get_advisors`) marca como ERROR vistas que están
+   bien.** Los nueve `security_definer_view` de este proyecto son a propósito:
+   son justamente las vistas que **anonimizan** (`help_posts_feed`,
+   `happy_posts_full`, `bitacora_posts_full`, `daily_responses_feed`…). Tienen
+   que saltarse la RLS de la tabla cruda para poder devolver la fila con el
+   `user_id` puesto a NULL cuando el post es anónimo. Si se «arreglaran»
+   poniéndoles `security_invoker=on`, los feeds anónimos dejarían de verse.
+
+   Comprobado el 12/08 que la máscara coincide con lo que la app escribe: los
+   15 posts anónimos de `help_posts`/`happy_posts` guardan literalmente
+   `"Usuario Anónimo"` en `user_name` (ningún nombre real), y los 7 de
+   `daily_responses` guardan `"Anónimo"`, que es exactamente la cadena que
+   compara la vista. No hay de-anonimización por esta vía.
+
 ---
 
 ## 8bis. Lentes de revisión ya aplicadas (y su resultado)
