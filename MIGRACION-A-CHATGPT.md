@@ -1,4 +1,469 @@
-# Traspaso de Velo — lo que hay que saber antes de tocar nada
+# Velo — traspaso completo a otro asistente
+
+**Este archivo se basta solo.** No hace falta abrir ningún otro: todo lo que
+necesitás está acá dentro, incluidos los documentos que antes iban aparte
+(están al final, como anexos A, B y C).
+
+Corte: **13/08/2026, versión 1652.** Repositorio público:
+`github.com/diego85greco-coder/Velo`.
+
+## Cómo leerlo
+
+La **parte 1** es el resumen de una sentada: qué es el proyecto, qué rompe la
+aplicación, qué no hay que tocar. Con eso ya se puede trabajar sin hacer daño.
+
+Los **anexos** son el detalle: el historial completo (A), lo que sólo puede
+hacer el titular (B) y lo que falta para lanzar (C).
+
+Si sólo vas a leer una cosa, que sea la **parte 1, punto 1** — el ritual de
+despliegue. Es lo único que puede dejar la app inutilizable para todos.
+
+---
+
+# PARTE 1 — Lo esencial
+
+## 0. Lo primero: qué es esto y para quién
+
+**Velo** (heyvelo.app) es una PWA de salud mental en español rioplatense. Gente
+que la está pasando mal escribe cómo se siente, pide ayuda a otras personas
+(«guardianes»), lleva un diario, registra su ánimo y habla con un acompañante
+de IA.
+
+Tres consecuencias prácticas que cambian cómo hay que trabajar acá:
+
+1. **Los datos son de los más sensibles que existen.** Diarios, estados de
+   ánimo, notas clínicas de profesionales sobre sus pacientes. Una fuga no es
+   un incidente técnico: es la peor cosa que le puede pasar a este proyecto.
+2. **Hay una red de crisis.** Si alguien escribe que se quiere matar, la app
+   tiene que abrir el SOS. Eso **no puede depender de que la IA responda**
+   (ver §5).
+3. **Todavía no se lanzó.** Es una prueba piloto con 11 personas registradas y
+   3 activas en los últimos 7 días. No leas los números de uso como rechazo del
+   mercado: no hay mercado todavía. (Yo cometí ese error y el titular tuvo que
+   corregirme.)
+
+El titular es Diego. Escribe en español; la app está en español rioplatense y
+los comentarios del código también.
+
+---
+
+## 1. ⚠️ EL RITUAL DE DESPLIEGUE — si esto se hace mal, la app entra en bucle
+
+Es lo único que puede dejar la aplicación inutilizable para todo el mundo.
+**Leelo antes de tocar nada.**
+
+Hay **cinco sitios** con el número de versión y tienen que coincidir SIEMPRE:
+
+| Archivo | Qué hay que cambiar |
+|---|---|
+| `version.json` | `{"v":1652}` |
+| `premium.js` | `var _BUILT_V = 1652;` |
+| `app-premium.html` | `?v=20260626-1652` — **son 4 apariciones**, todas |
+| `sw.js` | `var CACHE = 'velo-v219';` (sube de uno en uno, va por su cuenta) |
+
+La app hace *polling* de `version.json` y recarga si `v > _BUILT_V`. Si subís
+`version.json` sin subir `_BUILT_V`, cada cliente recarga, vuelve a leer el
+mismo `_BUILT_V` viejo, y recarga otra vez: **bucle infinito de recargas para
+todos los usuarios**. Si subís `_BUILT_V` sin cambiar los `?v=`, el navegador
+sirve el JS cacheado y no pasa nada, que es menos grave pero igual de confuso.
+
+Comprobación antes de empujar:
+
+```bash
+cat version.json
+grep -n "var _BUILT_V = " premium.js
+grep -c "v=20260626-1652" app-premium.html    # tiene que dar 4
+grep -n "var CACHE" sw.js
+```
+
+### Flujo de despliegue completo
+
+Se desarrolla en la rama `claude/premium-web-app-design-gZlbk` y se lleva a
+`main`, que es lo que Vercel despliega:
+
+```bash
+git add -A && git commit -m "..."
+git push -u origin claude/premium-web-app-design-gZlbk
+git checkout main
+git merge --ff-only claude/premium-web-app-design-gZlbk
+git push origin main
+git checkout claude/premium-web-app-design-gZlbk
+# y comprobar que llegó:
+curl -s https://heyvelo.app/version.json      # tiene que dar el número nuevo
+```
+
+Vercel tarda entre 1 y 3 minutos. **No des por desplegado nada que no hayas
+visto en `version.json` de producción.**
+
+---
+
+## 2. Arquitectura en dos minutos
+
+Es una aplicación de una sola página, sin framework, sin build. Se edita el
+archivo y se despliega.
+
+| Archivo | Qué es |
+|---|---|
+| `app-premium.html` | 4.639 líneas. Todas las pantallas, ocultas/mostradas por JS |
+| `premium.js` | **39.702 líneas**. Toda la lógica. Es *el* archivo |
+| `premium-redesign.css` | 15.877 líneas. Estilos y tokens de color |
+| `sw.js` | Service worker: caché y notificaciones push |
+| `index.html` | Redirige a `app-premium.html` |
+| `app.html` | La app vieja; hoy sólo una redirección de 1 KB |
+
+**Fuera del navegador:**
+
+| Dónde | Qué |
+|---|---|
+| `api/` (Vercel) | `gemini.js` (proxy de IA), `send-email.js`, `verify-turnstile.js` |
+| `supabase/functions/` | `send-dm-push`, `stripe-checkout`, `stripe-webhook`, `delete-account` |
+| `.github/scripts/` | copias de seguridad, restauración, notificaciones diarias |
+| `.github/workflows/` | `backup.yml`, `restore-test.yml`, `daily-push.yml` |
+| `supabase/migrations/` | 87 migraciones |
+| `supabase/schema.sql` | **la estructura completa de la base**, generada sola |
+| `test/` | 9 pruebas en Node puro, sin dependencias |
+
+**Servicios:** Vercel (hosting + funciones), Supabase (base, auth, storage,
+realtime), Gemini 2.5 Flash (IA, vía el proxy), Stripe y PayPal (pagos),
+Cloudinary, Resend (correo), Cloudflare Turnstile.
+
+Proyecto de Supabase: **`yuravtnjvvztsxdtggod`**. Está en **plan gratuito**, que
+no incluye copias de seguridad ni `pg_dump` ni la contraseña de la base. De ahí
+sale medio §6.
+
+Administradores (está escrito en `velo_is_admin()`): `consultas@heyvelo.app` y
+`wearevelo.app@gmail.com`.
+
+---
+
+## 3. El problema de fondo del proyecto: los fallos no se ven
+
+Si te llevás una sola idea de acá, que sea ésta.
+
+**`supabase-js` no lanza excepciones.** Ante un error de PostgREST devuelve
+`{ data: null, error: {...} }`. Un `try/catch` no atrapa nada. Durante meses la
+app tuvo decenas de sitios así:
+
+```js
+try {
+  await sbClient.from('tabla').insert({...});   // falla en silencio
+  pToast('✓','¡Guardado!');                      // y le miente a la persona
+} catch(e) {}
+```
+
+La persona veía «¡Guardado!» y su publicación no existía. Se encontraron y
+arreglaron muchos casos, pero **asumí que quedan más**. La regla:
+
+> Después de cada operación con Supabase, mirar `res.error`. Si hay error, la
+> persona tiene que enterarse. Nunca celebrar antes de comprobar.
+
+Hay un punto único por donde pasan todas las peticiones, `_veloLoudFetch` /
+`_veloFetchAndLog` (alrededor de la línea 452 de `premium.js`), que:
+
+- espera a que haya sesión antes de la primera petición a `/rest/v1`
+  (había una carrera que rompía la primera carga), y
+- muestra un aviso al usuario si **una escritura** falla.
+
+Ese aviso tiene una lista de exclusión, `_enSilencio`, con las tablas de
+telemetría (`usage_events`, `ia_usage`, `velo_api_usage`, `bot_attempts`,
+`vibe_views`, `push_history`, `guardian_presence`, `circle_members`). **Si
+agregás una tabla de fondo, agregala ahí**, o le vas a decir «No se pudo
+guardar» a alguien que no hizo nada. Está cubierto por
+`test/escritura-fallida.test.js`, que tiene 19 comprobaciones.
+
+---
+
+## 4. Seguridad: las cuatro lecciones que más caras salieron
+
+Están en el **anexo A**, §11 a §14, con más detalle. Resumen operativo:
+
+**a) PERMISSIVE vs RESTRICTIVE.** Las policies permisivas se combinan con OR,
+las restrictivas con AND. Yo afirmé que un límite diario «no funcionaba»
+razonando con OR sobre una policy que era RESTRICTIVE. Era falso.
+**Mirá la columna `permissive` de `pg_policies` antes de afirmar nada, y mejor
+probalo.**
+
+**b) La RLS también se aplica dentro de la subconsulta de una policy.** El tope
+de 25 mensajes de IA al día contaba `select count(*) from ia_usage where
+user_id = auth.uid()`, pero `ia_usage` no tenía policy de SELECT: el count daba
+0 siempre y no topaba nada. Consulta para detectar el caso:
+
+```sql
+select tablename, policyname,
+       (select count(*) from pg_policies p
+         where p.tablename = l.tablename and p.cmd in ('SELECT','ALL')) as lecturas
+from pg_policies l
+where schemaname='public' and coalesce(with_check,qual) ~* 'select count\(\*\)';
+```
+`lecturas = 0` es la señal.
+
+**c) Revocar un permiso a `anon` no siempre surte efecto.** Las funciones nacen
+con `EXECUTE` concedido a `PUBLIC` y `anon` lo hereda por ahí. Hay que quitarlo
+de `PUBLIC` y devolvérselo explícitamente a `authenticated` y `service_role`.
+**Comprobá siempre después de revocar**, y contra el endpoint público real:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST \
+  "$SUPABASE_URL/rest/v1/rpc/<fn>" \
+  -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
+  -H "Content-Type: application/json" -d '{}'
+```
+401 con `42501 permission denied` = cerrado de verdad.
+
+**d) El linter de Supabase marca como ERROR nueve vistas que están bien.** Son
+justamente las que **anonimizan** (`help_posts_feed`, `happy_posts_full`,
+`bitacora_posts_full`, `daily_responses_feed`…). Tienen que saltarse la RLS de
+la tabla cruda para devolver la fila con el `user_id` en NULL cuando el post es
+anónimo. **Si les ponés `security_invoker=on`, los feeds anónimos dejan de
+verse.** No las «arregles».
+
+Comprobado el 12/08 que la máscara coincide con lo que la app escribe: los 15
+posts anónimos guardan literalmente `"Usuario Anónimo"`, y los de la pregunta
+diaria `"Anónimo"`, que es la cadena exacta que compara la vista.
+
+**Regla general que se rompió varias veces:** antes de cerrar una policy, mirar
+qué la usa. Cerrar de más rompe funciones que nadie recordaba.
+
+---
+
+## 5. La red de crisis — no la toques sin entender esto
+
+Si alguien escribe que se quiere matar, la app abre el SOS con líneas de ayuda.
+Hay **dos capas**:
+
+1. `_geminiCrisisCheck` — clasificador con IA. Empieza con
+   `var result = await _geminiCall(prompt); if(!result) return;` → **si la IA no
+   responde, no pasa nada**.
+2. `_crisisRedLocal(texto)` / `_localCrisisCheck` — detector local por
+   expresiones regulares, corre en el navegador y **no depende de nada**.
+
+Hasta v1648 sólo la Sala de Ayuda tenía la capa local. Los dos **chats** —el del
+guardián y el del acompañante de IA— dependían únicamente de Gemini, que es
+**prepago**. Con el crédito agotado, esa persona no veía ninguna línea de
+crisis. Se arregló en v1649: los tres caminos tienen la red local.
+
+Tiene un tope de 10 minutos para no repetir el cartel en cada mensaje del chat.
+Está cubierto por `test/crisis-red-local.test.js`, que comprueba además que el
+lenguaje cotidiano («me muero de risa») no dispare nada.
+
+**Cualquier cambio en esta zona pasa por esa prueba.**
+
+---
+
+## 6. Copias de seguridad y restauración (todo esto es del 13/08)
+
+Era el agujero más grande del proyecto y se cerró entero el último día. Vale la
+pena entenderlo porque es lo que te salva el peor día.
+
+**El punto de partida:** las copias llevaban meses en verde y **ninguna se había
+restaurado nunca**. Al probarlo por primera vez aparecieron cuatro fallos, y los
+cuatro eran reales:
+
+1. **No existía la estructura en ninguna parte.** 27 de las 61 tablas —incluidas
+   `profiles`, `momentos`, `circles`, `daily_responses`, `reviews`— se habían
+   creado a mano en el panel de Supabase y no tenían ningún `create table` en el
+   repositorio. Había 1.231 filas sin ningún sitio donde volcarlas.
+2. **Faltaba `auth.users`.** PostgREST no la expone. Cinco tablas le apuntan con
+   clave ajena: `mood_entries`, `diary_entries`, `daily_responses`,
+   `dq_reactions`, `content_reports`. O sea que **los ánimos y los diarios** eran
+   justo lo que no entraba.
+3. **Faltaban las secuencias.** `circle_messages.id` es un serial clásico; sin su
+   `create sequence` la tabla no se crea y detrás caen sus restricciones,
+   policies y permisos. Los mensajes de los Círculos de Paz no se restauraban.
+4. **Nueve columnas `id` eran `GENERATED ALWAYS AS IDENTITY`**, que rechazan
+   cualquier valor, aunque sea el suyo. Por PostgREST no había forma de
+   sortearlo. Pasadas a `BY DEFAULT`.
+
+**Cómo quedó:**
+
+| Pieza | Qué hace |
+|---|---|
+| `backup.yml` (03:40 UTC) | datos a artefacto (30 días) + `auth_users.json` + archivos de Storage + vuelca `supabase/schema.sql` y lo commitea si cambió |
+| `dump-schema.js` | llama a `velo_dump_schema()` (SECURITY DEFINER, sólo service_role) |
+| `backup-storage.js` | los 3 cubos: `vibes`, `avatars`, `velo-assets` (26 archivos, 24 MB) |
+| `restore-test.yml` (04:20 UTC) | **la prueba**: PostgreSQL vacío → `schema.sql` → la copia de esa noche → cuenta fila por fila |
+| `test/db/prelude.sql` | el andamio que Supabase da y un PostgreSQL pelado no: roles, `auth.uid/jwt/users`, `net.http_post` |
+| `restore-local.js` | el cargador; ordena las tablas por sus claves ajenas, no por una lista a mano |
+| `restore.js` | la restauración de verdad sobre Supabase. **Por defecto simula**; sólo escribe con `--commit` |
+| `restore-storage.js` | los archivos, a su cubo con la MISMA ruta (la URL pública se arma con la ruta) |
+
+**Última ejecución verde (13/08 14:04 UTC):** 1.306 de 1.306 filas en 60 tablas,
+10 cuentas, 26 archivos, 62 tablas y 179 policies —las mismas que producción—,
+cero errores, y todas las tablas conservando la RLS.
+
+La prueba comprueba también que **la RLS quede puesta**: restaurar los datos con
+las puertas abiertas sería el peor final posible.
+
+> **`supabase/schema.sql` lo escribe una máquina.** No lo edites a mano. Si
+> querés cambiar la base, escribí una migración; el archivo se actualiza solo
+> esa noche. Si aparece un cambio que no esperabas, alguien tocó la base desde
+> el panel en vez de escribir una migración.
+
+**De paso, esto es el único aviso automático del proyecto.** No hay Sentry ni
+nada parecido: si se revoca la clave de servicio, se pausa el proyecto o alguien
+rompe el esquema, esto se pone en rojo esa noche y llega el correo de GitHub.
+
+**Lo que sigue sin cubrirse:** las contraseñas (`encrypted_password`). Al
+restaurar, cada persona vuelve a entrar con su correo y sus datos se reenlazan
+por el id. Meter hashes en un artefacto de GitHub es una decisión del titular.
+
+---
+
+## 7. Las pruebas
+
+Nueve, en Node puro, sin dependencias:
+
+```bash
+for t in test/*.test.js; do node "$t" || echo "FALLA $t"; done
+```
+
+| Prueba | Qué protege |
+|---|---|
+| `crisis-detector` / `crisis-red-local` | la red de crisis, con y sin IA |
+| `escritura-fallida` | 19 comprobaciones del punto único de fallos |
+| `dsa-moderacion` | avisar al autor y dejar apelar (obligación del DSA) |
+| `fechas-locales` | la semana de ánimo se calculaba con fecha UTC |
+| `reacciones` | emojis y etiquetas de las 23 reacciones |
+| `restore-order` | el orden de restauración |
+| `session-gate` | la carrera de sesión de la primera carga |
+| `wrapped-paralelo` | el resumen mensual |
+
+**Todas leen el código directamente de `premium.js` con expresiones regulares y
+lo evalúan**, así que no pueden desincronizarse del código real. Si movés una
+función, la prueba se rompe y te enterás.
+
+---
+
+## 8. Lo que queda pendiente
+
+### Del titular — necesita sus cuentas, no se puede hacer desde el código
+
+Está todo en el **anexo B**, ordenado por lo que cuesta dejarlo.
+
+1. 🔴 **La clave de Gemini.** Hay dos dando vueltas; la del proyecto *Velo app2*
+   (`…TtNk`) está en nivel **pagado**, las otras en gratuito — y en el gratuito
+   Google puede usar el contenido para entrenar. Por esta app pasan
+   conversaciones de gente contando por qué la está pasando mal. Va en Vercel y
+   en GitHub Actions.
+2. 🔴 **Recarga automática del crédito de Gemini.** Es prepago y quedaban ~9 €.
+   Cuando llegue a cero se caen el acompañante, la moderación automática y los
+   resúmenes, sin ningún aviso. (La red de crisis ya no depende de eso.)
+3. 🟡 **Terminar el cambio de la clave VAPID.** La privada vieja está en el
+   historial de un repo público (commit `91b34d3`). Toda la maquinaria está
+   hecha: el servidor firma con las dos claves y la app re-suscribe sola a cada
+   persona. Falta generar el par y poner la privada en el secreto
+   `VAPID_PRIVATE_KEY_NEW`, y **después** cambiar `_VAPID_PUBLIC_KEY` en
+   `premium.js` — en ese orden, o las notificaciones dejan de llegar.
+   **Matiz importante, para no exagerarlo:** con la clave sola no alcanza, hacen
+   falta también los endpoints de suscripción, que están en
+   `profiles.push_subscription` y no son legibles por nadie más. Hay que rotarla,
+   pero no es una puerta abierta hoy.
+4. 🟡 Decidir si las copias guardan los hashes de contraseña.
+5. 🟡 El interruptor de contraseñas filtradas (Supabase → Authentication →
+   Passwords → HaveIBeenPwned). Hoy está apagado.
+6. 🟢 Los plazos de conservación de datos.
+
+### Legal — son los bloqueos de lanzamiento
+
+Ver el **anexo C**. Quedan tres, todos del
+titular: el registro de actividades del art. 30, aceptar 6 DPA, y firmar la DPIA
+(tiene campos `[COMPLETAR]` con los datos societarios).
+
+### Producto — preguntas abiertas, no decididas
+
+- **Los cuatro feeds de contenido** (Bitácora, Sala de Ayuda, Alegrías,
+  Momentos) compiten entre sí. Consolidarlos antes de lanzar es una decisión de
+  producto pendiente.
+- **Sólo 2 de 11 personas activaron las notificaciones**, con un alta de 3 pasos
+  en iPhone. No es un bug; es el número que más predice si la gente vuelve.
+- Qué hacer con los datos del piloto antes de que entre el primer usuario real.
+
+---
+
+## 9. Trampas concretas que ya quemaron a alguien
+
+- **`toISOString()` para agrupar por día.** Da fecha UTC. La semana de ánimo
+  salía corrida para quien vive en Europa. Usar `_dateKey(d)`, que es local.
+- **PostgREST rechaza la operación ENTERA si pedís una columna que no existe**
+  (42703 / PGRST204). Un `select('id')` sobre una tabla sin `id` no devuelve
+  menos: no devuelve nada.
+- **iOS Safari pinta el texto de los `<button>` con el color del sistema** salvo
+  que lleven `-webkit-appearance:none`. Y `-webkit-text-fill-color` se hereda y
+  le gana a `color`. Varios textos invisibles en modo oscuro salieron de ahí.
+- **Medir contraste leyendo `backgroundColor` no sirve en esta app**, porque casi
+  todo son degradados. Un auditor mío devolvió 266 hallazgos y **los 266 eran
+  falsos**: una captura del titular mostró que el texto marcado con «1.4:1» se
+  leía perfectamente. Si vas a auditar contraste, calculá sobre el color
+  compuesto real.
+- **Los `sleep` en primer plano están bloqueados** en el entorno de Claude Code;
+  hay que usar tareas en segundo plano.
+- **Tres tablas no admiten la optimización `(select auth.uid())` en policies.**
+  Está explicado en el **anexo A**, §5bis.
+
+---
+
+## 10. Cómo se ha trabajado acá, y qué va a cambiar
+
+Buena parte del trabajo de estas semanas se hizo con **conexión directa** a
+Supabase (aplicar migraciones, consultar producción, desplegar edge functions),
+a Vercel y a GitHub. Si el asistente que lo retome no tiene esas conexiones va a
+poder **escribir** el SQL pero **no aplicarlo**: habrá que pegarlo a mano en el
+editor SQL de Supabase. Lo mismo con los despliegues. No es mejor ni peor, pero
+conviene saberlo antes y no descubrirlo a mitad de un cambio.
+
+**Lo que más bugs encontró en todo el proyecto no fue el análisis estático: fue
+el titular usando la app y mandando capturas de pantalla.** La reacción que no
+se veía, el botón que faltaba, el texto ilegible sobre el fondo, el wrapped que
+tardaba. Ninguno de ésos salió leyendo código. Si podés, pedile capturas.
+
+**Y una advertencia sobre mí mismo, porque es el error que más repetí:** afirmé
+varias veces cosas que resultaron falsas y que había «razonado» sin comprobar
+—que una policy no se aplicaba, que una reacción se había revelado por un
+arreglo mío, que los números de uso eran rechazo del mercado, que la clave VAPID
+filtrada era explotable hoy—. En una base de datos casi todo se puede **probar**
+en una transacción que se deshace:
+
+```sql
+do $$
+begin
+  perform set_config('role','authenticated',true);
+  perform set_config('request.jwt.claims','{"sub":"<uid>","role":"authenticated"}',true);
+  insert into public.<tabla>(...) values (...);
+  raise exception 'probado, se deshace todo';
+end $$;
+```
+
+Compruébalo. Este proyecto ya perdió tiempo con afirmaciones mías que sonaban
+razonables y eran falsas.
+
+---
+
+## 11. Los anexos que vienen abajo
+
+| Anexo | Qué tiene |
+|---|---|
+| **A** | El documento largo: arquitectura, historial de todo lo arreglado, las 14 lecciones, consultas de verificación útiles |
+| **B** | Las 9 cosas que sólo puede hacer el titular (sus cuentas, sus secretos), ordenadas por coste de dejarlas |
+| **C** | Qué falta para poder lanzar |
+
+Los documentos legales (`LEGAL-DPIA.md`, `LEGAL-registro-tratamiento.md`,
+`LEGAL-dpa-y-dpia.md`, `LEGAL-brechas-y-conservacion.md`,
+`LEGAL-procedimiento-crisis.md`) **no van acá a propósito**: son para el titular
+y su asesoría, no para quien programa, y sumarían 45 KB de texto jurídico que no
+cambia ninguna decisión técnica. Están en el repositorio si hacen falta.
+
+
+
+---
+---
+
+# ANEXO A — El documento largo (HANDOVER)
+
+> Historial completo, arquitectura en detalle, las 14 lecciones y las consultas de verificación. Es el archivo de referencia del proyecto.
+
+---
+
+## Traspaso de Velo — lo que hay que saber antes de tocar nada
 
 Documento para quien retome el desarrollo de esta aplicación (otra persona, otro
 asistente). Escrito el 07/08/2026, actualizado el 13/08/2026.
@@ -170,7 +635,7 @@ heyvelo.app  →  Vercel (estático + funciones en /api)
 | `app-premium.html` | ~4.600 líneas. Todas las pantallas + los modales legales |
 | `sw.js` | Service worker: caché y notificaciones push |
 | `supabase/migrations/*.sql` | Cada una explica el fallo, el arreglo y su verificación |
-| `LEGAL-*.md`, `LANZAMIENTO-CHECKLIST.md` | Estado legal y de lanzamiento |
+| `LEGAL-*.md` (en el repositorio), anexo C | Estado legal y de lanzamiento |
 
 No hay build ni linter: se edita y se despliega. **Sí hay pruebas**, y son
 rápidas — conviene correrlas antes de cada despliegue:
@@ -324,7 +789,7 @@ los endpoints de suscripción, y ésos no son legibles.
 ## 8. Qué queda pendiente
 
 **Requiere las cuentas del titular:** → consolidado en
-`PENDIENTE-DEL-TITULAR.md`, con qué hay que hacer y dónde va cada dato.
+el **anexo B**, con qué hay que hacer y dónde va cada dato.
 Se deja el resumen acá:
 
 1. Fijar en `GEMINI_API_KEY` (Vercel + GitHub) la clave del proyecto **Velo
@@ -811,31 +1276,400 @@ de ahí el artefacto no es el sitio y hace falta un bucket externo.
 
 **Lo que sigue sin cubrir:** las contraseñas (`encrypted_password`). Es una decisión del titular
 —meter hashes en un artefacto de GitHub no es gratis— y está en
-`PENDIENTE-DEL-TITULAR.md`. Sin ellas, al restaurar cada persona vuelve a entrar
+el **anexo B**. Sin ellas, al restaurar cada persona vuelve a entrar
 con su correo y sus datos se reenlazan solos por el id.
 
 ---
 
 ## 10. Para retomarlo con otro asistente
 
-> **Empezá por `TRASPASO.md`.** Es el resumen de una sentada, pensado para
-> dárselo a otra IA: qué es esto, el ritual de despliegue, las cuatro lecciones
-> de seguridad, la red de crisis, el sistema de copias y lo que queda
-> pendiente. Este archivo es el largo; aquél es la puerta de entrada.
+Ese papel lo cumple **la parte 1 de este mismo documento**. Lo único que hace
+falta añadir acá:
 
-El repositorio es público: `github.com/diego85greco-coder/Velo`. Cualquier
-herramienta con acceso a GitHub puede leerlo entero.
+**Diferencia práctica según las herramientas que tenga quien lo retome.** Buena
+parte del trabajo de estas semanas se hizo con conexión directa a Supabase
+(aplicar migraciones, consultar la base de producción, desplegar edge
+functions), a Vercel y a GitHub. Un asistente sin esas conexiones va a poder
+**escribir** el SQL pero **no aplicarlo**: eso habrá que pegarlo a mano en el
+editor SQL de Supabase. Lo mismo con los despliegues. No es mejor ni peor, pero
+conviene saberlo antes y no descubrirlo a mitad de un cambio.
 
-**Lo mínimo que hay que darle:** este archivo, `LANZAMIENTO-CHECKLIST.md` y los
-`LEGAL-*.md`. Con eso tiene el estado completo.
+Sea quien sea: **los puntos 1, 2 y 3 de este anexo son los que evitan romper la
+aplicación.** El resto es contexto.
 
-**Diferencia práctica a tener en cuenta:** buena parte del trabajo de este mes
-se hizo con conexión directa a Supabase (aplicar migraciones, consultar la base
-de producción, desplegar edge functions) y a Vercel y GitHub. Si el asistente
-que lo retome no tiene esas conexiones, va a poder escribir el SQL pero **no
-aplicarlo**: eso habrá que pegarlo a mano en el editor SQL de Supabase. Lo mismo
-con los despliegues. No es mejor ni peor — pero conviene saberlo antes, para no
-descubrirlo a mitad de un cambio.
+---
+---
 
-Sea quien sea: **el punto 2 y el punto 3 de este documento son los que evitan
-romper la aplicación.** El resto es contexto.
+# ANEXO B — Lo que sólo puede hacer el titular
+
+> Necesita sus cuentas o datos que sólo tiene él. No se puede resolver desde el código.
+
+---
+
+## Lo que sólo podés hacer vos
+
+Todo lo demás está hecho. Esto queda porque necesita **tus cuentas** o **datos
+que sólo vos tenés** — no hay forma de resolverlo desde el código.
+
+Está ordenado por lo que más caro sale dejarlo. Los tres primeros son los
+urgentes; el resto puede esperar sin que se rompa nada.
+
+---
+
+## 🔴 1. La clave de Gemini — 2 minutos
+
+Hay dos claves dando vueltas. La del proyecto **Velo app2** (`…TtNk`) está en
+nivel **Pagado**; las otras están en nivel **gratuito**, y en el gratuito Google
+puede usar el contenido para entrenar modelos. Por esta app pasan
+conversaciones de gente contando por qué la está pasando mal.
+
+Poné `…TtNk` en los dos sitios:
+
+| Dónde | Variable |
+|---|---|
+| Vercel → Settings → Environment Variables | `GEMINI_API_KEY` |
+| GitHub → Settings → Secrets → Actions | `GEMINI_API_KEY` |
+
+---
+
+## 🔴 2. Recarga automática del crédito de Gemini — 2 minutos
+
+El crédito es **prepago** y quedaban ~9 €. Cuando llega a cero dejan de
+funcionar, **sin ningún aviso**:
+
+- el acompañante,
+- la moderación automática,
+- **el clasificador de crisis**,
+- los resúmenes mensuales.
+
+Lo importante es el tercero. En Google AI Studio → Billing, activá la recarga
+automática. Es la diferencia entre que la red de seguridad esté puesta o no.
+
+> El detector local de crisis (`_localCrisisCheck`) **sigue funcionando sin IA
+> ni cupo** — corre en el navegador. La IA es la segunda capa, no la única.
+
+---
+
+## 🔴 3. Terminar el cambio de la clave de notificaciones — 5 minutos
+
+**Sube de amarillo a rojo (13/08).** Comprobado hoy: el repositorio es público
+(`"visibility": "public"`) y la clave privada vieja sigue siendo legible en el
+commit `91b34d3`. Git no olvida lo que se borra.
+
+Con esa clave, cualquiera puede firmar una notificación que el teléfono muestra
+**como si fuera de Velo**. En una app de salud mental eso no es spam: es alguien
+escribiéndole a una persona vulnerable con nuestra cara. Es lo más serio que
+queda abierto en todo el proyecto.
+
+Toda la maquinaria está hecha y probada. El servidor firma con las dos claves
+durante la transición, y la app le borra la suscripción vieja a cada persona y
+le crea una nueva sola al abrirse, sin pedirle nada. Falta un paso, y es tuyo
+porque toca los secretos:
+
+```
+npx web-push generate-vapid-keys
+```
+
+1. La **privada** → GitHub → Settings → Secrets → Actions → `VAPID_PRIVATE_KEY_NEW`
+2. La **pública** → decímela y la pongo en `premium.js` (la pública es pública,
+   se puede pegar por acá sin problema; **la privada no me la mandes**)
+
+**En ese orden.** Si cambia primero la constante de la app, el servidor no puede
+firmar lo que el navegador exige y las notificaciones dejan de llegar. Para que
+eso no pase en silencio, `send-push.js` ahora se pone en rojo si detecta a
+alguien con la clave nueva y sin el secreto puesto.
+
+---
+
+## 🟡 4. Aceptar los DPA — 15 minutos
+
+Contrato de encargado del tratamiento, art. 28 RGPD. Uno por proveedor:
+
+| Proveedor | Para qué | Estado |
+|---|---|---|
+| Google (Gemini) | IA: acompañante, moderación, resúmenes | ⬜ |
+| Supabase | Base de datos, cuentas, archivos | ⬜ |
+| Vercel | Alojamiento y funciones | ⬜ |
+| Stripe | Pagos | ⬜ |
+| Cloudinary | Imágenes y vídeo | ⬜ |
+| Resend | Correos | ⬜ |
+
+Al aceptarlos, marcá la fila en `LEGAL-registro-tratamiento.md` (tabla de
+transferencias internacionales).
+
+---
+
+## 🟡 5. Datos societarios — 10 minutos
+
+Los documentos legales están escritos y completos **salvo** estos campos, que
+sólo vos podés rellenar. Van todos juntos acá para que no los busques:
+
+| Dato | Dónde va |
+|---|---|
+| Razón social | `LEGAL-registro-tratamiento.md` (responsable) |
+| NIF / NIPC | idem |
+| Domicilio fiscal | idem |
+| Teléfono de contacto | `LEGAL-brechas-y-conservacion.md` |
+| ¿Hay DPO designado? | `LEGAL-brechas-y-conservacion.md` — si lo hay, hay que comunicarlo a la CNPD |
+
+Después: fechar y firmar `LEGAL-DPIA.md`, y copiar los mismos datos a la
+Política de Privacidad de la app.
+
+---
+
+## 🟡 6. ¿Guardamos las contraseñas en las copias? — decisión de 1 minuto
+
+Al probar una restauración de verdad por primera vez (13/08) apareció que las
+copias no incluían la lista de cuentas. Ya se arregló: ahora guardan id, correo
+y fechas, y con eso los ánimos y los diarios vuelven enlazados a su dueño.
+
+Lo que **no** se guarda es `encrypted_password`. Sin esas contraseñas, en una
+restauración cada persona tendría que volver a entrar con su correo (sus datos
+siguen ahí y se reenlazan solos por el id).
+
+Guardar los hashes haría la restauración transparente, pero mete material de
+credenciales en un artefacto de GitHub. Es una decisión tuya, no algo que se
+hace de oficio. **Si no hacés nada, se queda como está**, que es la opción
+prudente.
+
+---
+
+## 🟡 7. El interruptor de contraseñas filtradas — 1 minuto
+
+Supabase → Authentication → Passwords → activar la comprobación contra
+HaveIBeenPwned. Rechaza contraseñas que ya aparecieron en filtraciones
+conocidas. Hoy está apagado.
+
+---
+
+## 🟢 8. Decidir los plazos de conservación
+
+Están implementados y **desactivados a propósito**: borrar datos de gente es
+una decisión tuya, no técnica. Para ver qué se borraría con cada plazo:
+
+```sql
+select * from public.velo_retention_report();
+```
+
+Se activan uno por uno en `public.velo_retention_policy` (`enabled = true`).
+
+---
+
+## 🟢 9. Probar la app usándola
+
+Es el único hueco que no se puede tapar desde acá. Todo lo verificado hasta
+ahora fue contra la base de datos y renderizando piezas sueltas en un navegador.
+Lo que **no** está cubierto: el PWA en iPhone, los flujos completos de punta a
+punta, y cualquier cosa que sólo aparezca usándola de verdad.
+
+De hecho, los últimos ocho bugs salieron de que vos abriste la app y miraste.
+Ninguna revisión automática los habría encontrado.
+
+
+---
+---
+
+# ANEXO C — Qué falta para lanzar
+
+> Estado de los bloqueos de lanzamiento.
+
+---
+
+## Checklist para lanzar Velo públicamente
+
+Estado verificado contra el código y la base el **24/07/2026** (v1617).
+Velo = **red social de ayuda mutua**. No es servicio de salud.
+
+> ⚠️ **No es asesoramiento legal.** Es una lista técnica de huecos detectados
+> revisando la app. Tratás datos de ánimo (categoría especial, art. 9 RGPD), que
+> es el escenario más exigente: esto lo tiene que validar un abogado de
+> protección de datos en Portugal antes de abrir al público.
+
+---
+
+## ✅ Ya existe y funciona
+
+| Item | Dónde |
+|---|---|
+| Términos y Condiciones | `app-premium.html` — modal `termsOv` |
+| Política de Privacidad | modal `privacyOv` |
+| Aviso Legal (titular, jurisdicción, propiedad intelectual) | portada |
+| Casilla de aceptación en el registro | `regTcCheck` |
+| **Exportar mis datos** (portabilidad, art. 20) | `pBackupMyData()` — JSON con perfil, ánimos y localStorage |
+| **Borrar mi cuenta** (supresión, art. 17) | RPC `delete_my_account` — reescrito 24/07, borra 43 tablas + perfil + auth |
+| Banner de cookies | `cookieBanner` |
+| Modal de encargados / DPA | `dpaOv` |
+| Emails de contacto y de privacidad | `consultas@` / `privacidad-datos@` |
+| Directorio SOS (líneas de crisis) | sección SOS |
+| Moderación (IA + reportes de usuarios) | `moderation_flags` |
+| Transparencia de IA (Reglamento UE 2024/1689) | Términos §9 |
+
+---
+
+## 🔴 BLOQUEANTES — resolver antes de abrir
+
+### ~~1. Los analytics cargan ANTES del consentimiento~~ ✅ RESUELTO (v1614)
+Los scripts de Vercel ya no se cargan en el `<head>`: se inyectan por JS sólo si
+el consentimiento guardado es `all`. Con "Solo esenciales" no se cargan nunca.
+Texto del banner corregido.
+
+### ~~2. No hay verificación de edad~~ ✅ RESUELTO (v1614)
+Casilla obligatoria de 16+ con validación en `pSignUp`. Se registra la constancia
+(`age_confirmed_at`) y la versión de términos aceptada (`terms_version`) —
+columnas aplicadas en la base el 24/07.
+
+### 3. Registro de Actividades de Tratamiento (art. 30) — 📄 BORRADOR LISTO
+Ver `LEGAL-registro-tratamiento.md`: las 9 actividades documentadas desde el
+código. Falta que el responsable complete los campos `[COMPLETAR]` (datos
+societarios y plazos de conservación).
+
+### 4. Faltan los DPA firmados con los proveedores — ⬜ ACCIÓN DEL TITULAR
+6 proveedores: Supabase, Vercel, Stripe, Google (Gemini), Cloudinary y Resend.
+Instrucciones de dónde aceptar cada uno en `LEGAL-dpa-y-dpia.md`.
+
+⚠️ **Revisar primero el de Google:** si Gemini está en el tier gratuito, el
+contenido enviado puede usarse para entrenar modelos. Con datos de ánimo y
+conversaciones personales eso hay que descartarlo antes de abrir.
+
+### 5. Evaluación de Impacto (DPIA, art. 35) — muy probablemente obligatoria
+Se dispara por combinar: **datos de categoría especial** (ánimo), a escala, con
+**perfilado por IA** (resúmenes) y usuarios en situación vulnerable.
+
+**Arreglo:** borrador con la matriz de riesgos en `LEGAL-dpa-y-dpia.md`. La
+decisión y la firma son del responsable con su abogado. Si el criterio es que no
+aplica, hay que dejar constancia escrita del razonamiento.
+
+---
+
+### ~~De-anonimización de las publicaciones anónimas~~ ✅ RESUELTO (v1618)
+Era el hueco de privacidad más grave que quedaba: cualquier persona con cuenta
+podía pedir la tabla cruda (`GET /rest/v1/help_posts?select=user_id,preview`) y
+obtener el autor real de cada publicación "anónima", cruzándolo con `profiles`
+para ponerle nombre. Además, comentar cualquier post de Bitácora devolvía el
+`user_id` de su autor.
+
+**Arreglado en `20260729_anon_posts_deanon_fix.sql` + cliente v1618:**
+- Las publicaciones anónimas ajenas ya no son legibles en la tabla cruda (ni por
+  el websocket). El feed se sirve por las vistas enmascaradas.
+- El aviso al autor de un comentario o reacción lo resuelve el servidor (RPC
+  `velo_notify_bitacora_author`); el cliente nunca recibe su identificador.
+- De paso: borrar una publicación de Bitácora vuelve a ser cosa del autor (o de
+  moderación). Antes cualquier usuario podía borrar la de cualquiera.
+
+✅ **Aplicada en la base el 29/07.** Verificado simulando un usuario cualquiera:
+17 publicaciones anónimas (12 en Sala de Ayuda, 3 en Muro, 2 en Bitácora) dejaron
+de ser rastreables; el feed sigue completo, el autor sigue viendo las suyas,
+moderación sigue viendo todo, y publicar funciona en las tres secciones.
+
+---
+
+## 🟠 IMPORTANTES — poco trabajo, evitan problemas
+
+### ~~Policies `USING(true)` en otras tablas~~ ✅ RESUELTO (v1620, 30/07)
+Cerradas 15 tablas. Lo que estaba abierto y ya no:
+
+| Tabla | Qué permitía |
+|---|---|
+| `reportes` | Leer **todos los reportes, incluidos los de crisis** — el dato más sensible de la app |
+| `bitacora_reports` | Ver **quién reportó a quién** (material para represalias) |
+| `happy_history` | Borrar el historial del Muro de todos |
+| `contacts` | Leer los mensajes del formulario de contacto, con su email |
+| `terms_acceptance` | Alterar la constancia de consentimiento (art. 7.1) |
+| `user_blocks` | Leer y quitar los bloqueos de otra persona |
+| `guardian_presence` | Cambiarle a otro el nombre, el estado o la valoración |
+| `admin_news` | Publicar avisos con pinta de oficiales |
+| `donations` | Ver quién donó y cuánto |
+| `momentos`, `bitacora_reactions`, `reviews` | Editar o borrar contenido ajeno |
+| `plus_grants`, `bookings`, `sessions` | Escribir en tablas internas o retiradas |
+
+**Corrección:** el 29/07 se dijo que `plus_grants` permitía darse Velo Plus sin
+pagar. Es falso — nada lee esa tabla para autorizar. Quien decide es
+`profiles.role`, protegido por el trigger `trg_velo_protect_role`.
+
+**Bug corregido de paso:** `momentos` no tenía policy de DELETE, así que borrar
+un momento no borraba nada (decía "listo" y reaparecía al refrescar). Ahora sí.
+
+Estado final en toda la base: **0 policies `ALL` y 0 `DELETE` con `USING(true)`**
+(eran 13 y 3). Quedan 2 `UPDATE` abiertas a propósito (el guardián cierra el
+pedido ajeno; las reacciones escriben en el post ajeno) y 18 `SELECT` de
+contenido público por diseño.
+
+### ~~6. Procedimiento de brechas de seguridad (art. 33)~~ 📄 ESCRITO
+`LEGAL-brechas-y-conservacion.md`, parte 1: qué cuenta como brecha en Velo, los
+5 pasos, cuándo hay que notificar a la CNPD y cuándo además a las personas, y
+qué registrar siempre. Falta que el responsable complete el contacto.
+
+### ~~7. Plazos de conservación concretos~~ 📄 PROPUESTOS
+Mismo archivo, parte 2: una tabla con plazo y motivo para cada tipo de dato.
+Falta que el responsable decida los `[COMPLETAR]` y copiarlos a la Política de
+Privacidad.
+
+### ~~8. Re-consentimiento al cambiar los términos~~ ✅ RESUELTO (v1614)
+Se guarda `terms_version` además de la fecha. Al publicar textos nuevos, basta
+subir `VELO_TERMS_VERSION` en `premium.js` para poder identificar quién aceptó
+qué versión. *(Falta implementar el aviso de re-aceptación en sí.)*
+
+### ~~9. Sin límite de uso en los endpoints de IA y email~~ ✅ RESUELTO (v1621)
+El tope lo lleva ahora el **servidor**, no el cliente. Antes, el contador de 25
+mensajes de IA lo insertaba el navegador, así que llamar a `/api/gemini`
+directamente con el token lo salteaba entero y se podía quemar la clave de
+Gemini en un bucle.
+
+Ahora los dos proxies llaman al RPC `velo_consume_quota`, que cuenta y registra
+en el mismo paso: **25 IA/día** (ilimitado con Plus) y **10 correos/día** (sin
+tope para moderación, que responde consultas). La tabla del contador no es
+accesible por REST — sólo entra por el RPC. Verificado: el mensaje 26 y el
+correo 11 se cortan.
+
+Si la base no responde, se **deja pasar**: no vale cortarle la IA a todo el
+mundo por un fallo de conexión.
+
+### ~~10. Obligaciones de moderación (DSA)~~ ✅ RESUELTO (v1648)
+Al moderar se avisa al **autor** con el motivo, y desde ese mismo aviso puede
+pedir revisión. «Contenido OK» no genera aviso; sin autor identificado no se
+inventa destinatario. La apelación entra en `reportes` con
+`categoria:'apelacion'`, que es la bandeja que el panel ya lista — sin tabla ni
+pantalla nuevas. El punto de contacto (`consultas@heyvelo.app`) ya está
+publicado en la pantalla de Contacto.
+
+Cubierto por `test/dsa-moderacion.test.js`, incluido que un guardado fallido
+**no** se celebre.
+
+---
+
+## 🟡 RECOMENDABLES
+
+- 🔴 **Backups: el proyecto está en plan GRATUITO y NO tiene copias
+  automáticas.** Verificado el 30/07. Si la base se pierde, se pierden los
+  diarios, ánimos y conversaciones de todo el mundo, sin vuelta atrás.
+  **Mitigación puesta hoy:** volcado nocturno a JSON como artefacto de GitHub
+  (`.github/workflows/backup.yml`), usando el secreto que ya existía. Cubre las
+  54 tablas pero **no** los audios/imágenes de Storage ni `auth.users`.
+  Para eso hace falta el plan Pro (~25 USD/mes) o un `pg_dump` con la
+  contraseña de la base. **Falta probar una restauración.**
+- **Rotar el VAPID key:** estuvo en el repositorio (queda en el historial de git).
+- ~~De-anonimización~~ ✅ **RESUELTO (v1618)** — ver abajo.
+- **Página de estado / aviso de caídas.**
+- **Accesibilidad** (contraste, lectores de pantalla) — exigible a servicios
+  digitales en la UE desde 2025.
+
+---
+
+## Qué queda, por responsable
+
+**Del titular (no requiere código):**
+1. Aceptar los 6 DPA — empezando por Google/Gemini (ver aviso arriba)
+2. Completar los `[COMPLETAR]` del registro de tratamiento
+3. Consulta con abogado: DPIA, base legal de los datos de ánimo, postura ante
+   crisis (las 5 preguntas están en `LEGAL-dpa-y-dpia.md`)
+
+**Técnico pendiente:**
+4. Rotar la VAPID privada (estuvo en el repositorio)
+5. Probar una restauración a partir de un backup
+6. Aplicar los plazos de conservación que decida el titular (3 necesitan un
+   trabajo programado: cuentas inactivas, pedidos viejos, reportes resueltos)
+
+**Ya cerrado el 24/07:** encuadre de la app, textos legales, transparencia de IA,
+consentimiento de analytics, edad mínima, constancia de consentimiento,
+procedimiento de crisis, eliminación de Groq, y el cierre de las policies de
+escritura de diario/ánimos y de moderación en la base.

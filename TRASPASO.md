@@ -429,6 +429,12 @@ razonables y eran falsas.
 
 ## 11. Los otros documentos
 
+> **Si vas a dárselo a otra IA de una sola vez**, usá
+> [`MIGRACION-A-CHATGPT.md`](MIGRACION-A-CHATGPT.md): es este mismo documento
+> con el HANDOVER, lo pendiente del titular y el checklist de lanzamiento
+> incorporados como anexos, sin remitir a ningún archivo externo.
+
+
 | Archivo | Qué tiene |
 |---|---|
 | `HANDOVER.md` | **el documento largo**: arquitectura, historial, 14 lecciones, verificaciones útiles |

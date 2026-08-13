@@ -16,6 +16,7 @@ la red de crisis y qué queda pendiente.
 
 | Archivo | Qué tiene |
 |---|---|
+| [`MIGRACION-A-CHATGPT.md`](MIGRACION-A-CHATGPT.md) | **todo en un solo archivo**, para dárselo entero a otra IA |
 | [`TRASPASO.md`](TRASPASO.md) | la puerta de entrada — leer primero |
 | [`HANDOVER.md`](HANDOVER.md) | el documento largo: arquitectura, historial, 14 lecciones |
 | [`PENDIENTE-DEL-TITULAR.md`](PENDIENTE-DEL-TITULAR.md) | lo que sólo puede hacer el titular |
