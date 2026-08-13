@@ -771,6 +771,23 @@ Cómo quedó:
 | `.github/scripts/restore-local.js` | el cargador; ordena las tablas por sus claves ajenas, no por una lista a mano |
 | `.github/scripts/restore.js` | la restauración de verdad sobre un Supabase vivo. Por defecto simula; sólo escribe con `--commit` |
 
+**Primera restauración de verdad, verificada el 13/08 a las 12:33 UTC:**
+
+```
+Estructura restaurada: 62 tablas, 179 policies.   (producción: 62 y 179)
+--- errores al aplicar la estructura --- 0
+auth.users: 10 cuentas
+  ✓ mood_entries: 32/32     ✓ diary_entries: 1/1    ✓ daily_responses: 23/23
+  ✓ circle_messages: 23/23  ✓ profiles: 11/11       ✓ usage_events: 693/693
+  …
+1304/1304 filas en 60 tablas, más 10 cuentas.
+✓ La copia se restaura entera en una base vacía.
+✓ Todas las tablas restauradas conservan la RLS.
+```
+
+Antes de llegar a esto hicieron falta cuatro intentos, y los cuatro fallos
+fueron reales. Están en el historial y en las migraciones `20260813c`.
+
 La prueba también comprueba que las tablas restauradas **conserven la RLS**:
 recuperar los datos con las puertas abiertas sería el peor final posible —cada
 persona recupera su diario, y también el de los demás.
