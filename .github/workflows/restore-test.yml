@@ -68,7 +68,9 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node .github/scripts/backup.js
+        run: |
+          node .github/scripts/backup.js
+          node .github/scripts/backup-storage.js
 
       - name: Levantar el andamio (roles, auth, pg_net)
         env:
@@ -119,6 +121,33 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:prueba@localhost:5432/velo_restaurada
         run: node .github/scripts/restore-local.js ./backup
+
+      - name: ¿Están todos los archivos en la copia?
+        # No se restauran a un Storage de mentira (no hay uno que levantar en
+        # el runner). Lo que sí se comprueba es que la copia de esta noche
+        # tenga TODOS los archivos que dice tener, y que ninguno esté vacío:
+        # un archivo de 0 bytes en un backup es peor que uno que falta, porque
+        # parece que está.
+        run: |
+          M=backup/storage/_manifest.json
+          if [ ! -s "$M" ]; then echo "✗ No hay copia de Storage."; exit 1; fi
+          node -e '
+            const fs=require("fs"), path=require("path");
+            const m=JSON.parse(fs.readFileSync("backup/storage/_manifest.json","utf8"));
+            let mal=0, n=0, vacios=0;
+            for(const c of m.cubos){
+              if(c.archivos!==c.esperados){ console.error(`✗ ${c.cubo}: ${c.archivos}/${c.esperados}`); mal++; }
+              const base=path.join("backup/storage",c.cubo);
+              const rec=d=>fs.existsSync(d)?fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?rec(path.join(d,e.name)):[path.join(d,e.name)]):[];
+              for(const f of rec(base)){ n++; if(fs.statSync(f).size===0){ console.error(`✗ vacio: ${f}`); vacios++; } }
+            }
+            console.log(`${n} archivos en disco, ${(m.bytes_totales/1048576).toFixed(1)} MB`);
+            if(mal||vacios||n!==m.archivos_totales){
+              console.error(`✗ La copia de archivos no esta entera (${n} en disco vs ${m.archivos_totales} en el manifiesto)`);
+              process.exit(1);
+            }
+            console.log("✓ Todos los archivos de Storage estan en la copia.");
+          '
 
       - name: Comprobar que la RLS quedó puesta
         env:

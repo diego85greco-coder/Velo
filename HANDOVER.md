@@ -796,8 +796,19 @@ Y de paso es el único aviso automático del proyecto: si se revoca la clave de
 servicio, si se pausa el proyecto o si alguien rompe el esquema desde el panel,
 esto se pone en rojo esa misma noche.
 
-**Lo que sigue sin cubrir:** los archivos de Storage (audios e imágenes) y las
-contraseñas (`encrypted_password`). Lo segundo es una decisión del titular
+**Los archivos de Storage también se copian** (desde el 13/08). Son tres cubos
+—`vibes` (fotos y audios que publica la gente), `avatars` y `velo-assets`— y hoy
+pesan 24 MB entre todos, así que caben en el mismo artefacto.
+`backup-storage.js` los baja y `restore-storage.js` los devuelve a su cubo con
+la MISMA ruta, que es lo que importa: la URL pública se arma con la ruta, así
+que las filas restauradas vuelven a apuntar a algo que existe. La prueba
+nocturna comprueba que estén todos y que ninguno pese 0 bytes — un archivo vacío
+en un backup es peor que uno que falta, porque parece que está.
+
+Si algún día se pasan de 500 MB, `backup-storage.js` se para y lo dice: a partir
+de ahí el artefacto no es el sitio y hace falta un bucket externo.
+
+**Lo que sigue sin cubrir:** las contraseñas (`encrypted_password`). Es una decisión del titular
 —meter hashes en un artefacto de GitHub no es gratis— y está en
 `PENDIENTE-DEL-TITULAR.md`. Sin ellas, al restaurar cada persona vuelve a entrar
 con su correo y sus datos se reenlazan solos por el id.

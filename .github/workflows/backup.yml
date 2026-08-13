@@ -34,6 +34,14 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node .github/scripts/backup.js
 
+      - name: Copiar los archivos de Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        # Fotos y audios que sube la gente. En la base sólo queda la URL: sin
+        # esto, las filas se restauran apuntando a archivos que ya no existen.
+        run: node .github/scripts/backup-storage.js
+
       - name: Guardar como artefacto
         uses: actions/upload-artifact@v4
         with:
