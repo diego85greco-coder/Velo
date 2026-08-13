@@ -53,6 +53,17 @@ const VAPID_PRIVATE_NEW = (process.env.VAPID_PRIVATE_KEY_NEW || '').trim();
 const _DET_OLD = { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_KEY,  privateKey: VAPID_PRIVATE_KEY };
 const _DET_NEW = { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_NEW,  privateKey: VAPID_PRIVATE_NEW };
 console.log(`[vapid] rotación: clave nueva ${VAPID_PRIVATE_NEW ? 'CONFIGURADA' : 'todavía no configurada'}`);
+if (!VAPID_PRIVATE_NEW) {
+  console.warn('[vapid] ⚠️  LA ROTACIÓN SIGUE A MEDIAS. La clave privada VIEJA está en el');
+  console.warn('[vapid]     historial de un repositorio PÚBLICO: hoy cualquiera puede mandar');
+  console.warn('[vapid]     notificaciones haciéndose pasar por Velo. Para cerrarlo:');
+  console.warn('[vapid]     1) npx web-push generate-vapid-keys');
+  console.warn('[vapid]     2) la privada → secreto VAPID_PRIVATE_KEY_NEW del repositorio');
+  console.warn('[vapid]     3) la pública → _VAPID_PUBLIC_KEY en premium.js (ese orden)');
+  console.warn('[vapid]     La app re-suscribe sola a cada persona al abrirse. Ver PENDIENTE-DEL-TITULAR.md');
+}
+// Cuántas personas ya tienen la clave nueva sin que el servidor pueda firmarla.
+let rotacionSinSecreto = 0;
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
@@ -1222,6 +1233,10 @@ async function main() {
     const buildV = parsedFull.buildV || '?';
     const pubMatch = parsedFull.clientPubKey === VAPID_PUBLIC_KEY;
     console.log(`  user ${user.id}: tz=${tz} h=${localHour(tz)} slot=${slot||'none'} buildV=${buildV} clientPub=${clientPub}... match=${pubMatch}`);
+    // La aplicación ya cambió a la clave nueva pero el secreto no está puesto:
+    // esta persona NO va a recibir nada y el 401 se vería como un fallo suelto
+    // más. Se cuenta para poder cortar en rojo al final, con el motivo escrito.
+    if (parsedFull.clientPubKey === VAPID_PUBLIC_NEW && !VAPID_PRIVATE_NEW) rotacionSinSecreto++;
     if (!slot) { skipped++; continue; }
     // Dedup: skip if this slot was already sent (clave por fecha LOCAL del usuario)
     if (parsedFull.lastSent && parsedFull.lastSent[slot] === slotDayKey(tz, slot)) {
@@ -1295,6 +1310,15 @@ async function main() {
   }
 
   console.log(`Done — total_users=${users?.length||0}, sent=${sent}, skipped_no_window=${skipped}, failed=${failed}`);
+
+  // Si alguien ya está en la clave nueva y el servidor no la tiene, sus avisos
+  // NO llegan. Eso tiene que verse en rojo, no perderse entre los logs: es
+  // exactamente el tipo de fallo silencioso que este proyecto arrastró meses.
+  if (rotacionSinSecreto > 0) {
+    console.error(`\n✗ ${rotacionSinSecreto} persona(s) tienen la clave VAPID nueva y falta el secreto`);
+    console.error('  VAPID_PRIVATE_KEY_NEW. No están recibiendo notificaciones.');
+    process.exit(1);
+  }
 }
 
 main();

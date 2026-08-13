@@ -13,6 +13,9 @@ on:
     - cron: '40 3 * * *'   # 03:40 UTC — antes de las limpiezas de las 04:00
   workflow_dispatch:        # y a mano cuando haga falta
 
+permissions:
+  contents: write        # para commitear supabase/schema.sql cuando cambie
+
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -38,3 +41,29 @@ jobs:
           path: backup/
           retention-days: 30
           if-no-files-found: error
+
+      # La ESTRUCTURA sí va al repositorio, al revés que los datos: no contiene
+      # nada de nadie, y un respaldo sólo sirve si vive en un sitio distinto del
+      # que se puede perder. Hasta el 13/08/2026 no existía en ninguna parte: 27
+      # tablas se habían creado a mano en el panel de Supabase.
+      - name: Volcar la estructura a supabase/schema.sql
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node .github/scripts/dump-schema.js
+
+      - name: Commitear la estructura si cambió
+        run: |
+          if git diff --quiet -- supabase/schema.sql; then
+            echo "La estructura no cambió."
+            exit 0
+          fi
+          git config user.name  "velo-backup"
+          git config user.email "consultas@heyvelo.app"
+          git add supabase/schema.sql
+          git commit -m "Estructura de la base al $(date -u +%d/%m/%Y)
+
+          Volcado automático de velo_dump_schema(). Si aparece un cambio que no
+          esperabas, alguien tocó la base desde el panel en vez de escribir una
+          migración."
+          git push

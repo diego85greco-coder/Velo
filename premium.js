@@ -6995,6 +6995,28 @@ function _loadHomeMemoryCard(){
 }
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
+// ⚠️ ESTA CLAVE ESTÁ COMPROMETIDA Y HAY QUE CAMBIARLA (pendiente del titular).
+//
+// Su clave privada quedó escrita en `.github/scripts/send-push.js` y se quitó en
+// v1624, pero este repositorio es PÚBLICO y git no olvida: sigue siendo legible
+// en el commit 91b34d3. Con ella, cualquiera puede firmar notificaciones que el
+// teléfono muestra como si fueran de Velo. En una aplicación de salud mental eso
+// no es spam: es alguien escribiéndole a una persona vulnerable con nuestra cara.
+//
+// La maquinaria para cambiarla ya está toda hecha y probada:
+//   · el servidor firma con las dos claves durante la transición (send-push.js)
+//   · `_syncPushSubOnStartup` detecta que la clave cambió, borra la suscripción
+//     vieja y crea una nueva sola, sin pedirle nada a nadie (líneas de abajo)
+//
+// Falta un solo paso, y es del titular porque requiere tocar los secretos:
+//   1. npx web-push generate-vapid-keys
+//   2. la PRIVADA → secreto `VAPID_PRIVATE_KEY_NEW` del repositorio
+//   3. la PÚBLICA → esta constante  ← este orden, no al revés
+//
+// Si se cambia esta constante ANTES del paso 2, las notificaciones dejan de
+// llegar (el servidor no puede firmar lo que el navegador exige). Por eso
+// send-push.js se pone en rojo si detecta a alguien con la clave nueva y sin el
+// secreto puesto, en vez de fallar en silencio.
 var _VAPID_PUBLIC_KEY = 'BDArqGzq2k2topSo3dg0XJC0-vsUrn466S0RRvwbHc2BYV61mSGfk9E5CenvUJKrXbsJGVqgC8Nvxq6nn20-0u0';
 // Pre-warm SW registration so subscribe() can be called synchronously from user gesture
 var _swReg = null;
@@ -39278,7 +39300,7 @@ window.addEventListener('load', function(){
     // que trae ESTE build. El poll de abajo recarga si version.json > _BUILT_V; si
     // este número queda por debajo del de version.json, la app entra en LOOP de
     // recarga infinita. Al bumpear version.json, bumpear también acá.
-    var _BUILT_V = 1651;
+    var _BUILT_V = 1652;
     // v1646: se expone para que la suscripción push registre la versión REAL.
     // No es un sexto sitio que mantener: lee de _BUILT_V, no repite el número.
     try{ window._VELO_BUILD = _BUILT_V; }catch(_){}

@@ -1,0 +1,129 @@
+name: Prueba de restauración
+
+# Una copia de seguridad que nunca restauraste no es una copia: es una
+# hipótesis. Las copias de Velo llevaban meses en verde y ninguna se había
+# restaurado jamás. Al probarlo por primera vez (13/08/2026) aparecieron dos
+# agujeros que ningún «✓ backup correcto» iba a mostrar nunca:
+#
+#   · 27 de las 61 tablas no tenían ningún `create table` en el repositorio:
+#     se habían creado a mano en el panel. Los datos existían; el sitio donde
+#     volcarlos, no.
+#   · Faltaba `auth.users`, y cinco tablas le apuntan con clave ajena — los
+#     ánimos, los diarios y las respuestas diarias. Lo más personal que guarda
+#     la aplicación era justo lo que no se podía restaurar.
+#
+# Esto lo prueba de verdad, cada noche: PostgreSQL vacío → `supabase/schema.sql`
+# (el que está commiteado, el que se usaría el peor día) → la copia de esa misma
+# noche → se cuenta fila por fila. Si algo no entra, el workflow se pone en rojo
+# y llega el correo de GitHub.
+#
+# Es, de paso, el único aviso automático que tiene el proyecto: si la clave de
+# servicio se revoca, si el proyecto se pausa o si alguien rompe el esquema,
+# esto se entera esta noche y no dentro de tres meses.
+
+on:
+  schedule:
+    - cron: '20 4 * * *'    # 04:20 UTC — 40 min después de la copia
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:                  # y cuando se toca la maquinaria de respaldo
+      - '.github/scripts/backup.js'
+      - '.github/scripts/restore-local.js'
+      - '.github/scripts/dump-schema.js'
+      - 'test/db/prelude.sql'
+      - '.github/workflows/restore-test.yml'
+
+jobs:
+  restaurar:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: prueba
+          POSTGRES_DB: velo_restaurada
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias
+        run: npm install pg
+
+      - name: Hacer una copia fresca
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node .github/scripts/backup.js
+
+      - name: Levantar el andamio (roles, auth, pg_net)
+        env:
+          PGPASSWORD: prueba
+        run: psql -h localhost -U postgres -d velo_restaurada -v ON_ERROR_STOP=1 -f test/db/prelude.sql
+
+      - name: Aplicar la estructura commiteada
+        env:
+          PGPASSWORD: prueba
+        # Sin ON_ERROR_STOP: se quiere ver TODO lo que falla de una vez, no el
+        # primer error. El recuento de tablas de abajo es lo que decide.
+        run: |
+          psql -h localhost -U postgres -d velo_restaurada -f supabase/schema.sql 2>&1 | tee /tmp/schema.log
+          echo "--- errores al aplicar la estructura ---"
+          grep -c '^psql.*ERROR' /tmp/schema.log || true
+
+      - name: ¿Está toda la estructura?
+        env:
+          PGPASSWORD: prueba
+        run: |
+          TABLAS=$(psql -h localhost -U postgres -d velo_restaurada -tAc \
+            "select count(*) from pg_tables where schemaname='public'")
+          POLICIES=$(psql -h localhost -U postgres -d velo_restaurada -tAc \
+            "select count(*) from pg_policies where schemaname='public'")
+          echo "Estructura restaurada: $TABLAS tablas, $POLICIES policies."
+          if [ "$TABLAS" -lt 55 ]; then
+            echo "✗ Faltan tablas. La estructura commiteada no reconstruye la base."
+            grep '^psql.*ERROR' /tmp/schema.log | head -30
+            exit 1
+          fi
+          if [ "$POLICIES" -lt 150 ]; then
+            echo "✗ Faltan policies: la base se restauraría ABIERTA. Eso es peor que no restaurarla."
+            grep '^psql.*ERROR' /tmp/schema.log | head -30
+            exit 1
+          fi
+
+      - name: Volcar la copia encima y contar
+        env:
+          DATABASE_URL: postgres://postgres:prueba@localhost:5432/velo_restaurada
+        run: node .github/scripts/restore-local.js ./backup
+
+      - name: Comprobar que la RLS quedó puesta
+        env:
+          PGPASSWORD: prueba
+        # Restaurar los datos con las puertas abiertas sería el peor final
+        # posible: todo el mundo recupera su diario, y también el de los demás.
+        run: |
+          SIN_RLS=$(psql -h localhost -U postgres -d velo_restaurada -tAc \
+            "select coalesce(string_agg(c.relname, ', '), '') from pg_class c
+             join pg_namespace n on n.oid=c.relnamespace
+             where n.nspname='public' and c.relkind='r' and not c.relrowsecurity")
+          if [ -n "$SIN_RLS" ]; then
+            echo "✗ Tablas restauradas SIN seguridad a nivel de fila: $SIN_RLS"
+            exit 1
+          fi
+          echo "✓ Todas las tablas restauradas conservan la RLS."
+
+      # La copia no se guarda: este job la genera sólo para probarla. La copia
+      # que se conserva es la del workflow de las 03:40, en su artefacto.

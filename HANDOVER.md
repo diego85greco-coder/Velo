@@ -739,9 +739,51 @@ select count(*) from public.help_posts where anon and user_id <> auth.uid()::tex
 
 **Copias de seguridad:** el proyecto de Supabase está en **plan gratuito, que no
 las incluye**. Hay un volcado nocturno propio a artefacto de GitHub
-(`.github/workflows/backup.yml`). La restauración está **probada**: ciclo
-completo con 0 filas distintas. Script: `.github/scripts/restore.js` — por
-defecto simula, sólo escribe con `--commit`.
+(`.github/workflows/backup.yml`).
+
+> **Corrección (13/08).** Acá decía que la restauración estaba «probada: ciclo
+> completo con 0 filas distintas». Eso era un **simulacro contra la base viva**
+> —comparar la copia con lo que ya estaba— y una restauración de verdad es
+> volcarla donde no hay nada. Al hacerlo por primera vez aparecieron dos
+> agujeros que el simulacro no podía ver, porque comparaba contra una base que
+> ya tenía la estructura y las cuentas:
+>
+> 1. **No existía la estructura en ninguna parte.** 27 de las 61 tablas —entre
+>    ellas `profiles`, `momentos`, `circles`, `daily_responses`, `reviews`— se
+>    habían creado a mano en el panel y no tenían ningún `create table` en el
+>    repositorio. Había 1231 filas sin ningún sitio donde volcarlas.
+> 2. **Faltaba `auth.users`.** PostgREST no la expone, así que el backup nunca
+>    la tuvo — y cinco tablas le apuntan con clave ajena: `mood_entries`,
+>    `diary_entries`, `daily_responses`, `dq_reactions` y `content_reports`. Los
+>    ánimos y los diarios, o sea lo más personal que guarda la app, eran justo
+>    lo que no entraba. Comprobado: falla con
+>    `violates foreign key constraint "mood_entries_user_id_fkey"`.
+
+Cómo quedó:
+
+| Pieza | Qué hace |
+|---|---|
+| `.github/workflows/backup.yml` | 03:40 UTC — datos a artefacto (30 días) + estructura a `supabase/schema.sql`, que **sí se commitea** |
+| `.github/scripts/dump-schema.js` | llama a `velo_dump_schema()` (SECURITY DEFINER, sólo service_role) y escribe el DDL |
+| `.github/scripts/backup.js` | los datos, más `auth_users.json` vía `velo_dump_auth_users()` |
+| `.github/workflows/restore-test.yml` | 04:20 UTC — **la prueba**: PostgreSQL vacío → `schema.sql` → la copia de esa noche → cuenta fila por fila |
+| `test/db/prelude.sql` | el andamio que Supabase da y un PostgreSQL pelado no: roles, `auth.uid/jwt/users`, `net.http_post` |
+| `.github/scripts/restore-local.js` | el cargador; ordena las tablas por sus claves ajenas, no por una lista a mano |
+| `.github/scripts/restore.js` | la restauración de verdad sobre un Supabase vivo. Por defecto simula; sólo escribe con `--commit` |
+
+La prueba también comprueba que las tablas restauradas **conserven la RLS**:
+recuperar los datos con las puertas abiertas sería el peor final posible —cada
+persona recupera su diario, y también el de los demás.
+
+Y de paso es el único aviso automático del proyecto: si se revoca la clave de
+servicio, si se pausa el proyecto o si alguien rompe el esquema desde el panel,
+esto se pone en rojo esa misma noche.
+
+**Lo que sigue sin cubrir:** los archivos de Storage (audios e imágenes) y las
+contraseñas (`encrypted_password`). Lo segundo es una decisión del titular
+—meter hashes en un artefacto de GitHub no es gratis— y está en
+`PENDIENTE-DEL-TITULAR.md`. Sin ellas, al restaurar cada persona vuelve a entrar
+con su correo y sus datos se reenlazan solos por el id.
 
 ---
 

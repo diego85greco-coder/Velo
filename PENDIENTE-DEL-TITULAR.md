@@ -3,7 +3,7 @@
 Todo lo demás está hecho. Esto queda porque necesita **tus cuentas** o **datos
 que sólo vos tenés** — no hay forma de resolverlo desde el código.
 
-Está ordenado por lo que más caro sale dejarlo. Los dos primeros son los únicos
+Está ordenado por lo que más caro sale dejarlo. Los tres primeros son los
 urgentes; el resto puede esperar sin que se rompa nada.
 
 ---
@@ -42,7 +42,38 @@ automática. Es la diferencia entre que la red de seguridad esté puesta o no.
 
 ---
 
-## 🟡 3. Aceptar los DPA — 15 minutos
+## 🔴 3. Terminar el cambio de la clave de notificaciones — 5 minutos
+
+**Sube de amarillo a rojo (13/08).** Comprobado hoy: el repositorio es público
+(`"visibility": "public"`) y la clave privada vieja sigue siendo legible en el
+commit `91b34d3`. Git no olvida lo que se borra.
+
+Con esa clave, cualquiera puede firmar una notificación que el teléfono muestra
+**como si fuera de Velo**. En una app de salud mental eso no es spam: es alguien
+escribiéndole a una persona vulnerable con nuestra cara. Es lo más serio que
+queda abierto en todo el proyecto.
+
+Toda la maquinaria está hecha y probada. El servidor firma con las dos claves
+durante la transición, y la app le borra la suscripción vieja a cada persona y
+le crea una nueva sola al abrirse, sin pedirle nada. Falta un paso, y es tuyo
+porque toca los secretos:
+
+```
+npx web-push generate-vapid-keys
+```
+
+1. La **privada** → GitHub → Settings → Secrets → Actions → `VAPID_PRIVATE_KEY_NEW`
+2. La **pública** → decímela y la pongo en `premium.js` (la pública es pública,
+   se puede pegar por acá sin problema; **la privada no me la mandes**)
+
+**En ese orden.** Si cambia primero la constante de la app, el servidor no puede
+firmar lo que el navegador exige y las notificaciones dejan de llegar. Para que
+eso no pase en silencio, `send-push.js` ahora se pone en rojo si detecta a
+alguien con la clave nueva y sin el secreto puesto.
+
+---
+
+## 🟡 4. Aceptar los DPA — 15 minutos
 
 Contrato de encargado del tratamiento, art. 28 RGPD. Uno por proveedor:
 
@@ -60,7 +91,7 @@ transferencias internacionales).
 
 ---
 
-## 🟡 4. Datos societarios — 10 minutos
+## 🟡 5. Datos societarios — 10 minutos
 
 Los documentos legales están escritos y completos **salvo** estos campos, que
 sólo vos podés rellenar. Van todos juntos acá para que no los busques:
@@ -78,26 +109,32 @@ Política de Privacidad de la app.
 
 ---
 
-## 🟡 5. Terminar la rotación VAPID — 5 minutos
+## 🟡 6. ¿Guardamos las contraseñas en las copias? — decisión de 1 minuto
 
-La clave privada de las notificaciones push estuvo en el repositorio, así que
-**queda en el historial de git para siempre**. El código para rotarla sin que
-nadie pierda sus notificaciones ya está puesto: firma con la vieja y reintenta
-con la nueva.
+Al probar una restauración de verdad por primera vez (13/08) apareció que las
+copias no incluían la lista de cuentas. Ya se arregló: ahora guardan id, correo
+y fechas, y con eso los ánimos y los diarios vuelven enlazados a su dueño.
 
-Falta generar el par nuevo y poner la privada como `VAPID_PRIVATE_KEY_NEW` en
-GitHub Secrets y en Supabase. El envío de hoy lo confirma:
+Lo que **no** se guarda es `encrypted_password`. Sin esas contraseñas, en una
+restauración cada persona tendría que volver a entrar con su correo (sus datos
+siguen ahí y se reenlazan solos por el id).
 
-```
-[vapid] rotación: clave nueva todavía no configurada
-```
-
-Sin esto la app funciona igual — pero cualquiera con acceso al historial del
-repositorio puede enviar notificaciones push en nombre de Velo.
+Guardar los hashes haría la restauración transparente, pero mete material de
+credenciales en un artefacto de GitHub. Es una decisión tuya, no algo que se
+hace de oficio. **Si no hacés nada, se queda como está**, que es la opción
+prudente.
 
 ---
 
-## 🟢 6. Decidir los plazos de conservación
+## 🟡 7. El interruptor de contraseñas filtradas — 1 minuto
+
+Supabase → Authentication → Passwords → activar la comprobación contra
+HaveIBeenPwned. Rechaza contraseñas que ya aparecieron en filtraciones
+conocidas. Hoy está apagado.
+
+---
+
+## 🟢 8. Decidir los plazos de conservación
 
 Están implementados y **desactivados a propósito**: borrar datos de gente es
 una decisión tuya, no técnica. Para ver qué se borraría con cada plazo:
@@ -110,7 +147,7 @@ Se activan uno por uno en `public.velo_retention_policy` (`enabled = true`).
 
 ---
 
-## 🟢 7. Probar la app usándola
+## 🟢 9. Probar la app usándola
 
 Es el único hueco que no se puede tapar desde acá. Todo lo verificado hasta
 ahora fue contra la base de datos y renderizando piezas sueltas en un navegador.

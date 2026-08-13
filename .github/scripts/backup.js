@@ -15,9 +15,22 @@
  * repositorio. Un volcado con el diario íntimo de la gente commiteado en git
  * quedaría en el historial para siempre y sería una brecha, no un backup.
  *
- * LIMITACIÓN: no incluye los archivos de Storage (audios e imágenes) ni los
- * usuarios de auth.users, que PostgREST no expone. Para eso hace falta el plan
- * Pro o un pg_dump con la contraseña de la base.
+ * TAMBIÉN GUARDA LA LISTA DE CUENTAS (desde el 13/08/2026). PostgREST no expone
+ * `auth.users`, así que durante meses no estaba — y cinco tablas le apuntan con
+ * clave ajena: los ánimos, los diarios, las respuestas diarias, las reacciones y
+ * los reportes. Sin las cuentas, esas filas no entran en una base recién creada.
+ * Se descubrió al probar una restauración de verdad por primera vez. Se lee con
+ * `velo_dump_auth_users()`, que es SECURITY DEFINER y sólo puede llamar el
+ * servidor.
+ *
+ * LIMITACIÓN: no incluye los archivos de Storage (audios e imágenes) ni las
+ * contraseñas (`encrypted_password`). Al restaurar, cada persona vuelve a entrar
+ * con su correo y sus datos siguen enlazados por el id. Guardar los hashes en un
+ * artefacto es una decisión del titular: está anotada en PENDIENTE-DEL-TITULAR.md.
+ *
+ * LA ESTRUCTURA VA APARTE: `dump-schema.js` → `supabase/schema.sql`, que sí se
+ * commitea (no lleva datos de nadie). Una copia de datos sin esquema no se puede
+ * restaurar en ningún sitio.
  */
 
 const SUPA_URL = process.env.SUPABASE_URL;
@@ -150,18 +163,53 @@ async function dumpTable(name) {
     }
   }
 
+  // ── La lista de cuentas ───────────────────────────────────────────────────
+  // PostgREST no expone auth.users, así que durante meses la copia no la tuvo.
+  // No es un detalle: mood_entries, diary_entries, daily_responses, dq_reactions
+  // y content_reports apuntan ahí con clave ajena. Sin las cuentas, los ánimos y
+  // los diarios no entran en una base recién creada — se descubrió el 13/08/2026
+  // al probar una restauración de verdad por primera vez.
+  //
+  // Va sin `encrypted_password`: hace falta volver a entrar con el correo, pero
+  // los datos se reenlazan. Ver PENDIENTE-DEL-TITULAR.md.
+  let cuentas = 0, falloCuentas = false;
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/velo_dump_auth_users`, {
+      method: 'POST',
+      headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
+    const users = await r.json();
+    fs.writeFileSync(path.join(outDir, 'auth_users.json'), JSON.stringify(users));
+    cuentas = users.length;
+    console.log(`  ✓ auth.users: ${cuentas}`);
+  } catch (e) {
+    falloCuentas = true;
+    console.error(`  ✗ auth.users: ${e.message}`);
+    console.error('     Sin esto, los ánimos y los diarios no se pueden restaurar.');
+  }
+
   const total = summary.reduce((n, s) => n + (s.filas || 0), 0);
   fs.writeFileSync(path.join(outDir, '_manifest.json'), JSON.stringify({
+    cuentas,
     generado: new Date().toISOString(),
     tablas: summary.length,
     filas_totales: total,
     tablas_con_error: failed,
     origen_del_listado: origen,
-    nota: 'No incluye Storage (audios/imagenes) ni auth.users.',
+    nota: 'No incluye los archivos de Storage (audios/imagenes) ni las contrasenas de auth.users.',
     detalle: summary
   }, null, 2));
 
-  console.log(`\n${total} filas en ${TABLES.length - failed}/${TABLES.length} tablas.`);
+  console.log(`\n${total} filas en ${TABLES.length - failed}/${TABLES.length} tablas, mas ${cuentas} cuentas.`);
+
+  // Sin la lista de cuentas no se pueden restaurar los animos ni los diarios:
+  // eso es una copia rota, no una copia con un detalle de menos.
+  if (falloCuentas) {
+    console.error('Sin auth.users la copia no se puede restaurar entera.');
+    process.exit(1);
+  }
 
   // Si falla más de un tercio de las tablas, algo está mal de verdad (clave
   // revocada, proyecto pausado) y conviene que el workflow se ponga en rojo en
