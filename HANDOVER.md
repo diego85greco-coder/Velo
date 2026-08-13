@@ -413,6 +413,32 @@ Se deja el resumen acá:
    `daily_responses` guardan `"Anónimo"`, que es exactamente la cadena que
    compara la vista. No hay de-anonimización por esta vía.
 
+14. **Una policy que cuenta filas necesita poder VERLAS.** La RLS se aplica
+   también dentro de la subconsulta de una policy. `ia_usage_daily_limit`
+   contaba `select count(*) from ia_usage where user_id = auth.uid()` para topar
+   en 25/día, pero `ia_usage` no tenía ninguna policy de SELECT: el count daba 0
+   siempre y la restrictiva dejaba pasar todo. Entraban 26 de 26.
+
+   Se arregló con `ia_usage_select_own` (13/08). La forma de detectarlo, por si
+   aparece otra:
+
+   ```sql
+   -- policies que cuentan filas, y si su tabla es legible por su dueño
+   select tablename, policyname,
+          (select count(*) from pg_policies p
+            where p.tablename = l.tablename and p.cmd in ('SELECT','ALL')) as lecturas
+   from pg_policies l
+   where schemaname='public' and coalesce(with_check,qual) ~* 'select count\(\*\)';
+   ```
+   `lecturas = 0` es la señal. De las tres del proyecto sólo `ia_usage` la tenía.
+
+   Ojo con el tamaño real del problema: `ia_usage` es la tercera de tres capas.
+   La que protege el saldo de Gemini es el 429 del proxy `/api/gemini`
+   (`velo_consume_quota`, SECURITY DEFINER, sin esta ceguera), y el cliente ya
+   lo entiende desde v1621. No hubo consecuencia visible. Los cuatro límites por
+   trigger (bitácora, momentos, botellas, reacciones) tampoco sufren esto, por
+   ser SECURITY DEFINER.
+
 ---
 
 ## 8bis. Lentes de revisión ya aplicadas (y su resultado)

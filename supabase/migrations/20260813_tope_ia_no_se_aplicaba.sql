@@ -1,0 +1,51 @@
+-- La capa de respaldo del tope diario de IA no se estaba aplicando.
+--
+-- CÓMO SE VIO
+-- `ia_usage` tenía 0 filas desde siempre. Con 11 usuarios y 3 activos eso podía
+-- explicarse (el titular es Plus y `_recordIaUsageServer` sale antes de escribir
+-- si sos Plus). Pero al probarlo haciéndose pasar por un usuario gratuito,
+-- entraron 26 inserciones de 26. El tope nunca saltaba.
+--
+-- POR QUÉ
+-- La policy `ia_usage_daily_limit` es RESTRICTIVE y está bien escrita:
+--
+--   ... OR (select count(*) from ia_usage u
+--            where u.user_id = auth.uid()::text
+--              and u.created_at > now() - interval '24 hours') < 25
+--
+-- El problema es que **la RLS también se aplica dentro de la subconsulta de una
+-- policy**. `ia_usage` no tenía NINGUNA policy de SELECT, así que para el propio
+-- usuario esa tabla era invisible: el `count(*)` devolvía 0 siempre, `0 < 25`
+-- era siempre cierto, y la restrictiva dejaba pasar todo. La policy contaba sus
+-- propias filas sin poder verlas.
+--
+-- Comprobado en la base, en transacciones que se deshacen:
+--   sin policy de SELECT  → entran 26 de 26
+--   con policy de SELECT  → la 26 se rechaza («new row violates row-level
+--                           security policy "ia_usage_daily_limit"»)
+--   usuario Plus          → entran 40 de 40, sin tope (correcto)
+--
+-- QUÉ CONSECUENCIA TUVO DE VERDAD: NINGUNA VISIBLE
+-- Vale la pena dejarlo escrito para no exagerarlo después. El tope que de
+-- verdad protege el saldo de Gemini —que es prepago— no es éste: es el del
+-- proxy `/api/gemini`, que llama a `velo_consume_quota` y devuelve 429
+-- (25/día de conversación, 150/día global por persona). Ése sí funciona:
+-- `velo_api_usage` tiene filas y la función es SECURITY DEFINER, así que no
+-- sufre esta ceguera. Y desde v1621 el cliente entiende ese 429 y muestra el
+-- mismo aviso cálido que el contador local.
+--
+-- O sea que `ia_usage` era la tercera capa de tres, y era la que estaba rota.
+-- Nadie se quedó sin IA ni gastó de más por esto. Pero era una red de seguridad
+-- que parecía puesta y no lo estaba, y eso es justamente lo que no se puede
+-- dejar así: el día que se toque el proxy, ésta tiene que aguantar.
+--
+-- LAS OTRAS NO TIENEN ESTE PROBLEMA (comprobado)
+-- `help_posts` y `guardian_requests` usan el mismo patrón de policy, pero sus
+-- tablas sí son legibles por su dueño (help_select_public_or_own,
+-- gr_select_involved), así que cuentan bien. Y los otros cuatro límites
+-- —bitácora, momentos, botellas y reacciones a botellas— son triggers
+-- SECURITY DEFINER, que ven todas las filas.
+
+create policy ia_usage_select_own on public.ia_usage
+  for select to authenticated
+  using (user_id = (auth.uid())::text);
