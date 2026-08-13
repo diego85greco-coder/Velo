@@ -817,6 +817,11 @@ con su correo y sus datos se reenlazan solos por el id.
 
 ## 10. Para retomarlo con otro asistente
 
+> **Empezá por `TRASPASO.md`.** Es el resumen de una sentada, pensado para
+> dárselo a otra IA: qué es esto, el ritual de despliegue, las cuatro lecciones
+> de seguridad, la red de crisis, el sistema de copias y lo que queda
+> pendiente. Este archivo es el largo; aquél es la puerta de entrada.
+
 El repositorio es público: `github.com/diego85greco-coder/Velo`. Cualquier
 herramienta con acceso a GitHub puede leerlo entero.
 
