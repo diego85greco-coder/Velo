@@ -72,7 +72,8 @@ async function ordenPorDependencias(tablas) {
 
 async function tiposDe(tabla) {
   const { rows } = await cli.query(
-    `select column_name, data_type, udt_name from information_schema.columns
+    `select column_name, data_type, udt_name, is_identity, identity_generation
+       from information_schema.columns
       where table_schema='public' and table_name=$1`, [tabla]);
   return new Map(rows.map(r => [r.column_name, r]));
 }
@@ -133,13 +134,26 @@ function valorPara(v, col) {
     const ignoradas = Object.keys(filas[0]).filter(c => !tipos.has(c));
     if (ignoradas.length) problemas.push(`${tabla}: la copia trae columnas que la estructura no tiene (${ignoradas.join(', ')})`);
 
+    // Una columna GENERATED ALWAYS AS IDENTITY rechaza cualquier valor, aunque
+    // sea el suyo de siempre. Restaurar es precisamente devolverle el que tenía,
+    // porque otras filas apuntan a él. En producción esas nueve columnas se
+    // pasaron a BY DEFAULT (migración 20260813c) justamente por eso, pero acá se
+    // contempla igual: si alguien crea mañana una tabla con ALWAYS, esta prueba
+    // tiene que decir qué falta, no morirse.
+    const hayAlways = cols.some(c => {
+      const t = tipos.get(c);
+      return t && t.is_identity === 'YES' && t.identity_generation === 'ALWAYS';
+    });
+    const overriding = hayAlways ? ' overriding system value' : '';
+    if (hayAlways) problemas.push(`${tabla}: la columna id es GENERATED ALWAYS — por PostgREST (restore.js) no se podría restaurar con su id original`);
+
     let ok = 0;
     for (const fila of filas) {
       const vals = cols.map(c => valorPara(fila[c], tipos.get(c)));
       const ph = cols.map((_, i) => `$${i + 1}`).join(',');
       try {
         await cli.query(
-          `insert into public."${tabla}" (${cols.map(c => `"${c}"`).join(',')})
+          `insert into public."${tabla}" (${cols.map(c => `"${c}"`).join(',')})${overriding}
            values (${ph}) on conflict do nothing`, vals);
         ok++;
       } catch (e) {
