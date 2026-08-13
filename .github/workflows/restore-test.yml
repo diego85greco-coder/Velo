@@ -80,6 +80,16 @@ jobs:
         # Sin ON_ERROR_STOP: se quiere ver TODO lo que falla de una vez, no el
         # primer error. El recuento de tablas de abajo es lo que decide.
         run: |
+          # El `| tee` de abajo se come el código de salida de psql, así que un
+          # archivo que no existe pasaría como paso correcto. Ya ocurrió en la
+          # primera ejecución (13/08): schema.sql todavía no estaba commiteado y
+          # este paso salió en verde. Se comprueba a mano.
+          if [ ! -s supabase/schema.sql ]; then
+            echo "✗ No hay supabase/schema.sql, o está vacío."
+            echo "  Lo genera el workflow «Copia de seguridad de la base». Lanzalo una vez"
+            echo "  a mano (Actions → Run workflow) y volvé a intentarlo."
+            exit 1
+          fi
           psql -h localhost -U postgres -d velo_restaurada -f supabase/schema.sql 2>&1 | tee /tmp/schema.log
           echo "--- errores al aplicar la estructura ---"
           grep -c '^psql.*ERROR' /tmp/schema.log || true
