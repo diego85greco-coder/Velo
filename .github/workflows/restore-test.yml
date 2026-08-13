@@ -31,6 +31,7 @@ on:
       - '.github/scripts/backup.js'
       - '.github/scripts/restore-local.js'
       - '.github/scripts/dump-schema.js'
+      - 'supabase/schema.sql'      # si cambia la estructura, hay que reprobarla
       - 'test/db/prelude.sql'
       - '.github/workflows/restore-test.yml'
 
