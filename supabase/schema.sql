@@ -1,0 +1,2754 @@
+-- Esquema de Velo (schema public). GENERADO AUTOMATICAMENTE.
+-- No editar a mano: lo reescribe el workflow "Copia de seguridad de la base"
+-- llamando a public.velo_dump_schema().
+
+create extension if not exists pgcrypto;
+
+-- == TABLAS ==
+
+create table if not exists public.admin_news (
+  id uuid default gen_random_uuid() not null,
+  titulo text,
+  cuerpo text,
+  emoji text default ' '::text,
+  source_url text,
+  source_name text,
+  active boolean default true,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bitacora_comment_reactions (
+  id uuid default gen_random_uuid() not null,
+  comment_id text not null,
+  user_id text not null,
+  emoji text not null,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bitacora_comments (
+  id uuid default gen_random_uuid() not null,
+  post_id text not null,
+  user_id text not null,
+  content text not null,
+  is_anon boolean default false,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bitacora_posts (
+  id uuid default gen_random_uuid() not null,
+  user_id text,
+  categoria text not null,
+  titulo text,
+  contenido text not null,
+  is_anon boolean default false,
+  votos_a integer default 0,
+  votos_b integer default 0,
+  created_at timestamp with time zone default now(),
+  postura_a text default ''::text,
+  postura_b text default ''::text,
+  tema text
+);
+
+create table if not exists public.bitacora_reactions (
+  id uuid default gen_random_uuid() not null,
+  post_id text not null,
+  user_id text not null,
+  reaction_type text not null,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bitacora_reports (
+  id uuid default gen_random_uuid() not null,
+  user_id text,
+  post_id text,
+  comment_id text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bookings (
+  id uuid default gen_random_uuid() not null,
+  pro_id text,
+  user_id text,
+  amount numeric,
+  commission numeric,
+  estado text default 'pendiente'::text,
+  paid boolean default false,
+  paid_at timestamp with time zone,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bot_attempts (
+  id bigint generated always as identity not null,
+  reason text,
+  ua text,
+  ts timestamp with time zone default now() not null
+);
+
+create table if not exists public.bottle_reactions (
+  id uuid default gen_random_uuid() not null,
+  bottle_id text not null,
+  user_id text not null,
+  reaction text not null,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bottle_replies (
+  id uuid default gen_random_uuid() not null,
+  bottle_id text not null,
+  user_id text not null,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.bottles (
+  id text not null,
+  user_id text,
+  mood text default '💭'::text,
+  text text not null,
+  color text default 'rgba(116,198,157,.12)'::text,
+  replied boolean default false,
+  replied_by text,
+  created_at timestamp with time zone default now(),
+  user_name text,
+  user_av text,
+  anon boolean default false
+);
+
+create table if not exists public.broadcasts (
+  id uuid default gen_random_uuid() not null,
+  target text not null,
+  subject text not null,
+  body text not null,
+  icon text default '📢'::text,
+  sender text default 'Velo'::text,
+  sent_at timestamp with time zone default now()
+);
+
+create table if not exists public.buddy_requests (
+  id uuid default gen_random_uuid() not null,
+  from_id text not null,
+  to_id text not null,
+  status text default 'pending'::text not null,
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.circle_members (
+  circle_id text not null,
+  user_id text not null,
+  last_seen timestamp with time zone default now()
+);
+
+create table if not exists public.circle_messages (
+  id bigint default nextval('circle_messages_id_seq'::regclass) not null,
+  circle_id text not null,
+  user_id text,
+  user_name text default 'Usuario'::text not null,
+  user_av text default '🌿'::text,
+  text text,
+  emoji text,
+  type text default 'text'::text,
+  created_at timestamp with time zone default now(),
+  reactions jsonb
+);
+
+create table if not exists public.circles (
+  id text not null,
+  name text not null,
+  descripcion text,
+  emoji text default ' '::text,
+  foto text,
+  tema text,
+  cap_min integer default 5,
+  cap_max integer default 30,
+  creator_id text,
+  official boolean default false,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.contacts (
+  id uuid default gen_random_uuid() not null,
+  user_email text default 'anónimo'::text,
+  topic text default 'General'::text,
+  mensaje text not null,
+  leido boolean default false,
+  fecha timestamp with time zone default now(),
+  reply text,
+  allow_reply boolean default false,
+  reply_at timestamp with time zone,
+  user_name text,
+  user_id text,
+  source text
+);
+
+create table if not exists public.content_reports (
+  id uuid default gen_random_uuid() not null,
+  reporter_id uuid,
+  response_id text,
+  response_user_id uuid,
+  report_type text,
+  created_at timestamp with time zone default now(),
+  resolved boolean default false not null,
+  resolved_at timestamp with time zone
+);
+
+create table if not exists public.daily_responses (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid,
+  question_date date default CURRENT_DATE not null,
+  question_id integer default 1 not null,
+  mood_emoji text default '😊'::text not null,
+  response_text text default ''::text,
+  user_name text default ''::text,
+  user_avatar text default ''::text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.data_requests (
+  id bigint generated always as identity not null,
+  email text not null,
+  report_summary text,
+  sent_at timestamp with time zone default now() not null,
+  sent_by text
+);
+
+create table if not exists public.deleted_accounts (
+  id bigint generated always as identity not null,
+  deleted_at timestamp with time zone default now() not null,
+  reason text,
+  user_id uuid
+);
+
+create table if not exists public.diary_entries (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  text text not null,
+  date_label text,
+  ts bigint not null,
+  created_at timestamp with time zone default now(),
+  audio text,
+  image text,
+  title text
+);
+
+create table if not exists public.direct_messages (
+  id uuid default gen_random_uuid() not null,
+  from_id text not null,
+  from_name text,
+  from_av text,
+  to_id text not null,
+  text text,
+  read boolean default false,
+  created_at timestamp with time zone default now(),
+  reactions jsonb,
+  read_at timestamp with time zone
+);
+
+create table if not exists public.donations (
+  id uuid default gen_random_uuid() not null,
+  user_email text,
+  amount numeric,
+  currency text default 'USD'::text,
+  tipo text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.dq_comments (
+  id uuid default gen_random_uuid() not null,
+  response_id text not null,
+  text text not null,
+  user_hash text,
+  user_name text,
+  user_avatar text,
+  user_id uuid,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.dq_reactions (
+  id uuid default gen_random_uuid() not null,
+  response_id uuid,
+  user_id uuid,
+  reaction text not null,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.guardian_presence (
+  user_id text not null,
+  name text,
+  avatar text,
+  bio text,
+  tags text[],
+  status text default 'disponible'::text,
+  last_seen timestamp with time zone default now(),
+  convs integer default 0,
+  rating double precision default 5.0,
+  is_guardian boolean default true
+);
+
+create table if not exists public.guardian_requests (
+  id text not null,
+  post_id text not null,
+  seeker_id text,
+  guardian_id text,
+  guardian_name text default 'Guardián'::text,
+  guardian_av text default '🌿'::text,
+  status text default 'pending'::text,
+  support_msg text,
+  rating integer,
+  created_at timestamp with time zone default now(),
+  kind text,
+  seeker_name text,
+  seeker_av text,
+  context text
+);
+
+create table if not exists public.happy_history (
+  id text not null,
+  user_id text not null,
+  emoji text default '☀️'::text,
+  text text default ''::text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.happy_posts (
+  id text not null,
+  user_id text,
+  user_name text default 'Usuario'::text not null,
+  user_av text default ''::text,
+  emoji text default '☀️'::text,
+  text text default ''::text,
+  photo text default ''::text,
+  anon boolean default false,
+  reactions jsonb default '{"✨": 0, "🌸": 0, "🌿": 0, "💛": 0, "🤗": 0}'::jsonb,
+  created_at timestamp with time zone default now(),
+  comments jsonb
+);
+
+create table if not exists public.help_posts (
+  id text not null,
+  user_id text,
+  user_name text default 'Usuario Anónimo'::text not null,
+  emoji text default '💙'::text,
+  preview text not null,
+  urgencia text,
+  anon boolean default true,
+  taken boolean default false,
+  taken_by text,
+  created_at timestamp with time zone default now(),
+  closed boolean default false,
+  user_av text
+);
+
+create table if not exists public.ia_usage (
+  id bigint generated always as identity not null,
+  user_id text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.moderation_flags (
+  id uuid default gen_random_uuid() not null,
+  section text,
+  tipo text,
+  gravedad text,
+  content text,
+  user_id text,
+  resolved boolean default false,
+  resolution text,
+  created_at timestamp with time zone default now(),
+  resolved_by text,
+  resolved_at timestamp with time zone
+);
+
+create table if not exists public.momento_comments (
+  id uuid default gen_random_uuid() not null,
+  momento_id text not null,
+  text text not null,
+  user_hash text,
+  user_name text,
+  user_avatar text,
+  user_id uuid,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.momentos (
+  id text not null,
+  text text,
+  emoji text,
+  anon_label text,
+  hearts integer default 0,
+  created_at timestamp with time zone default now(),
+  expires_at timestamp with time zone,
+  user_hash text,
+  user_name text,
+  user_avatar text,
+  user_id uuid
+);
+
+create table if not exists public.mood_entries (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  date_key text not null,
+  emoji text,
+  label text,
+  note text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.news_reactions (
+  id bigint generated always as identity not null,
+  news_key text not null,
+  titulo text,
+  emoji_news text,
+  reaction text not null,
+  user_id uuid not null,
+  date_key text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.plus_grants (
+  id uuid default gen_random_uuid() not null,
+  email text,
+  granted_at timestamp with time zone default now(),
+  expires_at timestamp with time zone,
+  note text
+);
+
+create table if not exists public.pro_patient_notes (
+  pro_id text not null,
+  patient_id text not null,
+  notes text,
+  updated_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.profiles (
+  id text not null,
+  nombre text default ''::text,
+  email text default ''::text,
+  avatar text default ''::text,
+  motto text default ''::text,
+  role text default 'user'::text,
+  created_at timestamp with time zone default now(),
+  status_music text,
+  status_book text,
+  status_phrase text,
+  terms_accepted_at timestamp with time zone,
+  plus_expires_at timestamp with time zone,
+  status_film text,
+  helped_count integer default 0,
+  received_count integer default 0,
+  username text,
+  visit_day_count integer default 0,
+  user_status text default 'disponible'::text,
+  incognito boolean default false,
+  read_bcast_ids text[] default '{}'::text[],
+  badge_notified text default 'Novato'::text,
+  weather_city text default ''::text,
+  visit_days jsonb default '[]'::jsonb,
+  fav_contacts jsonb default '[]'::jsonb,
+  blocked_users jsonb default '[]'::jsonb,
+  dark_mode boolean,
+  push_subscription text,
+  username_changes integer default 0,
+  buddy_id text,
+  buddy_name text,
+  buddy_available_at timestamp with time zone,
+  buddy_started_at timestamp with time zone,
+  guardian_specialties text,
+  vibes_seen jsonb default '{}'::jsonb,
+  onboarding_flags jsonb default '{}'::jsonb,
+  achievements_json text default '{}'::text,
+  diamante_plus_granted_at timestamp with time zone,
+  terms_version text,
+  age_confirmed_at timestamp with time zone,
+  daily_quote_cache text,
+  pro_spec text,
+  pro_trial_expires_at timestamp with time zone,
+  pro_subscription_expires_at timestamp with time zone,
+  pro_cert_url text,
+  pro_verified boolean,
+  pro_availability text,
+  pro_solidarity boolean,
+  dpa_accepted_at timestamp with time zone
+);
+
+create table if not exists public.push_history (
+  id bigint generated always as identity not null,
+  slot text not null,
+  title text,
+  body text,
+  sent_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.quote_reactions (
+  id bigint generated always as identity not null,
+  date_key text not null,
+  user_id uuid not null,
+  emoji text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.referrals (
+  id uuid default gen_random_uuid() not null,
+  referrer_id text not null,
+  referred_id text not null,
+  created_at timestamp with time zone default now(),
+  qualified_at timestamp with time zone,
+  reward_granted_at timestamp with time zone
+);
+
+create table if not exists public.reportes (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid,
+  mensaje text,
+  categoria text,
+  estado text default 'abierto'::text,
+  created_at timestamp with time zone default now(),
+  resolved_at timestamp with time zone
+);
+
+create table if not exists public.reviews (
+  id uuid default gen_random_uuid() not null,
+  pro_id text,
+  user_id text,
+  stars integer,
+  texto text,
+  created_at timestamp with time zone default now(),
+  kind text,
+  reviewer_name text,
+  reviewee_name text,
+  reply text,
+  reply_name text
+);
+
+create table if not exists public.sessions (
+  id text not null,
+  pro_id text,
+  pro_name text,
+  user_id text,
+  user_name text,
+  booking_date date,
+  booking_time text,
+  status text default 'confirmed'::text,
+  amount numeric(10,2) default 0,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+create table if not exists public.solidarity_requests (
+  id uuid default gen_random_uuid() not null,
+  user_id text,
+  email text,
+  user_name text,
+  tipo text,
+  espec text,
+  urgencia text,
+  horarios text,
+  description text,
+  status text default 'pending'::text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.support_matches (
+  id uuid default gen_random_uuid() not null,
+  user_id text not null,
+  partner_id text not null,
+  month_key text not null,
+  my_answer text default 'pending'::text not null,
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.surveys (
+  id uuid default gen_random_uuid() not null,
+  user_id text,
+  general integer,
+  utilidad integer,
+  recomendaria integer,
+  funcion text,
+  sugerencia text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.terms_acceptance (
+  id uuid default gen_random_uuid() not null,
+  email text,
+  nombre text,
+  accepted_at timestamp with time zone default now(),
+  rol text,
+  version text,
+  ip_hint text
+);
+
+create table if not exists public.usage_events (
+  id bigint generated always as identity not null,
+  user_id uuid,
+  event text not null,
+  meta text,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.user_blocks (
+  id uuid default gen_random_uuid() not null,
+  blocker_id uuid not null,
+  blocked_id uuid not null,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.user_favorites (
+  id uuid default gen_random_uuid() not null,
+  user_id text not null,
+  fav_id text not null,
+  fav_name text,
+  fav_av text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.velo_api_usage (
+  id bigint generated always as identity not null,
+  user_id text not null,
+  kind text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.velo_notifications (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  type text not null,
+  title text not null,
+  body text,
+  related_id text,
+  is_read boolean default false,
+  created_at timestamp with time zone default now(),
+  sender_id uuid
+);
+
+create table if not exists public.velo_retention_policy (
+  key text not null,
+  days integer not null,
+  enabled boolean default false not null,
+  description text
+);
+
+create table if not exists public.vibe_comment_reactions (
+  id uuid default gen_random_uuid() not null,
+  comment_id uuid not null,
+  user_id text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.vibe_comments (
+  id uuid default gen_random_uuid() not null,
+  vibe_id uuid not null,
+  user_id text not null,
+  user_name text,
+  user_av text,
+  text text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.vibe_groups (
+  id uuid default gen_random_uuid() not null,
+  kind text not null,
+  slug text,
+  title text not null,
+  emoji text default ' '::text,
+  description text,
+  owner_id text,
+  member_ids text[] default '{}'::text[],
+  created_at timestamp with time zone default now() not null,
+  expires_at timestamp with time zone
+);
+
+create table if not exists public.vibe_reactions (
+  vibe_id uuid not null,
+  user_id text not null,
+  reaction text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.vibe_views (
+  vibe_id uuid not null,
+  viewer_id text not null,
+  viewer_name text,
+  viewer_av text,
+  created_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.vibes (
+  id uuid default gen_random_uuid() not null,
+  group_id uuid,
+  user_id text not null,
+  user_name text,
+  user_av text,
+  media_url text not null,
+  caption text default ''::text,
+  archived boolean default false not null,
+  created_at timestamp with time zone default now() not null,
+  expires_at timestamp with time zone default (now() + '24:00:00'::interval) not null,
+  instant_scope text,
+  instant_member_ids text[] default '{}'::text[],
+  mood text
+);
+
+-- == RESTRICCIONES ==
+
+alter table public.admin_news drop constraint if exists admin_news_pkey;
+alter table public.admin_news add constraint admin_news_pkey PRIMARY KEY (id);
+alter table public.bitacora_comment_reactions drop constraint if exists bitacora_comment_reactions_pkey;
+alter table public.bitacora_comment_reactions add constraint bitacora_comment_reactions_pkey PRIMARY KEY (id);
+alter table public.bitacora_comments drop constraint if exists bitacora_comments_pkey;
+alter table public.bitacora_comments add constraint bitacora_comments_pkey PRIMARY KEY (id);
+alter table public.bitacora_posts drop constraint if exists bitacora_posts_pkey;
+alter table public.bitacora_posts add constraint bitacora_posts_pkey PRIMARY KEY (id);
+alter table public.bitacora_reactions drop constraint if exists bitacora_reactions_pkey;
+alter table public.bitacora_reactions add constraint bitacora_reactions_pkey PRIMARY KEY (id);
+alter table public.bitacora_reports drop constraint if exists bitacora_reports_pkey;
+alter table public.bitacora_reports add constraint bitacora_reports_pkey PRIMARY KEY (id);
+alter table public.bookings drop constraint if exists bookings_pkey;
+alter table public.bookings add constraint bookings_pkey PRIMARY KEY (id);
+alter table public.bot_attempts drop constraint if exists bot_attempts_pkey;
+alter table public.bot_attempts add constraint bot_attempts_pkey PRIMARY KEY (id);
+alter table public.bottle_reactions drop constraint if exists bottle_reactions_pkey;
+alter table public.bottle_reactions add constraint bottle_reactions_pkey PRIMARY KEY (id);
+alter table public.bottle_replies drop constraint if exists bottle_replies_pkey;
+alter table public.bottle_replies add constraint bottle_replies_pkey PRIMARY KEY (id);
+alter table public.bottles drop constraint if exists bottles_pkey;
+alter table public.bottles add constraint bottles_pkey PRIMARY KEY (id);
+alter table public.broadcasts drop constraint if exists broadcasts_pkey;
+alter table public.broadcasts add constraint broadcasts_pkey PRIMARY KEY (id);
+alter table public.buddy_requests drop constraint if exists buddy_requests_pkey;
+alter table public.buddy_requests add constraint buddy_requests_pkey PRIMARY KEY (id);
+alter table public.circle_members drop constraint if exists circle_members_pkey;
+alter table public.circle_members add constraint circle_members_pkey PRIMARY KEY (circle_id, user_id);
+alter table public.circle_messages drop constraint if exists circle_messages_pkey;
+alter table public.circle_messages add constraint circle_messages_pkey PRIMARY KEY (id);
+alter table public.circles drop constraint if exists circles_pkey;
+alter table public.circles add constraint circles_pkey PRIMARY KEY (id);
+alter table public.contacts drop constraint if exists contacts_pkey;
+alter table public.contacts add constraint contacts_pkey PRIMARY KEY (id);
+alter table public.content_reports drop constraint if exists content_reports_pkey;
+alter table public.content_reports add constraint content_reports_pkey PRIMARY KEY (id);
+alter table public.daily_responses drop constraint if exists daily_responses_pkey;
+alter table public.daily_responses add constraint daily_responses_pkey PRIMARY KEY (id);
+alter table public.data_requests drop constraint if exists data_requests_pkey;
+alter table public.data_requests add constraint data_requests_pkey PRIMARY KEY (id);
+alter table public.deleted_accounts drop constraint if exists deleted_accounts_pkey;
+alter table public.deleted_accounts add constraint deleted_accounts_pkey PRIMARY KEY (id);
+alter table public.diary_entries drop constraint if exists diary_entries_pkey;
+alter table public.diary_entries add constraint diary_entries_pkey PRIMARY KEY (id);
+alter table public.direct_messages drop constraint if exists direct_messages_pkey;
+alter table public.direct_messages add constraint direct_messages_pkey PRIMARY KEY (id);
+alter table public.donations drop constraint if exists donations_pkey;
+alter table public.donations add constraint donations_pkey PRIMARY KEY (id);
+alter table public.dq_comments drop constraint if exists dq_comments_pkey;
+alter table public.dq_comments add constraint dq_comments_pkey PRIMARY KEY (id);
+alter table public.dq_reactions drop constraint if exists dq_reactions_pkey;
+alter table public.dq_reactions add constraint dq_reactions_pkey PRIMARY KEY (id);
+alter table public.guardian_presence drop constraint if exists guardian_presence_pkey;
+alter table public.guardian_presence add constraint guardian_presence_pkey PRIMARY KEY (user_id);
+alter table public.guardian_requests drop constraint if exists guardian_requests_pkey;
+alter table public.guardian_requests add constraint guardian_requests_pkey PRIMARY KEY (id);
+alter table public.happy_history drop constraint if exists happy_history_pkey;
+alter table public.happy_history add constraint happy_history_pkey PRIMARY KEY (id);
+alter table public.happy_posts drop constraint if exists happy_posts_pkey;
+alter table public.happy_posts add constraint happy_posts_pkey PRIMARY KEY (id);
+alter table public.help_posts drop constraint if exists help_posts_pkey;
+alter table public.help_posts add constraint help_posts_pkey PRIMARY KEY (id);
+alter table public.ia_usage drop constraint if exists ia_usage_pkey;
+alter table public.ia_usage add constraint ia_usage_pkey PRIMARY KEY (id);
+alter table public.moderation_flags drop constraint if exists moderation_flags_pkey;
+alter table public.moderation_flags add constraint moderation_flags_pkey PRIMARY KEY (id);
+alter table public.momento_comments drop constraint if exists momento_comments_pkey;
+alter table public.momento_comments add constraint momento_comments_pkey PRIMARY KEY (id);
+alter table public.momentos drop constraint if exists momentos_pkey;
+alter table public.momentos add constraint momentos_pkey PRIMARY KEY (id);
+alter table public.mood_entries drop constraint if exists mood_entries_pkey;
+alter table public.mood_entries add constraint mood_entries_pkey PRIMARY KEY (id);
+alter table public.news_reactions drop constraint if exists news_reactions_pkey;
+alter table public.news_reactions add constraint news_reactions_pkey PRIMARY KEY (id);
+alter table public.plus_grants drop constraint if exists plus_grants_pkey;
+alter table public.plus_grants add constraint plus_grants_pkey PRIMARY KEY (id);
+alter table public.pro_patient_notes drop constraint if exists pro_patient_notes_pkey;
+alter table public.pro_patient_notes add constraint pro_patient_notes_pkey PRIMARY KEY (pro_id, patient_id);
+alter table public.profiles drop constraint if exists profiles_pkey;
+alter table public.profiles add constraint profiles_pkey PRIMARY KEY (id);
+alter table public.push_history drop constraint if exists push_history_pkey;
+alter table public.push_history add constraint push_history_pkey PRIMARY KEY (id);
+alter table public.quote_reactions drop constraint if exists quote_reactions_pkey;
+alter table public.quote_reactions add constraint quote_reactions_pkey PRIMARY KEY (id);
+alter table public.referrals drop constraint if exists referrals_pkey;
+alter table public.referrals add constraint referrals_pkey PRIMARY KEY (id);
+alter table public.reportes drop constraint if exists reportes_pkey;
+alter table public.reportes add constraint reportes_pkey PRIMARY KEY (id);
+alter table public.reviews drop constraint if exists reviews_pkey;
+alter table public.reviews add constraint reviews_pkey PRIMARY KEY (id);
+alter table public.sessions drop constraint if exists sessions_pkey;
+alter table public.sessions add constraint sessions_pkey PRIMARY KEY (id);
+alter table public.solidarity_requests drop constraint if exists solidarity_requests_pkey;
+alter table public.solidarity_requests add constraint solidarity_requests_pkey PRIMARY KEY (id);
+alter table public.support_matches drop constraint if exists support_matches_pkey;
+alter table public.support_matches add constraint support_matches_pkey PRIMARY KEY (id);
+alter table public.surveys drop constraint if exists surveys_pkey;
+alter table public.surveys add constraint surveys_pkey PRIMARY KEY (id);
+alter table public.terms_acceptance drop constraint if exists terms_acceptance_pkey;
+alter table public.terms_acceptance add constraint terms_acceptance_pkey PRIMARY KEY (id);
+alter table public.usage_events drop constraint if exists usage_events_pkey;
+alter table public.usage_events add constraint usage_events_pkey PRIMARY KEY (id);
+alter table public.user_blocks drop constraint if exists user_blocks_pkey;
+alter table public.user_blocks add constraint user_blocks_pkey PRIMARY KEY (id);
+alter table public.user_favorites drop constraint if exists user_favorites_pkey;
+alter table public.user_favorites add constraint user_favorites_pkey PRIMARY KEY (id);
+alter table public.velo_api_usage drop constraint if exists velo_api_usage_pkey;
+alter table public.velo_api_usage add constraint velo_api_usage_pkey PRIMARY KEY (id);
+alter table public.velo_notifications drop constraint if exists velo_notifications_pkey;
+alter table public.velo_notifications add constraint velo_notifications_pkey PRIMARY KEY (id);
+alter table public.velo_retention_policy drop constraint if exists velo_retention_policy_pkey;
+alter table public.velo_retention_policy add constraint velo_retention_policy_pkey PRIMARY KEY (key);
+alter table public.vibe_comment_reactions drop constraint if exists vibe_comment_reactions_pkey;
+alter table public.vibe_comment_reactions add constraint vibe_comment_reactions_pkey PRIMARY KEY (id);
+alter table public.vibe_comments drop constraint if exists vibe_comments_pkey;
+alter table public.vibe_comments add constraint vibe_comments_pkey PRIMARY KEY (id);
+alter table public.vibe_groups drop constraint if exists vibe_groups_pkey;
+alter table public.vibe_groups add constraint vibe_groups_pkey PRIMARY KEY (id);
+alter table public.vibe_reactions drop constraint if exists vibe_reactions_pkey;
+alter table public.vibe_reactions add constraint vibe_reactions_pkey PRIMARY KEY (vibe_id, user_id);
+alter table public.vibe_views drop constraint if exists vibe_views_pkey;
+alter table public.vibe_views add constraint vibe_views_pkey PRIMARY KEY (vibe_id, viewer_id);
+alter table public.vibes drop constraint if exists vibes_pkey;
+alter table public.vibes add constraint vibes_pkey PRIMARY KEY (id);
+alter table public.bitacora_comment_reactions drop constraint if exists bitacora_comment_reactions_comment_id_user_id_emoji_key;
+alter table public.bitacora_comment_reactions add constraint bitacora_comment_reactions_comment_id_user_id_emoji_key UNIQUE (comment_id, user_id, emoji);
+alter table public.bitacora_reactions drop constraint if exists bitacora_reactions_post_id_user_id_reaction_type_key;
+alter table public.bitacora_reactions add constraint bitacora_reactions_post_id_user_id_reaction_type_key UNIQUE (post_id, user_id, reaction_type);
+alter table public.bottle_reactions drop constraint if exists bottle_reactions_bottle_id_user_id_reaction_key;
+alter table public.bottle_reactions add constraint bottle_reactions_bottle_id_user_id_reaction_key UNIQUE (bottle_id, user_id, reaction);
+alter table public.bottle_replies drop constraint if exists bottle_replies_bottle_id_user_id_key;
+alter table public.bottle_replies add constraint bottle_replies_bottle_id_user_id_key UNIQUE (bottle_id, user_id);
+alter table public.daily_responses drop constraint if exists daily_responses_user_date_unique;
+alter table public.daily_responses add constraint daily_responses_user_date_unique UNIQUE (user_id, question_date);
+alter table public.dq_reactions drop constraint if exists dq_reactions_unique;
+alter table public.dq_reactions add constraint dq_reactions_unique UNIQUE (response_id, user_id, reaction);
+alter table public.mood_entries drop constraint if exists mood_entries_user_id_date_key_key;
+alter table public.mood_entries add constraint mood_entries_user_id_date_key_key UNIQUE (user_id, date_key);
+alter table public.news_reactions drop constraint if exists news_reactions_news_key_user_id_reaction_key;
+alter table public.news_reactions add constraint news_reactions_news_key_user_id_reaction_key UNIQUE (news_key, user_id, reaction);
+alter table public.quote_reactions drop constraint if exists quote_reactions_date_key_user_id_emoji_key;
+alter table public.quote_reactions add constraint quote_reactions_date_key_user_id_emoji_key UNIQUE (date_key, user_id, emoji);
+alter table public.referrals drop constraint if exists referrals_referred_id_key;
+alter table public.referrals add constraint referrals_referred_id_key UNIQUE (referred_id);
+alter table public.support_matches drop constraint if exists support_matches_user_id_partner_id_month_key_key;
+alter table public.support_matches add constraint support_matches_user_id_partner_id_month_key_key UNIQUE (user_id, partner_id, month_key);
+alter table public.user_blocks drop constraint if exists user_blocks_blocker_id_blocked_id_key;
+alter table public.user_blocks add constraint user_blocks_blocker_id_blocked_id_key UNIQUE (blocker_id, blocked_id);
+alter table public.user_favorites drop constraint if exists user_favorites_user_id_fav_id_key;
+alter table public.user_favorites add constraint user_favorites_user_id_fav_id_key UNIQUE (user_id, fav_id);
+alter table public.vibe_comment_reactions drop constraint if exists vibe_comment_reactions_comment_id_user_id_key;
+alter table public.vibe_comment_reactions add constraint vibe_comment_reactions_comment_id_user_id_key UNIQUE (comment_id, user_id);
+alter table public.vibe_groups drop constraint if exists vibe_groups_slug_key;
+alter table public.vibe_groups add constraint vibe_groups_slug_key UNIQUE (slug);
+alter table public.bitacora_posts drop constraint if exists bitacora_posts_categoria_check;
+alter table public.bitacora_posts add constraint bitacora_posts_categoria_check CHECK ((categoria = ANY (ARRAY['apoyo'::text, 'superacion'::text, 'debate'::text])));
+alter table public.bottle_reactions drop constraint if exists bottle_reactions_reaction_check;
+alter table public.bottle_reactions add constraint bottle_reactions_reaction_check CHECK ((reaction = ANY (ARRAY['heart'::text, 'olive'::text, 'dove'::text])));
+alter table public.buddy_requests drop constraint if exists buddy_requests_status_check;
+alter table public.buddy_requests add constraint buddy_requests_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text, 'cancelled'::text])));
+alter table public.support_matches drop constraint if exists support_matches_my_answer_check;
+alter table public.support_matches add constraint support_matches_my_answer_check CHECK ((my_answer = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])));
+alter table public.vibe_comments drop constraint if exists vibe_comments_text_check;
+alter table public.vibe_comments add constraint vibe_comments_text_check CHECK (((length(text) >= 1) AND (length(text) <= 500)));
+alter table public.vibe_groups drop constraint if exists vibe_groups_kind_check;
+alter table public.vibe_groups add constraint vibe_groups_kind_check CHECK ((kind = ANY (ARRAY['official'::text, 'public'::text, 'private'::text])));
+alter table public.vibe_reactions drop constraint if exists vibe_reactions_reaction_check;
+alter table public.vibe_reactions add constraint vibe_reactions_reaction_check CHECK ((reaction = ANY (ARRAY['alegria'::text, 'abrazo'::text, 'acompano'::text, 'fuerzas'::text, 'gracias'::text, 'me_hace_bien'::text, 'animos'::text, 'me_inspira'::text, 'abrazo_grande'::text, 'conmovido'::text, 'sanando'::text, 'admiro'::text, 'celebro'::text, 'emociona'::text, 'bronca'::text, 'sonrisa'::text, 'pienso'::text, 'aplausos'::text, 'cruzo_dedos'::text, 'uf'::text, 'intenso'::text, 'orgullo'::text, 'con_vos'::text])));
+alter table public.vibes drop constraint if exists vibes_instant_scope_check;
+alter table public.vibes add constraint vibes_instant_scope_check CHECK ((instant_scope = ANY (ARRAY['public'::text, 'private'::text])));
+alter table public.vibes drop constraint if exists vibes_target_check;
+alter table public.vibes add constraint vibes_target_check CHECK ((((group_id IS NOT NULL) AND (instant_scope IS NULL)) OR ((group_id IS NULL) AND (instant_scope IS NOT NULL))));
+alter table public.bottle_reactions drop constraint if exists bottle_reactions_user_id_fkey;
+alter table public.bottle_reactions add constraint bottle_reactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.bottle_replies drop constraint if exists bottle_replies_user_id_fkey;
+alter table public.bottle_replies add constraint bottle_replies_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.buddy_requests drop constraint if exists buddy_requests_from_id_fkey;
+alter table public.buddy_requests add constraint buddy_requests_from_id_fkey FOREIGN KEY (from_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.buddy_requests drop constraint if exists buddy_requests_to_id_fkey;
+alter table public.buddy_requests add constraint buddy_requests_to_id_fkey FOREIGN KEY (to_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.content_reports drop constraint if exists content_reports_reporter_id_fkey;
+alter table public.content_reports add constraint content_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES auth.users(id);
+alter table public.daily_responses drop constraint if exists daily_responses_user_id_fkey;
+alter table public.daily_responses add constraint daily_responses_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+alter table public.diary_entries drop constraint if exists diary_entries_user_id_fkey;
+alter table public.diary_entries add constraint diary_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+alter table public.dq_reactions drop constraint if exists dq_reactions_response_id_fkey;
+alter table public.dq_reactions add constraint dq_reactions_response_id_fkey FOREIGN KEY (response_id) REFERENCES daily_responses(id) ON DELETE CASCADE;
+alter table public.dq_reactions drop constraint if exists dq_reactions_user_id_fkey;
+alter table public.dq_reactions add constraint dq_reactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+alter table public.mood_entries drop constraint if exists mood_entries_user_id_fkey;
+alter table public.mood_entries add constraint mood_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+alter table public.profiles drop constraint if exists profiles_buddy_id_fkey;
+alter table public.profiles add constraint profiles_buddy_id_fkey FOREIGN KEY (buddy_id) REFERENCES profiles(id) ON DELETE SET NULL;
+alter table public.referrals drop constraint if exists referrals_referred_id_fkey;
+alter table public.referrals add constraint referrals_referred_id_fkey FOREIGN KEY (referred_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.referrals drop constraint if exists referrals_referrer_id_fkey;
+alter table public.referrals add constraint referrals_referrer_id_fkey FOREIGN KEY (referrer_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.support_matches drop constraint if exists support_matches_partner_id_fkey;
+alter table public.support_matches add constraint support_matches_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.support_matches drop constraint if exists support_matches_user_id_fkey;
+alter table public.support_matches add constraint support_matches_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.vibe_comment_reactions drop constraint if exists vibe_comment_reactions_comment_id_fkey;
+alter table public.vibe_comment_reactions add constraint vibe_comment_reactions_comment_id_fkey FOREIGN KEY (comment_id) REFERENCES vibe_comments(id) ON DELETE CASCADE;
+alter table public.vibe_comment_reactions drop constraint if exists vibe_comment_reactions_user_id_fkey;
+alter table public.vibe_comment_reactions add constraint vibe_comment_reactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.vibe_comments drop constraint if exists vibe_comments_user_id_fkey;
+alter table public.vibe_comments add constraint vibe_comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.vibe_comments drop constraint if exists vibe_comments_vibe_id_fkey;
+alter table public.vibe_comments add constraint vibe_comments_vibe_id_fkey FOREIGN KEY (vibe_id) REFERENCES vibes(id) ON DELETE CASCADE;
+alter table public.vibe_groups drop constraint if exists vibe_groups_owner_id_fkey;
+alter table public.vibe_groups add constraint vibe_groups_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.vibe_reactions drop constraint if exists vibe_reactions_user_id_fkey;
+alter table public.vibe_reactions add constraint vibe_reactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+alter table public.vibe_reactions drop constraint if exists vibe_reactions_vibe_id_fkey;
+alter table public.vibe_reactions add constraint vibe_reactions_vibe_id_fkey FOREIGN KEY (vibe_id) REFERENCES vibes(id) ON DELETE CASCADE;
+alter table public.vibes drop constraint if exists vibes_group_id_fkey;
+alter table public.vibes add constraint vibes_group_id_fkey FOREIGN KEY (group_id) REFERENCES vibe_groups(id) ON DELETE CASCADE;
+alter table public.vibes drop constraint if exists vibes_user_id_fkey;
+alter table public.vibes add constraint vibes_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+
+-- == FUNCIONES ==
+
+CREATE OR REPLACE FUNCTION public._bottle_check_rate_limit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+ recent_count int;
+begin
+ if new.user_id is null then return new; end if; -- ignorar posts sin user
+ select count(*) into recent_count
+ from bottles
+ where user_id = new.user_id
+ and created_at > (now() - interval '24 hours');
+ if recent_count >= 10 then
+ raise exception 'BOTTLE_RATE_LIMIT: máximo 10 mensajes al mar cada 24h';
+ end if;
+ return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public._bottle_react_rate_limit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+ recent_count int;
+begin
+ select count(*) into recent_count
+ from bottle_reactions
+ where user_id = new.user_id
+ and created_at > (now() - interval '1 hour');
+ if recent_count >= 60 then
+ raise exception 'REACT_RATE_LIMIT: demasiadas reacciones en poco tiempo';
+ end if;
+ return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public._bt_check_rate_limit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+ recent_count int;
+begin
+ select count(*) into recent_count
+ from bitacora_posts
+ where user_id = new.user_id
+ and created_at > (now() - interval '24 hours');
+ if recent_count >= 3 then
+ raise exception 'BT_RATE_LIMIT: máximo 3 historias cada 24h';
+ end if;
+ return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public._mo_check_rate_limit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+ recent_count int;
+begin
+ select count(*) into recent_count
+ from momentos
+ where user_id = new.user_id
+ and created_at > (now() - interval '1 hour');
+ if recent_count >= 5 then
+ raise exception 'MO_RATE_LIMIT: máximo 5 momentos por hora';
+ end if;
+ return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.accept_help_post(p_post_id text, p_req_id text, p_guardian_name text, p_guardian_av text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_uid    text := auth.uid()::text;
+  v_seeker text;
+  v_dm_id  uuid;
+begin
+  if v_uid is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_auth');
+  end if;
+  select user_id into v_seeker from public.help_posts where id = p_post_id;
+  if v_seeker is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_seeker');
+  end if;
+  insert into public.guardian_requests
+    (id, post_id, seeker_id, guardian_id, guardian_name, guardian_av, status)
+  values
+    (p_req_id, p_post_id, v_seeker, v_uid,
+     coalesce(nullif(p_guardian_name, ''), 'Guardián'),
+     coalesce(nullif(p_guardian_av,   ''), '🌿'), 'pending');
+  if v_seeker <> v_uid then
+    insert into public.direct_messages (from_id, from_name, from_av, to_id, text)
+    values (v_uid,
+            coalesce(nullif(p_guardian_name, ''), 'Guardián'),
+            coalesce(nullif(p_guardian_av,   ''), '🌿'),
+            v_seeker, '__velo_accompany_req__')
+    returning id into v_dm_id;
+  end if;
+  return jsonb_build_object('ok', true, 'dm_id', v_dm_id);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.claim_referral_qualification()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_uid     text := auth.uid()::text;
+  v_ref     public.referrals%rowtype;
+  v_days    int;
+  v_pending int;
+  v_rounds  int;
+  v_base    timestamptz;
+  v_new_exp timestamptz;
+  v_ids     uuid[];
+begin
+  if v_uid is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_auth');
+  end if;
+
+  select * into v_ref from public.referrals where referred_id = v_uid limit 1;
+  if v_ref.id is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_referral');
+  end if;
+  if v_ref.qualified_at is not null then
+    return jsonb_build_object('ok', true, 'reason', 'already_qualified');
+  end if;
+
+  select count(distinct date_key) into v_days
+    from public.mood_entries where user_id::text = v_uid;
+  if v_days < 3 then
+    return jsonb_build_object('ok', false, 'reason', 'not_qualified', 'days', v_days);
+  end if;
+
+  update public.referrals set qualified_at = now() where id = v_ref.id;
+
+  select count(*) into v_pending from public.referrals
+    where referrer_id = v_ref.referrer_id
+      and qualified_at is not null and reward_granted_at is null;
+
+  if v_pending >= 5 then
+    v_rounds := v_pending / 5;
+    select greatest(now(), coalesce(plus_expires_at, now())) into v_base
+      from public.profiles where id = v_ref.referrer_id;
+    v_new_exp := v_base + (v_rounds * interval '30 days');
+
+    perform set_config('velo.reward_grant', 'on', true);
+    update public.profiles
+      set role = 'plus', plus_expires_at = v_new_exp
+      where id = v_ref.referrer_id;
+    perform set_config('velo.reward_grant', 'off', true);
+
+    select array_agg(id) into v_ids from (
+      select id from public.referrals
+      where referrer_id = v_ref.referrer_id
+        and qualified_at is not null and reward_granted_at is null
+      order by qualified_at asc
+      limit (v_rounds * 5)
+    ) s;
+    update public.referrals set reward_granted_at = now() where id = any(v_ids);
+
+    insert into public.broadcasts (target, subject, body, icon, sender)
+    values ('user:' || v_ref.referrer_id, '🎉 ¡Ganaste Velo Plus!',
+            '¡Ganaste ' || (v_rounds * 30) || ' días de Velo Plus! Ya se activó en tu cuenta 🎉 '
+            || 'Gracias por invitar a la comunidad 💚',
+            '🎉', 'Velo — Comunidad');
+
+    return jsonb_build_object('ok', true, 'rewarded_referrer', true,
+                              'referrer', v_ref.referrer_id, 'expires_at', v_new_exp,
+                              'rounds', v_rounds);
+  end if;
+
+  insert into public.broadcasts (target, subject, body, icon, sender)
+  values ('user:' || v_ref.referrer_id, '✨ Otra invitación válida',
+          'Alguien que invitaste ya usó Velo 3 días. Llevás ' || v_pending
+          || '/5 invitaciones válidas — te faltan ' || (5 - (v_pending % 5))
+          || ' para ganar +30 días de Plus 💚',
+          '💚', 'Velo — Comunidad');
+
+  return jsonb_build_object('ok', true, 'rewarded_referrer', false, 'pending', v_pending);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.delete_my_account(p_reason text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare v_uid uuid := auth.uid(); v_txt text; v_mail text; r record;
+begin
+  if v_uid is null then raise exception 'Not authenticated'; end if;
+  v_txt := v_uid::text; v_mail := auth.jwt() ->> 'email';
+
+  begin
+    insert into deleted_accounts (user_id, reason, deleted_at)
+    values (v_uid, p_reason, now()) on conflict do nothing;
+  exception when others then
+    raise notice 'delete_my_account: no se pudo registrar la baja (%)', sqlerrm;
+  end;
+
+  for r in
+    select c.table_name, c.column_name
+      from information_schema.columns c
+      join information_schema.tables t
+        on t.table_schema = c.table_schema and t.table_name = c.table_name
+     where c.table_schema='public' and t.table_type='BASE TABLE'
+       and c.column_name in ('user_id','from_id','to_id','owner_id','creator_id',
+                             'seeker_id','guardian_id','author_id','buddy_id')
+       and c.table_name not in ('profiles','deleted_accounts','donations')
+  loop
+    begin
+      execute format('delete from public.%I where %I::text = $1', r.table_name, r.column_name) using v_txt;
+    exception when others then
+      raise notice 'delete_my_account: skip %.% (%)', r.table_name, r.column_name, sqlerrm;
+    end;
+  end loop;
+
+  -- NUEVO: notas clínicas, tanto si la persona es el paciente como el profesional.
+  begin delete from public.pro_patient_notes where patient_id::text=v_txt or pro_id::text=v_txt; exception when others then raise notice 'delete_my_account: pro_patient_notes (%)', sqlerrm; end;
+
+  begin delete from public.user_blocks     where blocker_id::text=v_txt or blocked_id::text=v_txt; exception when others then null; end;
+  begin delete from public.vibe_views      where viewer_id::text=v_txt;                            exception when others then null; end;
+  begin delete from public.referrals       where referrer_id::text=v_txt or referred_id::text=v_txt; exception when others then null; end;
+  begin delete from public.content_reports where reporter_id::text=v_txt;                          exception when others then null; end;
+  begin delete from public.support_matches where partner_id::text=v_txt;                           exception when others then null; end;
+  begin delete from public.user_favorites  where fav_id::text=v_txt;                               exception when others then null; end;
+  begin delete from public.reviews         where pro_id::text=v_txt;                               exception when others then null; end;
+  begin delete from public.bookings        where pro_id::text=v_txt;                               exception when others then null; end;
+  begin delete from public.sessions        where pro_id::text=v_txt;                               exception when others then null; end;
+  if v_mail is not null then
+    begin delete from public.contacts where user_email=v_mail;                                     exception when others then null; end;
+  end if;
+
+  begin update public.help_posts         set taken_by=null         where taken_by::text=v_txt;         exception when others then null; end;
+  begin update public.bottles            set replied_by=null       where replied_by::text=v_txt;       exception when others then null; end;
+  begin update public.velo_notifications set sender_id=null        where sender_id::text=v_txt;        exception when others then null; end;
+  begin update public.content_reports    set response_user_id=null where response_user_id::text=v_txt; exception when others then null; end;
+
+  -- NUEVO: sacar su identificador de las listas de otras personas.
+  for r in
+    select c.table_name, c.column_name, c.data_type
+      from information_schema.columns c
+      join information_schema.tables t
+        on t.table_schema=c.table_schema and t.table_name=c.table_name
+     where c.table_schema='public' and t.table_type='BASE TABLE'
+       and (c.table_name, c.column_name) in
+           (('vibe_groups','member_ids'),('profiles','blocked_users'),('profiles','fav_contacts'))
+  loop
+    begin
+      if r.data_type = 'ARRAY' then
+        execute format('update public.%I set %I = array_remove(%I, $1) where $1 = any(%I)',
+                       r.table_name, r.column_name, r.column_name, r.column_name) using v_txt;
+      elsif r.data_type = 'jsonb' then
+        execute format($f$update public.%I set %I = (
+                          select coalesce(jsonb_agg(e), '[]'::jsonb)
+                            from jsonb_array_elements(%I) e where e <> to_jsonb($1::text))
+                        where %I @> to_jsonb($1::text)$f$,
+                       r.table_name, r.column_name, r.column_name, r.column_name) using v_txt;
+      else
+        raise notice 'delete_my_account: %.% es % — no se limpia', r.table_name, r.column_name, r.data_type;
+      end if;
+    exception when others then
+      raise notice 'delete_my_account: lista %.% (%)', r.table_name, r.column_name, sqlerrm;
+    end;
+  end loop;
+
+  begin delete from public.profiles where id::text = v_txt;
+  exception when others then raise notice 'delete_my_account: profiles (%)', sqlerrm; end;
+
+  delete from auth.users where id = v_uid;
+end; $function$
+;
+
+CREATE OR REPLACE FUNCTION public.dm_push_notify_fn()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+begin
+  perform net.http_post(
+    url     := 'https://yuravtnjvvztsxdtggod.supabase.co/functions/v1/send-dm-push',
+    headers := jsonb_build_object(
+      'Content-Type',  'application/json',
+      'Authorization', 'Bearer sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C'
+    ),
+    body    := jsonb_build_object('type','INSERT','table','direct_messages','schema','public','record', to_jsonb(new))
+  );
+  return new;
+end; $function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_user_session_counts(p_user_id text)
+ RETURNS TABLE(helped integer, received integer)
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+SELECT
+COUNT(*) FILTER (WHERE guardian_id = p_user_id AND status IN ('ended','message_left'))::integer,
+COUNT(*) FILTER (WHERE seeker_id = p_user_id AND status IN ('ended','message_left'))::integer
+FROM guardian_requests;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.grant_diamante_plus()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_uid     text := auth.uid()::text;
+  v_helped  int;
+  v_already timestamptz;
+  v_base    timestamptz;
+  v_new_exp timestamptz;
+begin
+  if v_uid is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_auth');
+  end if;
+
+  select diamante_plus_granted_at into v_already from public.profiles where id = v_uid;
+  if v_already is not null then
+    return jsonb_build_object('ok', false, 'reason', 'already_granted');
+  end if;
+
+  select count(*) into v_helped from public.guardian_requests
+    where guardian_id = v_uid and status in ('ended', 'message_left');
+  if v_helped < 100 then
+    return jsonb_build_object('ok', false, 'reason', 'not_eligible', 'helped', v_helped);
+  end if;
+
+  select greatest(now(), coalesce(plus_expires_at, now())) into v_base
+    from public.profiles where id = v_uid;
+  v_new_exp := v_base + interval '90 days';
+
+  perform set_config('velo.reward_grant', 'on', true);
+  update public.profiles
+    set role = 'plus', plus_expires_at = v_new_exp, diamante_plus_granted_at = now()
+    where id = v_uid;
+  perform set_config('velo.reward_grant', 'off', true);
+
+  return jsonb_build_object('ok', true, 'expires_at', v_new_exp, 'helped', v_helped);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.increment_momento_hearts(post_id text)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  update public.momentos set hearts = coalesce(hearts,0)+1 where id = post_id;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.leave_vibe_group(gid uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  update public.vibe_groups
+  set member_ids = array_remove(coalesce(member_ids, '{}'), auth.uid()::text)
+  where id = gid and kind = 'private'
+    and auth.uid()::text = any(coalesce(member_ids, '{}'));
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_apply_retention()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_help int := 0;
+  v_mod  int := 0;
+  v_days int;
+begin
+  select days into v_days from public.velo_retention_policy
+   where key='help_posts' and enabled;
+  if found then
+    delete from public.help_posts
+     where coalesce(closed,false) and created_at < now() - (v_days || ' days')::interval;
+    get diagnostics v_help = row_count;
+  end if;
+
+  select days into v_days from public.velo_retention_policy
+   where key='moderation_flags' and enabled;
+  if found then
+    delete from public.moderation_flags
+     where coalesce(resolved,false) and created_at < now() - (v_days || ' days')::interval;
+    get diagnostics v_mod = row_count;
+  end if;
+
+  -- `inactive_accounts` NO se aplica automáticamente a propósito: borrar la
+  -- cuenta de alguien sin avisarle antes por email sería desproporcionado.
+  -- El informe la señala; el aviso y el borrado son una decisión con revisión.
+
+  return jsonb_build_object('help_posts_borrados', v_help,
+                            'moderation_flags_borrados', v_mod,
+                            'ejecutado', now());
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_cleanup_api_usage()
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  delete from public.velo_api_usage where created_at < now() - interval '48 hours';
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_cleanup_ia_usage()
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  delete from public.ia_usage where created_at < now() - interval '48 hours';
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_consume_quota(p_kind text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_uid    text := auth.uid()::text;
+  v_limit  int;
+  v_used   int;
+  v_global int;
+  c_global constant int := 150;   -- techo diario por persona sobre ia + ia_sys
+begin
+  if v_uid is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_auth');
+  end if;
+
+  v_limit := case p_kind
+               when 'ia'     then 25    -- conversación con el acompañante
+               when 'ia_sys' then 200   -- moderación, crisis, resúmenes, frases
+               when 'email'  then 10
+               else 25
+             end;
+
+  -- Velo Plus: la conversación es ilimitada y NO cuenta para el techo global.
+  -- Se registra como 'ia_plus' justamente para eso. Si contara, una persona con
+  -- Plus que hablara mucho —que en esta aplicación suele ser alguien que lo está
+  -- pasando mal— se quedaría además sin moderación ni detector de crisis.
+  if p_kind = 'ia' and public.velo_is_premium(v_uid) then
+    insert into public.velo_api_usage (user_id, kind) values (v_uid, 'ia_plus');
+    return jsonb_build_object('ok', true, 'unlimited', true);
+  end if;
+
+  -- Techo global sobre lo que sí puede inflarse mintiendo en `kind`.
+  if p_kind in ('ia', 'ia_sys') then
+    select count(*) into v_global
+      from public.velo_api_usage u
+     where u.user_id = v_uid
+       and u.kind in ('ia', 'ia_sys')
+       and u.created_at > now() - interval '24 hours';
+    if v_global >= c_global then
+      return jsonb_build_object('ok', false, 'reason', 'global',
+                                'limit', c_global, 'used', v_global, 'kind', p_kind);
+    end if;
+  end if;
+
+  select count(*) into v_used
+    from public.velo_api_usage u
+   where u.user_id = v_uid
+     and u.kind = p_kind
+     and u.created_at > now() - interval '24 hours';
+
+  if v_used >= v_limit then
+    return jsonb_build_object('ok', false, 'reason', 'limit',
+                              'limit', v_limit, 'used', v_used, 'kind', p_kind);
+  end if;
+
+  insert into public.velo_api_usage (user_id, kind) values (v_uid, p_kind);
+  return jsonb_build_object('ok', true, 'remaining', v_limit - v_used - 1, 'kind', p_kind);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_create_notif(p_recipient uuid, p_type text, p_title text, p_body text DEFAULT NULL::text, p_related text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  if auth.uid() is null then return; end if;                            -- sólo autenticados
+  if p_recipient is null or p_recipient = auth.uid() then return; end if; -- no self / no nulo
+  insert into public.velo_notifications
+    (user_id, sender_id, type, title, body, related_id, is_read, created_at)
+  values (
+    p_recipient,
+    auth.uid(),
+    left(coalesce(p_type, ''), 40),
+    left(coalesce(p_title, ''), 200),
+    nullif(left(coalesce(p_body, ''), 500), ''),
+    nullif(left(coalesce(p_related, ''), 100), ''),
+    false,
+    now()
+  );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_dump_auth_users()
+ RETURNS json
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'auth', 'pg_catalog'
+AS $function$
+  select coalesce(json_agg(json_build_object(
+    'id', u.id,
+    'email', u.email,
+    'created_at', u.created_at,
+    'last_sign_in_at', u.last_sign_in_at,
+    'email_confirmed_at', u.email_confirmed_at
+  ) order by u.created_at), '[]'::json)
+  from auth.users u;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_dump_schema()
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_catalog'
+AS $function$
+declare
+  out_text text := '';
+  r record;
+begin
+  out_text := out_text ||
+    '-- Esquema de Velo (schema public). GENERADO AUTOMATICAMENTE.' || E'\n' ||
+    '-- No editar a mano: lo reescribe el workflow "Copia de seguridad de la base"' || E'\n' ||
+    '-- llamando a public.velo_dump_schema().' || E'\n\n' ||
+    'create extension if not exists pgcrypto;' || E'\n\n';
+
+  out_text := out_text || '-- == TABLAS ==' || E'\n\n';
+  for r in
+    select c.oid, c.relname
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r'
+    order by c.relname
+  loop
+    out_text := out_text || 'create table if not exists public.' || quote_ident(r.relname) || ' (' || E'\n';
+    out_text := out_text || (
+      select string_agg(
+        '  ' || quote_ident(a.attname) || ' ' || format_type(a.atttypid, a.atttypmod)
+        || case when a.attidentity = 'a' then ' generated always as identity'
+                when a.attidentity = 'd' then ' generated by default as identity'
+                else '' end
+        || case when a.attgenerated = 's'
+                then ' generated always as (' || pg_get_expr(ad.adbin, ad.adrelid) || ') stored'
+                when ad.adbin is not null and a.attidentity = ''
+                then ' default ' || pg_get_expr(ad.adbin, ad.adrelid)
+                else '' end
+        || case when a.attnotnull then ' not null' else '' end,
+        ',' || E'\n' order by a.attnum)
+      from pg_attribute a
+      left join pg_attrdef ad on ad.adrelid = a.attrelid and ad.adnum = a.attnum
+      where a.attrelid = r.oid and a.attnum > 0 and not a.attisdropped
+    ) || E'\n);\n\n';
+  end loop;
+
+  out_text := out_text || '-- == RESTRICCIONES ==' || E'\n\n';
+  for r in
+    select c.relname as tabla, con.conname, pg_get_constraintdef(con.oid) as def, con.contype
+    from pg_constraint con
+    join pg_class c on c.oid = con.conrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+    order by case con.contype when 'p' then 1 when 'u' then 2 when 'c' then 3 else 4 end,
+             c.relname, con.conname
+  loop
+    out_text := out_text ||
+      'alter table public.' || quote_ident(r.tabla) ||
+      ' drop constraint if exists ' || quote_ident(r.conname) || ';' || E'\n' ||
+      'alter table public.' || quote_ident(r.tabla) ||
+      ' add constraint ' || quote_ident(r.conname) || ' ' || r.def || ';' || E'\n';
+  end loop;
+  out_text := out_text || E'\n';
+
+  out_text := out_text || '-- == FUNCIONES ==' || E'\n\n';
+  for r in
+    select pg_get_functiondef(p.oid) as def
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    left join pg_depend d on d.objid = p.oid and d.deptype = 'e'
+    where n.nspname = 'public' and p.prokind in ('f','p') and d.objid is null
+    order by p.proname
+  loop
+    out_text := out_text || r.def || ';' || E'\n\n';
+  end loop;
+
+  out_text := out_text || '-- == VISTAS ==' || E'\n\n';
+  for r in
+    select c.relname,
+           pg_get_viewdef(c.oid, true) as def,
+           coalesce((select option_value from pg_options_to_table(c.reloptions)
+                      where option_name = 'security_invoker'), '') as inv
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'v'
+    order by c.relname
+  loop
+    out_text := out_text || 'create or replace view public.' || quote_ident(r.relname) ||
+      case when r.inv <> '' then ' with (security_invoker=' || r.inv || ')' else '' end ||
+      ' as' || E'\n' || r.def || E'\n\n';
+  end loop;
+
+  out_text := out_text || '-- == INDICES ==' || E'\n\n';
+  for r in
+    select i.indexdef
+    from pg_indexes i
+    where i.schemaname = 'public'
+      and not exists (
+        select 1 from pg_constraint con
+        join pg_class ic on ic.oid = con.conindid
+        where ic.relname = i.indexname)
+    order by i.tablename, i.indexname
+  loop
+    out_text := out_text || replace(r.indexdef, 'CREATE INDEX', 'CREATE INDEX IF NOT EXISTS') || ';' || E'\n';
+  end loop;
+  out_text := out_text || E'\n';
+
+  out_text := out_text || '-- == TRIGGERS ==' || E'\n\n';
+  for r in
+    select c.relname as tabla, t.tgname, pg_get_triggerdef(t.oid) as def
+    from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and not t.tgisinternal
+    order by c.relname, t.tgname
+  loop
+    out_text := out_text ||
+      'drop trigger if exists ' || quote_ident(r.tgname) || ' on public.' || quote_ident(r.tabla) || ';' || E'\n' ||
+      r.def || ';' || E'\n';
+  end loop;
+  out_text := out_text || E'\n';
+
+  out_text := out_text || '-- == SEGURIDAD A NIVEL DE FILA ==' || E'\n\n';
+  for r in
+    select c.relname, c.relrowsecurity, c.relforcerowsecurity
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r'
+    order by c.relname
+  loop
+    if r.relrowsecurity then
+      out_text := out_text || 'alter table public.' || quote_ident(r.relname) || ' enable row level security;' || E'\n';
+    end if;
+    if r.relforcerowsecurity then
+      out_text := out_text || 'alter table public.' || quote_ident(r.relname) || ' force row level security;' || E'\n';
+    end if;
+  end loop;
+  out_text := out_text || E'\n';
+
+  for r in
+    select p.tablename, p.policyname, p.permissive, p.roles, p.cmd, p.qual, p.with_check
+    from pg_policies p where p.schemaname = 'public'
+    order by p.tablename, p.policyname
+  loop
+    out_text := out_text ||
+      'drop policy if exists ' || quote_ident(r.policyname) || ' on public.' || quote_ident(r.tablename) || ';' || E'\n' ||
+      'create policy ' || quote_ident(r.policyname) || ' on public.' || quote_ident(r.tablename) ||
+      ' as ' || r.permissive ||
+      ' for ' || case r.cmd when 'ALL' then 'all' else lower(r.cmd) end ||
+      ' to ' || array_to_string(r.roles, ', ') ||
+      coalesce(' using (' || r.qual || ')', '') ||
+      coalesce(' with check (' || r.with_check || ')', '') || ';' || E'\n';
+  end loop;
+  out_text := out_text || E'\n';
+
+  out_text := out_text || '-- == PERMISOS ==' || E'\n\n';
+  for r in
+    select g.table_name, g.grantee, string_agg(distinct g.privilege_type, ', ') as privs
+    from information_schema.role_table_grants g
+    where g.table_schema = 'public' and g.grantee in ('anon','authenticated','service_role')
+    group by g.table_name, g.grantee
+    order by g.table_name, g.grantee
+  loop
+    out_text := out_text || 'grant ' || r.privs || ' on public.' || quote_ident(r.table_name) ||
+                ' to ' || quote_ident(r.grantee) || ';' || E'\n';
+  end loop;
+  out_text := out_text || E'\n';
+
+  for r in
+    select p.proname, pg_get_function_identity_arguments(p.oid) as args, g.grantee
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    cross join lateral (values ('anon'),('authenticated'),('service_role')) as g(grantee)
+    left join pg_depend d on d.objid = p.oid and d.deptype = 'e'
+    where n.nspname = 'public' and p.prokind in ('f','p') and d.objid is null
+      and has_function_privilege(g.grantee, p.oid, 'EXECUTE')
+    order by p.proname, g.grantee
+  loop
+    out_text := out_text || 'grant execute on function public.' || quote_ident(r.proname) ||
+                '(' || r.args || ') to ' || quote_ident(r.grantee) || ';' || E'\n';
+  end loop;
+
+  out_text := out_text || E'\n' ||
+    '-- Las funciones nacen con EXECUTE concedido a PUBLIC. Se lo quitamos a las' || E'\n' ||
+    '-- que no deben estar abiertas a anonimos (ver HANDOVER 12).' || E'\n';
+  for r in
+    select p.proname, pg_get_function_identity_arguments(p.oid) as args
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    left join pg_depend d on d.objid = p.oid and d.deptype = 'e'
+    where n.nspname = 'public' and p.prokind in ('f','p') and d.objid is null
+      and not has_function_privilege('anon', p.oid, 'EXECUTE')
+    order by p.proname
+  loop
+    out_text := out_text || 'revoke execute on function public.' || quote_ident(r.proname) ||
+                '(' || r.args || ') from public;' || E'\n';
+  end loop;
+
+  return out_text;
+end $function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_is_admin()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  select coalesce(auth.jwt() ->> 'email','') in ('consultas@heyvelo.app','wearevelo.app@gmail.com');
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_is_premium(uid text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = uid and p.role = 'plus'
+      and (p.plus_expires_at is null or p.plus_expires_at > now())
+  );
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_notify_bitacora_author(p_post_id text, p_type text, p_title text, p_body text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_author uuid;
+begin
+  if auth.uid() is null then return; end if;
+
+  select bp.user_id::uuid into v_author
+    from public.bitacora_posts bp
+   where bp.id::text = p_post_id;
+
+  if v_author is null or v_author = auth.uid() then return; end if;
+
+  insert into public.velo_notifications
+    (user_id, sender_id, type, title, body, related_id, is_read, created_at)
+  values (
+    v_author,
+    auth.uid(),
+    left(coalesce(p_type, ''), 40),
+    left(coalesce(p_title, ''), 200),
+    nullif(left(coalesce(p_body, ''), 500), ''),
+    left(p_post_id, 100),
+    false,
+    now()
+  );
+exception when others then
+  return;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_protect_role()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  if new.role is distinct from old.role then
+    if auth.uid() is null then
+      return new;
+    end if;
+    if coalesce(auth.jwt() ->> 'email', '') in
+       ('consultas@heyvelo.app', 'wearevelo.app@gmail.com') then
+      return new;
+    end if;
+    if coalesce(current_setting('velo.reward_grant', true), '') = 'on' then
+      return new;
+    end if;
+    new.role := old.role;
+  end if;
+  return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.velo_retention_report()
+ RETURNS TABLE(politica text, dias integer, activa boolean, filas_afectadas bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  return query
+  select p.key, p.days, p.enabled,
+    case p.key
+      when 'help_posts' then
+        (select count(*) from public.help_posts h
+          where coalesce(h.closed,false) and h.created_at < now() - (p.days || ' days')::interval)
+      when 'moderation_flags' then
+        (select count(*) from public.moderation_flags m
+          where coalesce(m.resolved,false) and m.created_at < now() - (p.days || ' days')::interval)
+      when 'inactive_accounts' then
+        (select count(*) from public.profiles pr
+          where pr.created_at < now() - (p.days || ' days')::interval
+            and not exists (select 1 from public.mood_entries me
+                             where me.user_id = pr.id::uuid
+                               and me.created_at > now() - (p.days || ' days')::interval))
+      else 0::bigint
+    end
+  from public.velo_retention_policy p
+  order by p.key;
+end;
+$function$
+;
+
+-- == VISTAS ==
+
+create or replace view public.bitacora_comments_full as
+ SELECT bc.id,
+    bc.post_id,
+    bc.content,
+    bc.is_anon,
+    bc.created_at,
+        CASE
+            WHEN NOT bc.is_anon OR bc.user_id = auth.uid()::text THEN bc.user_id
+            ELSE NULL::text
+        END AS user_id,
+        CASE
+            WHEN bc.is_anon THEN NULL::text
+            ELSE p.username
+        END AS author_username,
+        CASE
+            WHEN bc.is_anon THEN NULL::text
+            ELSE p.nombre
+        END AS author_name,
+        CASE
+            WHEN bc.is_anon THEN NULL::text
+            ELSE p.avatar
+        END AS author_avatar
+   FROM bitacora_comments bc
+     LEFT JOIN profiles p ON p.id = bc.user_id;
+
+create or replace view public.bitacora_posts_full as
+ SELECT bp.id,
+    bp.categoria,
+    bp.titulo,
+    bp.contenido,
+    bp.is_anon,
+    bp.votos_a,
+    bp.votos_b,
+    bp.created_at,
+    bp.postura_a,
+    bp.postura_b,
+    bp.tema,
+        CASE
+            WHEN NOT bp.is_anon OR bp.user_id = auth.uid()::text THEN bp.user_id
+            ELSE NULL::text
+        END AS user_id,
+        CASE
+            WHEN bp.is_anon THEN NULL::text
+            ELSE p.username
+        END AS author_username,
+        CASE
+            WHEN bp.is_anon THEN NULL::text
+            ELSE p.nombre
+        END AS author_name,
+        CASE
+            WHEN bp.is_anon THEN NULL::text
+            ELSE p.avatar
+        END AS author_avatar
+   FROM bitacora_posts bp
+     LEFT JOIN profiles p ON p.id = bp.user_id;
+
+create or replace view public.bitacora_reported_ids as
+ SELECT DISTINCT post_id
+   FROM bitacora_reports
+  WHERE post_id IS NOT NULL;
+
+create or replace view public.daily_responses_feed with (security_invoker=off) as
+ SELECT id,
+        CASE
+            WHEN user_name = 'Anónimo'::text AND user_id IS DISTINCT FROM auth.uid() THEN NULL::uuid
+            ELSE user_id
+        END AS user_id,
+    question_date,
+    question_id,
+    mood_emoji,
+    response_text,
+    user_name,
+    user_avatar,
+    created_at
+   FROM daily_responses dr;
+
+create or replace view public.dq_comments_feed as
+ SELECT id,
+    response_id,
+    text,
+    user_name,
+    user_avatar,
+        CASE
+            WHEN (COALESCE(user_name, ''::text) <> ALL (ARRAY[''::text, 'Anónimo'::text])) OR user_id = auth.uid() THEN user_id
+            ELSE NULL::uuid
+        END AS user_id,
+    created_at
+   FROM dq_comments;
+
+create or replace view public.happy_posts_full as
+ SELECT id,
+    user_name,
+    user_av,
+    emoji,
+    text,
+    photo,
+    anon,
+    reactions,
+    comments,
+    created_at,
+        CASE
+            WHEN NOT anon OR user_id = auth.uid()::text THEN user_id
+            ELSE NULL::text
+        END AS user_id
+   FROM happy_posts;
+
+create or replace view public.help_posts_feed with (security_invoker=off) as
+ SELECT id,
+    emoji,
+    preview,
+    urgencia,
+    taken,
+    taken_by,
+    closed,
+    anon,
+    user_name,
+    user_av,
+    created_at,
+        CASE
+            WHEN anon AND user_id IS DISTINCT FROM auth.uid()::text THEN NULL::text
+            ELSE user_id
+        END AS user_id
+   FROM help_posts hp;
+
+create or replace view public.momento_comments_feed as
+ SELECT id,
+    momento_id,
+    text,
+    user_name,
+    user_avatar,
+        CASE
+            WHEN COALESCE(user_name, ''::text) <> ''::text THEN user_id
+            ELSE NULL::uuid
+        END AS user_id,
+    created_at
+   FROM momento_comments;
+
+create or replace view public.profiles_full as
+ SELECT id,
+    nombre,
+    email,
+    avatar,
+    motto,
+    role,
+    created_at,
+    status_music,
+    status_book,
+    status_phrase,
+    terms_accepted_at,
+    plus_expires_at,
+    status_film,
+    helped_count,
+    received_count,
+    username,
+    visit_day_count,
+    user_status,
+    incognito,
+    read_bcast_ids,
+    badge_notified,
+    weather_city,
+    visit_days,
+    fav_contacts,
+    blocked_users,
+    dark_mode,
+    push_subscription,
+    username_changes,
+    buddy_id,
+    buddy_name,
+    buddy_available_at,
+    buddy_started_at,
+    guardian_specialties,
+    vibes_seen,
+    onboarding_flags,
+    achievements_json
+   FROM profiles
+  WHERE id = auth.uid()::text OR velo_is_admin();
+
+-- == INDICES ==
+
+CREATE INDEX IF NOT EXISTS bt_cm_rx_comment_idx ON public.bitacora_comment_reactions USING btree (comment_id);
+CREATE INDEX IF NOT EXISTS bitacora_comments_post_idx ON public.bitacora_comments USING btree (post_id);
+CREATE INDEX IF NOT EXISTS idx_bitacora_posts_tema ON public.bitacora_posts USING btree (tema);
+CREATE INDEX IF NOT EXISTS idx_bt_posts_cat ON public.bitacora_posts USING btree (categoria, created_at DESC);
+CREATE INDEX IF NOT EXISTS bitacora_reactions_post_idx ON public.bitacora_reactions USING btree (post_id);
+CREATE INDEX IF NOT EXISTS bottle_reactions_user_id_idx ON public.bottle_reactions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_bottle_reactions_bottle ON public.bottle_reactions USING btree (bottle_id);
+CREATE INDEX IF NOT EXISTS idx_bottle_reactions_created ON public.bottle_reactions USING btree (created_at);
+CREATE INDEX IF NOT EXISTS bottle_replies_user_id_idx ON public.bottle_replies USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_bottle_replies_bottle ON public.bottle_replies USING btree (bottle_id);
+CREATE INDEX IF NOT EXISTS idx_bottle_replies_created ON public.bottle_replies USING btree (created_at);
+CREATE INDEX IF NOT EXISTS buddy_requests_from_status_idx ON public.buddy_requests USING btree (from_id, status);
+CREATE INDEX IF NOT EXISTS buddy_requests_to_status_idx ON public.buddy_requests USING btree (to_id, status);
+CREATE INDEX IF NOT EXISTS circle_messages_circle_id_idx ON public.circle_messages USING btree (circle_id);
+CREATE INDEX IF NOT EXISTS content_reports_reporter_id_idx ON public.content_reports USING btree (reporter_id);
+CREATE UNIQUE INDEX deleted_accounts_user_id_uidx ON public.deleted_accounts USING btree (user_id) WHERE (user_id IS NOT NULL);
+CREATE INDEX IF NOT EXISTS diary_entries_user_id_idx ON public.diary_entries USING btree (user_id);
+CREATE UNIQUE INDEX diary_entries_user_ts_uidx ON public.diary_entries USING btree (user_id, ts);
+CREATE INDEX IF NOT EXISTS dq_reactions_user_id_idx ON public.dq_reactions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS ia_usage_user_time_idx ON public.ia_usage USING btree (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS mood_entries_user_id_idx ON public.mood_entries USING btree (user_id);
+CREATE INDEX IF NOT EXISTS news_reactions_date_idx ON public.news_reactions USING btree (date_key);
+CREATE INDEX IF NOT EXISTS news_reactions_key_idx ON public.news_reactions USING btree (news_key);
+CREATE INDEX IF NOT EXISTS pro_patient_notes_patient_idx ON public.pro_patient_notes USING btree (patient_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_buddy_available ON public.profiles USING btree (buddy_available_at) WHERE (buddy_available_at IS NOT NULL);
+CREATE INDEX IF NOT EXISTS profiles_buddy_id_idx ON public.profiles USING btree (buddy_id);
+CREATE INDEX IF NOT EXISTS profiles_username_idx ON public.profiles USING btree (username);
+CREATE UNIQUE INDEX profiles_username_unique ON public.profiles USING btree (username) WHERE ((username IS NOT NULL) AND (username <> ''::text));
+CREATE INDEX IF NOT EXISTS push_history_slot_sent_idx ON public.push_history USING btree (slot, sent_at DESC);
+CREATE INDEX IF NOT EXISTS quote_reactions_date_idx ON public.quote_reactions USING btree (date_key);
+CREATE INDEX IF NOT EXISTS idx_referrals_qualified ON public.referrals USING btree (referrer_id) WHERE (qualified_at IS NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON public.referrals USING btree (referrer_id);
+CREATE INDEX IF NOT EXISTS solidarity_requests_created_idx ON public.solidarity_requests USING btree (created_at DESC);
+CREATE INDEX IF NOT EXISTS solidarity_requests_user_idx ON public.solidarity_requests USING btree (user_id);
+CREATE INDEX IF NOT EXISTS support_matches_partner_month_idx ON public.support_matches USING btree (partner_id, month_key);
+CREATE INDEX IF NOT EXISTS support_matches_user_month_idx ON public.support_matches USING btree (user_id, month_key);
+CREATE INDEX IF NOT EXISTS usage_events_created_idx ON public.usage_events USING btree (created_at DESC);
+CREATE INDEX IF NOT EXISTS usage_events_event_idx ON public.usage_events USING btree (event, meta);
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked_id ON public.user_blocks USING btree (blocked_id);
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocker_id ON public.user_blocks USING btree (blocker_id);
+CREATE INDEX IF NOT EXISTS velo_api_usage_idx ON public.velo_api_usage USING btree (user_id, kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS vibe_comment_reactions_comment_idx ON public.vibe_comment_reactions USING btree (comment_id);
+CREATE INDEX IF NOT EXISTS vibe_comment_reactions_user_id_idx ON public.vibe_comment_reactions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS vibe_comments_created_idx ON public.vibe_comments USING btree (created_at DESC);
+CREATE INDEX IF NOT EXISTS vibe_comments_user_id_idx ON public.vibe_comments USING btree (user_id);
+CREATE INDEX IF NOT EXISTS vibe_comments_vibe_idx ON public.vibe_comments USING btree (vibe_id);
+CREATE INDEX IF NOT EXISTS vibe_groups_expires_idx ON public.vibe_groups USING btree (expires_at);
+CREATE INDEX IF NOT EXISTS vibe_groups_kind_idx ON public.vibe_groups USING btree (kind);
+CREATE INDEX IF NOT EXISTS vibe_groups_owner_idx ON public.vibe_groups USING btree (owner_id);
+CREATE INDEX IF NOT EXISTS vibe_reactions_user_id_idx ON public.vibe_reactions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS vibe_reactions_vibe_idx ON public.vibe_reactions USING btree (vibe_id);
+CREATE INDEX IF NOT EXISTS vibes_created_idx ON public.vibes USING btree (created_at DESC);
+CREATE INDEX IF NOT EXISTS vibes_expires_idx ON public.vibes USING btree (expires_at);
+CREATE INDEX IF NOT EXISTS vibes_group_idx ON public.vibes USING btree (group_id);
+CREATE INDEX IF NOT EXISTS vibes_user_idx ON public.vibes USING btree (user_id);
+
+-- == TRIGGERS ==
+
+drop trigger if exists trg_bt_rate_limit on public.bitacora_posts;
+CREATE TRIGGER trg_bt_rate_limit BEFORE INSERT ON public.bitacora_posts FOR EACH ROW EXECUTE FUNCTION _bt_check_rate_limit();
+drop trigger if exists trg_bottle_react_rate_limit on public.bottle_reactions;
+CREATE TRIGGER trg_bottle_react_rate_limit BEFORE INSERT ON public.bottle_reactions FOR EACH ROW EXECUTE FUNCTION _bottle_react_rate_limit();
+drop trigger if exists trg_bottle_rate_limit on public.bottles;
+CREATE TRIGGER trg_bottle_rate_limit BEFORE INSERT ON public.bottles FOR EACH ROW EXECUTE FUNCTION _bottle_check_rate_limit();
+drop trigger if exists dm_push_notify on public.direct_messages;
+CREATE TRIGGER dm_push_notify AFTER INSERT ON public.direct_messages FOR EACH ROW EXECUTE FUNCTION dm_push_notify_fn();
+drop trigger if exists trg_mo_rate_limit on public.momentos;
+CREATE TRIGGER trg_mo_rate_limit BEFORE INSERT ON public.momentos FOR EACH ROW EXECUTE FUNCTION _mo_check_rate_limit();
+drop trigger if exists trg_velo_protect_role on public.profiles;
+CREATE TRIGGER trg_velo_protect_role BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION velo_protect_role();
+
+-- == SEGURIDAD A NIVEL DE FILA ==
+
+alter table public.admin_news enable row level security;
+alter table public.bitacora_comment_reactions enable row level security;
+alter table public.bitacora_comments enable row level security;
+alter table public.bitacora_posts enable row level security;
+alter table public.bitacora_reactions enable row level security;
+alter table public.bitacora_reports enable row level security;
+alter table public.bookings enable row level security;
+alter table public.bot_attempts enable row level security;
+alter table public.bottle_reactions enable row level security;
+alter table public.bottle_replies enable row level security;
+alter table public.bottles enable row level security;
+alter table public.broadcasts enable row level security;
+alter table public.buddy_requests enable row level security;
+alter table public.circle_members enable row level security;
+alter table public.circle_messages enable row level security;
+alter table public.circles enable row level security;
+alter table public.contacts enable row level security;
+alter table public.content_reports enable row level security;
+alter table public.daily_responses enable row level security;
+alter table public.data_requests enable row level security;
+alter table public.deleted_accounts enable row level security;
+alter table public.diary_entries enable row level security;
+alter table public.direct_messages enable row level security;
+alter table public.donations enable row level security;
+alter table public.dq_comments enable row level security;
+alter table public.dq_reactions enable row level security;
+alter table public.guardian_presence enable row level security;
+alter table public.guardian_requests enable row level security;
+alter table public.happy_history enable row level security;
+alter table public.happy_posts enable row level security;
+alter table public.help_posts enable row level security;
+alter table public.ia_usage enable row level security;
+alter table public.moderation_flags enable row level security;
+alter table public.momento_comments enable row level security;
+alter table public.momentos enable row level security;
+alter table public.mood_entries enable row level security;
+alter table public.news_reactions enable row level security;
+alter table public.plus_grants enable row level security;
+alter table public.pro_patient_notes enable row level security;
+alter table public.profiles enable row level security;
+alter table public.push_history enable row level security;
+alter table public.quote_reactions enable row level security;
+alter table public.referrals enable row level security;
+alter table public.reportes enable row level security;
+alter table public.reviews enable row level security;
+alter table public.sessions enable row level security;
+alter table public.solidarity_requests enable row level security;
+alter table public.support_matches enable row level security;
+alter table public.surveys enable row level security;
+alter table public.terms_acceptance enable row level security;
+alter table public.usage_events enable row level security;
+alter table public.user_blocks enable row level security;
+alter table public.user_favorites enable row level security;
+alter table public.velo_api_usage enable row level security;
+alter table public.velo_notifications enable row level security;
+alter table public.velo_retention_policy enable row level security;
+alter table public.vibe_comment_reactions enable row level security;
+alter table public.vibe_comments enable row level security;
+alter table public.vibe_groups enable row level security;
+alter table public.vibe_reactions enable row level security;
+alter table public.vibe_views enable row level security;
+alter table public.vibes enable row level security;
+
+drop policy if exists news_delete_admin on public.admin_news;
+create policy news_delete_admin on public.admin_news as PERMISSIVE for delete to authenticated using (velo_is_admin());
+drop policy if exists news_insert_admin on public.admin_news;
+create policy news_insert_admin on public.admin_news as PERMISSIVE for insert to authenticated with check (velo_is_admin());
+drop policy if exists news_select_any on public.admin_news;
+create policy news_select_any on public.admin_news as PERMISSIVE for select to anon, authenticated using (true);
+drop policy if exists news_update_admin on public.admin_news;
+create policy news_update_admin on public.admin_news as PERMISSIVE for update to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists bt_cm_rx_delete on public.bitacora_comment_reactions;
+create policy bt_cm_rx_delete on public.bitacora_comment_reactions as PERMISSIVE for delete to anon, authenticated using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists bt_cm_rx_insert on public.bitacora_comment_reactions;
+create policy bt_cm_rx_insert on public.bitacora_comment_reactions as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists bt_cm_rx_select on public.bitacora_comment_reactions;
+create policy bt_cm_rx_select on public.bitacora_comment_reactions as PERMISSIVE for select to anon, authenticated using (true);
+drop policy if exists bt_cm_delete on public.bitacora_comments;
+create policy bt_cm_delete on public.bitacora_comments as PERMISSIVE for delete to anon, authenticated using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists bt_cm_insert on public.bitacora_comments;
+create policy bt_cm_insert on public.bitacora_comments as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists bt_cm_select on public.bitacora_comments;
+create policy bt_cm_select on public.bitacora_comments as PERMISSIVE for select to anon, authenticated using (true);
+drop policy if exists bt_delete_own on public.bitacora_posts;
+create policy bt_delete_own on public.bitacora_posts as PERMISSIVE for delete to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists bt_insert_auth on public.bitacora_posts;
+create policy bt_insert_auth on public.bitacora_posts as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists bt_select_public_or_own on public.bitacora_posts;
+create policy bt_select_public_or_own on public.bitacora_posts as PERMISSIVE for select to authenticated using (((COALESCE(is_anon, false) = false) OR (user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists bt_rx_delete on public.bitacora_reactions;
+create policy bt_rx_delete on public.bitacora_reactions as PERMISSIVE for delete to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists bt_rx_insert on public.bitacora_reactions;
+create policy bt_rx_insert on public.bitacora_reactions as PERMISSIVE for insert to authenticated with check ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists bt_rx_select on public.bitacora_reactions;
+create policy bt_rx_select on public.bitacora_reactions as PERMISSIVE for select to anon, authenticated using (true);
+drop policy if exists bt_rp_delete on public.bitacora_reports;
+create policy bt_rp_delete on public.bitacora_reports as PERMISSIVE for delete to authenticated using (velo_is_admin());
+drop policy if exists bt_rp_insert on public.bitacora_reports;
+create policy bt_rp_insert on public.bitacora_reports as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists bt_rp_select on public.bitacora_reports;
+create policy bt_rp_select on public.bitacora_reports as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists bookings_admin on public.bookings;
+create policy bookings_admin on public.bookings as PERMISSIVE for all to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists bot_attempts_insert_any on public.bot_attempts;
+create policy bot_attempts_insert_any on public.bot_attempts as PERMISSIVE for insert to anon, authenticated with check (true);
+drop policy if exists bot_attempts_select_admin on public.bot_attempts;
+create policy bot_attempts_select_admin on public.bot_attempts as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists "delete own bottle reaction" on public.bottle_reactions;
+create policy "delete own bottle reaction" on public.bottle_reactions as PERMISSIVE for delete to public using ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists "insert own bottle reaction" on public.bottle_reactions;
+create policy "insert own bottle reaction" on public.bottle_reactions as PERMISSIVE for insert to public with check ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists "read bottle reactions" on public.bottle_reactions;
+create policy "read bottle reactions" on public.bottle_reactions as PERMISSIVE for select to public using (true);
+drop policy if exists "insert own bottle reply" on public.bottle_replies;
+create policy "insert own bottle reply" on public.bottle_replies as PERMISSIVE for insert to public with check ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists "read bottle replies" on public.bottle_replies;
+create policy "read bottle replies" on public.bottle_replies as PERMISSIVE for select to public using (true);
+drop policy if exists bottles_insert_own on public.bottles;
+create policy bottles_insert_own on public.bottles as PERMISSIVE for insert to public with check ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists bottles_select_own on public.bottles;
+create policy bottles_select_own on public.bottles as PERMISSIVE for select to public using (((user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists broadcasts_delete_own on public.broadcasts;
+create policy broadcasts_delete_own on public.broadcasts as PERMISSIVE for delete to authenticated using ((target = ('user:'::text || (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists broadcasts_insert_auth on public.broadcasts;
+create policy broadcasts_insert_auth on public.broadcasts as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists broadcasts_mass_admin_only on public.broadcasts;
+create policy broadcasts_mass_admin_only on public.broadcasts as RESTRICTIVE for insert to public with check (((COALESCE(target, ''::text) <> ALL (ARRAY['users'::text, 'pros'::text, 'all'::text])) OR velo_is_admin()));
+drop policy if exists broadcasts_no_admin_impersonation on public.broadcasts;
+create policy broadcasts_no_admin_impersonation on public.broadcasts as RESTRICTIVE for insert to public with check (((POSITION(('Administraci'::text) IN (COALESCE(sender, ''::text))) = 0) OR velo_is_admin()));
+drop policy if exists broadcasts_select_own on public.broadcasts;
+create policy broadcasts_select_own on public.broadcasts as PERMISSIVE for select to authenticated using (((target = ('user:'::text || (( SELECT auth.uid() AS uid))::text)) OR (target = 'all'::text) OR (target = 'users'::text) OR (target = 'pros'::text)));
+drop policy if exists buddy_requests_insert on public.buddy_requests;
+create policy buddy_requests_insert on public.buddy_requests as PERMISSIVE for insert to public with check (((( SELECT auth.uid() AS uid))::text = from_id));
+drop policy if exists buddy_requests_select on public.buddy_requests;
+create policy buddy_requests_select on public.buddy_requests as PERMISSIVE for select to public using ((((( SELECT auth.uid() AS uid))::text = from_id) OR ((( SELECT auth.uid() AS uid))::text = to_id)));
+drop policy if exists buddy_requests_update on public.buddy_requests;
+create policy buddy_requests_update on public.buddy_requests as PERMISSIVE for update to public using ((((( SELECT auth.uid() AS uid))::text = from_id) OR ((( SELECT auth.uid() AS uid))::text = to_id)));
+drop policy if exists cmem_select_auth on public.circle_members;
+create policy cmem_select_auth on public.circle_members as PERMISSIVE for select to authenticated using (true);
+drop policy if exists cmem_write_own on public.circle_members;
+create policy cmem_write_own on public.circle_members as PERMISSIVE for all to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = ( SELECT (auth.jwt() ->> 'email'::text))))) with check (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = ( SELECT (auth.jwt() ->> 'email'::text)))));
+drop policy if exists circle_msg_insert on public.circle_messages;
+create policy circle_msg_insert on public.circle_messages as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists cm_insert_member on public.circle_messages;
+create policy cm_insert_member on public.circle_messages as PERMISSIVE for insert to authenticated with check (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = ( SELECT (auth.jwt() ->> 'email'::text)))));
+drop policy if exists cm_select_member on public.circle_messages;
+create policy cm_select_member on public.circle_messages as PERMISSIVE for select to authenticated using ((circle_id IN ( SELECT cm.circle_id
+   FROM circle_members cm
+  WHERE ((cm.user_id = (( SELECT auth.uid() AS uid))::text) OR (cm.user_id = ( SELECT (auth.jwt() ->> 'email'::text)))))));
+drop policy if exists circles_delete_own on public.circles;
+create policy circles_delete_own on public.circles as PERMISSIVE for delete to public using (((creator_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists circles_insert_own on public.circles;
+create policy circles_insert_own on public.circles as PERMISSIVE for insert to public with check ((creator_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists circles_read on public.circles;
+create policy circles_read on public.circles as PERMISSIVE for select to public using (true);
+drop policy if exists circles_update_own on public.circles;
+create policy circles_update_own on public.circles as PERMISSIVE for update to public using (((creator_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin())) with check (((creator_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists contacts_delete_admin on public.contacts;
+create policy contacts_delete_admin on public.contacts as PERMISSIVE for delete to authenticated using (velo_is_admin());
+drop policy if exists contacts_insert_any on public.contacts;
+create policy contacts_insert_any on public.contacts as PERMISSIVE for insert to anon, authenticated with check (true);
+drop policy if exists contacts_select_own_or_admin on public.contacts;
+create policy contacts_select_own_or_admin on public.contacts as PERMISSIVE for select to authenticated using (((user_email = (( SELECT auth.jwt() AS jwt) ->> 'email'::text)) OR velo_is_admin()));
+drop policy if exists contacts_update_admin on public.contacts;
+create policy contacts_update_admin on public.contacts as PERMISSIVE for update to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists insert_own_reports on public.content_reports;
+create policy insert_own_reports on public.content_reports as PERMISSIVE for insert to public with check ((( SELECT auth.uid() AS uid) = reporter_id));
+drop policy if exists delete_own_responses on public.daily_responses;
+create policy delete_own_responses on public.daily_responses as PERMISSIVE for delete to public using ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists dr_select_own on public.daily_responses;
+create policy dr_select_own on public.daily_responses as PERMISSIVE for select to public using ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists own_insert_daily on public.daily_responses;
+create policy own_insert_daily on public.daily_responses as PERMISSIVE for insert to public with check ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists own_update_daily on public.daily_responses;
+create policy own_update_daily on public.daily_responses as PERMISSIVE for update to public using ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists data_requests_admin on public.data_requests;
+create policy data_requests_admin on public.data_requests as PERMISSIVE for all to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists deleted_accounts_admin on public.deleted_accounts;
+create policy deleted_accounts_admin on public.deleted_accounts as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists diary_delete_own on public.diary_entries;
+create policy diary_delete_own on public.diary_entries as PERMISSIVE for delete to authenticated using ((user_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists diary_insert_own on public.diary_entries;
+create policy diary_insert_own on public.diary_entries as PERMISSIVE for insert to authenticated with check ((user_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists diary_select_own on public.diary_entries;
+create policy diary_select_own on public.diary_entries as PERMISSIVE for select to authenticated using (((user_id = ( SELECT auth.uid() AS uid)) OR velo_is_admin()));
+drop policy if exists diary_update_own on public.diary_entries;
+create policy diary_update_own on public.diary_entries as PERMISSIVE for update to authenticated using ((user_id = ( SELECT auth.uid() AS uid))) with check ((user_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists dm_delete_participant on public.direct_messages;
+create policy dm_delete_participant on public.direct_messages as PERMISSIVE for delete to authenticated using (((from_id = (( SELECT auth.uid() AS uid))::text) OR (to_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists dm_insert_own on public.direct_messages;
+create policy dm_insert_own on public.direct_messages as PERMISSIVE for insert to authenticated with check ((from_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists dm_select_participant on public.direct_messages;
+create policy dm_select_participant on public.direct_messages as PERMISSIVE for select to authenticated using (((from_id = (( SELECT auth.uid() AS uid))::text) OR (to_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists dm_update_participant on public.direct_messages;
+create policy dm_update_participant on public.direct_messages as PERMISSIVE for update to authenticated using (((from_id = (( SELECT auth.uid() AS uid))::text) OR (to_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists donations_insert_any on public.donations;
+create policy donations_insert_any on public.donations as PERMISSIVE for insert to anon, authenticated with check (true);
+drop policy if exists donations_select_admin on public.donations;
+create policy donations_select_admin on public.donations as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists insert_all on public.dq_comments;
+create policy insert_all on public.dq_comments as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists select_all on public.dq_comments;
+create policy select_all on public.dq_comments as PERMISSIVE for select to public using (true);
+drop policy if exists own_delete_dq_reaction on public.dq_reactions;
+create policy own_delete_dq_reaction on public.dq_reactions as PERMISSIVE for delete to public using ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists own_insert_dq_reaction on public.dq_reactions;
+create policy own_insert_dq_reaction on public.dq_reactions as PERMISSIVE for insert to public with check ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists public_read_dq_reactions on public.dq_reactions;
+create policy public_read_dq_reactions on public.dq_reactions as PERMISSIVE for select to public using (true);
+drop policy if exists gp_delete_own on public.guardian_presence;
+create policy gp_delete_own on public.guardian_presence as PERMISSIVE for delete to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = (( SELECT auth.jwt() AS jwt) ->> 'email'::text)) OR velo_is_admin()));
+drop policy if exists gp_insert_own on public.guardian_presence;
+create policy gp_insert_own on public.guardian_presence as PERMISSIVE for insert to authenticated with check (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = (( SELECT auth.jwt() AS jwt) ->> 'email'::text))));
+drop policy if exists gp_select_any on public.guardian_presence;
+create policy gp_select_any on public.guardian_presence as PERMISSIVE for select to anon, authenticated using (true);
+drop policy if exists gp_update_own on public.guardian_presence;
+create policy gp_update_own on public.guardian_presence as PERMISSIVE for update to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = (( SELECT auth.jwt() AS jwt) ->> 'email'::text)))) with check (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = (( SELECT auth.jwt() AS jwt) ->> 'email'::text))));
+drop policy if exists gr_insert_seeker on public.guardian_requests;
+create policy gr_insert_seeker on public.guardian_requests as PERMISSIVE for insert to public with check ((seeker_id = (auth.uid())::text));
+drop policy if exists gr_select_involved on public.guardian_requests;
+create policy gr_select_involved on public.guardian_requests as PERMISSIVE for select to public using (((seeker_id = (auth.uid())::text) OR (guardian_id = (auth.uid())::text) OR velo_is_admin()));
+drop policy if exists gr_update_involved on public.guardian_requests;
+create policy gr_update_involved on public.guardian_requests as PERMISSIVE for update to public using (((seeker_id = (auth.uid())::text) OR (guardian_id = (auth.uid())::text))) with check (((seeker_id = (auth.uid())::text) OR (guardian_id = (auth.uid())::text)));
+drop policy if exists guardian_requests_daily_limit on public.guardian_requests;
+create policy guardian_requests_daily_limit on public.guardian_requests as RESTRICTIVE for insert to authenticated with check ((velo_is_premium((auth.uid())::text) OR (seeker_id IS DISTINCT FROM (auth.uid())::text) OR (( SELECT count(*) AS count
+   FROM guardian_requests g
+  WHERE ((g.seeker_id = (auth.uid())::text) AND (g.created_at > (now() - '24:00:00'::interval)))) < 4)));
+drop policy if exists happy_hist_delete_own on public.happy_history;
+create policy happy_hist_delete_own on public.happy_history as PERMISSIVE for delete to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists happy_hist_insert_own on public.happy_history;
+create policy happy_hist_insert_own on public.happy_history as PERMISSIVE for insert to authenticated with check ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists happy_hist_select_own on public.happy_history;
+create policy happy_hist_select_own on public.happy_history as PERMISSIVE for select to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists happy_hist_update_own on public.happy_history;
+create policy happy_hist_update_own on public.happy_history as PERMISSIVE for update to authenticated using ((user_id = (( SELECT auth.uid() AS uid))::text)) with check ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists happy_delete_own on public.happy_posts;
+create policy happy_delete_own on public.happy_posts as PERMISSIVE for delete to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists happy_insert_auth on public.happy_posts;
+create policy happy_insert_auth on public.happy_posts as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists happy_select_public_or_own on public.happy_posts;
+create policy happy_select_public_or_own on public.happy_posts as PERMISSIVE for select to authenticated using (((COALESCE(anon, false) = false) OR (user_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists happy_update_auth on public.happy_posts;
+create policy happy_update_auth on public.happy_posts as PERMISSIVE for update to authenticated using (true) with check (true);
+drop policy if exists help_delete_own on public.help_posts;
+create policy help_delete_own on public.help_posts as PERMISSIVE for delete to authenticated using (((user_id = (auth.uid())::text) OR velo_is_admin()));
+drop policy if exists help_insert_auth on public.help_posts;
+create policy help_insert_auth on public.help_posts as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists help_posts_daily_limit on public.help_posts;
+create policy help_posts_daily_limit on public.help_posts as RESTRICTIVE for insert to authenticated with check ((velo_is_premium((auth.uid())::text) OR (( SELECT count(*) AS count
+   FROM help_posts h
+  WHERE ((h.user_id = (auth.uid())::text) AND (h.created_at > (now() - '24:00:00'::interval)))) < 4)));
+drop policy if exists help_select_public_or_own on public.help_posts;
+create policy help_select_public_or_own on public.help_posts as PERMISSIVE for select to authenticated using (((COALESCE(anon, false) = false) OR (user_id = (auth.uid())::text) OR velo_is_admin()));
+drop policy if exists help_update_auth on public.help_posts;
+create policy help_update_auth on public.help_posts as PERMISSIVE for update to authenticated using (true) with check (true);
+drop policy if exists ia_usage_daily_limit on public.ia_usage;
+create policy ia_usage_daily_limit on public.ia_usage as RESTRICTIVE for insert to authenticated with check ((velo_is_premium((auth.uid())::text) OR (( SELECT count(*) AS count
+   FROM ia_usage u
+  WHERE ((u.user_id = (auth.uid())::text) AND (u.created_at > (now() - '24:00:00'::interval)))) < 25)));
+drop policy if exists ia_usage_insert_own on public.ia_usage;
+create policy ia_usage_insert_own on public.ia_usage as PERMISSIVE for insert to authenticated with check ((user_id = (auth.uid())::text));
+drop policy if exists ia_usage_select_own on public.ia_usage;
+create policy ia_usage_select_own on public.ia_usage as PERMISSIVE for select to authenticated using ((user_id = (auth.uid())::text));
+drop policy if exists flags_insert_auth on public.moderation_flags;
+create policy flags_insert_auth on public.moderation_flags as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists flags_select_admin on public.moderation_flags;
+create policy flags_select_admin on public.moderation_flags as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists flags_update_admin on public.moderation_flags;
+create policy flags_update_admin on public.moderation_flags as PERMISSIVE for update to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists insert_comments on public.momento_comments;
+create policy insert_comments on public.momento_comments as PERMISSIVE for insert to authenticated with check (true);
+drop policy if exists read_comments on public.momento_comments;
+create policy read_comments on public.momento_comments as PERMISSIVE for select to public using (true);
+drop policy if exists insert_all on public.momentos;
+create policy insert_all on public.momentos as PERMISSIVE for insert to anon, authenticated with check (((user_id IS NULL) OR (user_id = ( SELECT auth.uid() AS uid))));
+drop policy if exists momentos_delete_own on public.momentos;
+create policy momentos_delete_own on public.momentos as PERMISSIVE for delete to authenticated using (((user_id = ( SELECT auth.uid() AS uid)) OR velo_is_admin()));
+drop policy if exists momentos_update_own on public.momentos;
+create policy momentos_update_own on public.momentos as PERMISSIVE for update to authenticated using (((user_id = ( SELECT auth.uid() AS uid)) OR velo_is_admin())) with check (((user_id = ( SELECT auth.uid() AS uid)) OR velo_is_admin()));
+drop policy if exists public_read_momentos on public.momentos;
+create policy public_read_momentos on public.momentos as PERMISSIVE for select to public using (true);
+drop policy if exists read_active on public.momentos;
+create policy read_active on public.momentos as PERMISSIVE for select to public using ((expires_at > now()));
+drop policy if exists mood_delete_own on public.mood_entries;
+create policy mood_delete_own on public.mood_entries as PERMISSIVE for delete to authenticated using ((user_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists mood_insert_own on public.mood_entries;
+create policy mood_insert_own on public.mood_entries as PERMISSIVE for insert to authenticated with check ((user_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists mood_select_own on public.mood_entries;
+create policy mood_select_own on public.mood_entries as PERMISSIVE for select to authenticated using (((user_id = ( SELECT auth.uid() AS uid)) OR velo_is_admin()));
+drop policy if exists mood_update_own on public.mood_entries;
+create policy mood_update_own on public.mood_entries as PERMISSIVE for update to authenticated using ((user_id = ( SELECT auth.uid() AS uid))) with check ((user_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists news_rx_delete on public.news_reactions;
+create policy news_rx_delete on public.news_reactions as PERMISSIVE for delete to public using ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists news_rx_insert on public.news_reactions;
+create policy news_rx_insert on public.news_reactions as PERMISSIVE for insert to public with check ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists news_rx_select on public.news_reactions;
+create policy news_rx_select on public.news_reactions as PERMISSIVE for select to public using (true);
+drop policy if exists plus_grants_admin_read on public.plus_grants;
+create policy plus_grants_admin_read on public.plus_grants as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists ppn_all_own on public.pro_patient_notes;
+create policy ppn_all_own on public.pro_patient_notes as PERMISSIVE for all to authenticated using ((pro_id = (( SELECT auth.uid() AS uid))::text)) with check ((pro_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists profiles_delete_admin on public.profiles;
+create policy profiles_delete_admin on public.profiles as PERMISSIVE for delete to authenticated using (velo_is_admin());
+drop policy if exists profiles_insert_own on public.profiles;
+create policy profiles_insert_own on public.profiles as PERMISSIVE for insert to authenticated with check ((id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists profiles_select on public.profiles;
+create policy profiles_select on public.profiles as PERMISSIVE for select to authenticated using (true);
+drop policy if exists profiles_update_own on public.profiles;
+create policy profiles_update_own on public.profiles as PERMISSIVE for update to authenticated using ((id = (( SELECT auth.uid() AS uid))::text)) with check ((id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists quote_rx_delete on public.quote_reactions;
+create policy quote_rx_delete on public.quote_reactions as PERMISSIVE for delete to public using ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists quote_rx_insert on public.quote_reactions;
+create policy quote_rx_insert on public.quote_reactions as PERMISSIVE for insert to public with check ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists quote_rx_select on public.quote_reactions;
+create policy quote_rx_select on public.quote_reactions as PERMISSIVE for select to public using (true);
+drop policy if exists "insert own referral" on public.referrals;
+create policy "insert own referral" on public.referrals as PERMISSIVE for insert to public with check ((referred_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists "read own referrals" on public.referrals;
+create policy "read own referrals" on public.referrals as PERMISSIVE for select to public using (((referrer_id = (( SELECT auth.uid() AS uid))::text) OR (referred_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists "update own referral" on public.referrals;
+create policy "update own referral" on public.referrals as PERMISSIVE for update to public using (((referred_id = (( SELECT auth.uid() AS uid))::text) OR (referrer_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists reportes_insert_any on public.reportes;
+create policy reportes_insert_any on public.reportes as PERMISSIVE for insert to anon, authenticated with check (true);
+drop policy if exists reportes_select_admin on public.reportes;
+create policy reportes_select_admin on public.reportes as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists reportes_update_admin on public.reportes;
+create policy reportes_update_admin on public.reportes as PERMISSIVE for update to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists reviews_delete_involved on public.reviews;
+create policy reviews_delete_involved on public.reviews as PERMISSIVE for delete to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR (pro_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists reviews_insert_own on public.reviews;
+create policy reviews_insert_own on public.reviews as PERMISSIVE for insert to authenticated with check ((user_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists reviews_select_any on public.reviews;
+create policy reviews_select_any on public.reviews as PERMISSIVE for select to anon, authenticated using (true);
+drop policy if exists reviews_update_reviewee on public.reviews;
+create policy reviews_update_reviewee on public.reviews as PERMISSIVE for update to authenticated using (((pro_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin())) with check (((pro_id = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists sessions_admin on public.sessions;
+create policy sessions_admin on public.sessions as PERMISSIVE for all to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists sr_delete_admin on public.solidarity_requests;
+create policy sr_delete_admin on public.solidarity_requests as PERMISSIVE for delete to authenticated using (velo_is_admin());
+drop policy if exists sr_insert_own on public.solidarity_requests;
+create policy sr_insert_own on public.solidarity_requests as PERMISSIVE for insert to authenticated with check (((user_id IS NULL) OR (user_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists sr_select_admin_or_own on public.solidarity_requests;
+create policy sr_select_admin_or_own on public.solidarity_requests as PERMISSIVE for select to authenticated using ((velo_is_admin() OR (user_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists sr_update_admin on public.solidarity_requests;
+create policy sr_update_admin on public.solidarity_requests as PERMISSIVE for update to authenticated using (velo_is_admin()) with check (velo_is_admin());
+drop policy if exists support_matches_delete on public.support_matches;
+create policy support_matches_delete on public.support_matches as PERMISSIVE for delete to public using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists support_matches_insert on public.support_matches;
+create policy support_matches_insert on public.support_matches as PERMISSIVE for insert to public with check (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists support_matches_select on public.support_matches;
+create policy support_matches_select on public.support_matches as PERMISSIVE for select to public using ((((( SELECT auth.uid() AS uid))::text = user_id) OR ((( SELECT auth.uid() AS uid))::text = partner_id)));
+drop policy if exists support_matches_update on public.support_matches;
+create policy support_matches_update on public.support_matches as PERMISSIVE for update to public using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists surveys_insert_own on public.surveys;
+create policy surveys_insert_own on public.surveys as PERMISSIVE for insert to public with check (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id IS NULL)));
+drop policy if exists surveys_select_admin on public.surveys;
+create policy surveys_select_admin on public.surveys as PERMISSIVE for select to public using (velo_is_admin());
+drop policy if exists terms_insert_any on public.terms_acceptance;
+create policy terms_insert_any on public.terms_acceptance as PERMISSIVE for insert to anon, authenticated with check (true);
+drop policy if exists terms_select_admin on public.terms_acceptance;
+create policy terms_select_admin on public.terms_acceptance as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists usage_insert on public.usage_events;
+create policy usage_insert on public.usage_events as PERMISSIVE for insert to public with check ((( SELECT auth.uid() AS uid) = user_id));
+drop policy if exists usage_select_admin on public.usage_events;
+create policy usage_select_admin on public.usage_events as PERMISSIVE for select to public using (velo_is_admin());
+drop policy if exists blocks_delete_own on public.user_blocks;
+create policy blocks_delete_own on public.user_blocks as PERMISSIVE for delete to authenticated using ((blocker_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists blocks_insert_own on public.user_blocks;
+create policy blocks_insert_own on public.user_blocks as PERMISSIVE for insert to authenticated with check ((blocker_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists blocks_select_involved on public.user_blocks;
+create policy blocks_select_involved on public.user_blocks as PERMISSIVE for select to authenticated using (((blocker_id = ( SELECT auth.uid() AS uid)) OR (blocked_id = ( SELECT auth.uid() AS uid))));
+drop policy if exists blocks_update_own on public.user_blocks;
+create policy blocks_update_own on public.user_blocks as PERMISSIVE for update to authenticated using ((blocker_id = ( SELECT auth.uid() AS uid))) with check ((blocker_id = ( SELECT auth.uid() AS uid)));
+drop policy if exists favs_delete_own on public.user_favorites;
+create policy favs_delete_own on public.user_favorites as PERMISSIVE for delete to authenticated using (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = ( SELECT (auth.jwt() ->> 'email'::text)))));
+drop policy if exists favs_insert_own on public.user_favorites;
+create policy favs_insert_own on public.user_favorites as PERMISSIVE for insert to authenticated with check (((user_id = (( SELECT auth.uid() AS uid))::text) OR (user_id = ( SELECT (auth.jwt() ->> 'email'::text)))));
+drop policy if exists favs_select_involved on public.user_favorites;
+create policy favs_select_involved on public.user_favorites as PERMISSIVE for select to public using (((user_id = (( SELECT auth.uid() AS uid))::text) OR (fav_id = (( SELECT auth.uid() AS uid))::text)));
+drop policy if exists users_delete_own_favs on public.user_favorites;
+create policy users_delete_own_favs on public.user_favorites as PERMISSIVE for delete to public using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists select_own on public.velo_notifications;
+create policy select_own on public.velo_notifications as PERMISSIVE for select to public using ((((user_id)::text = (( SELECT auth.uid() AS uid))::text) OR velo_is_admin()));
+drop policy if exists update_own on public.velo_notifications;
+create policy update_own on public.velo_notifications as PERMISSIVE for update to public using (((user_id)::text = (( SELECT auth.uid() AS uid))::text)) with check (((user_id)::text = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists retention_policy_admin on public.velo_retention_policy;
+create policy retention_policy_admin on public.velo_retention_policy as PERMISSIVE for select to authenticated using (velo_is_admin());
+drop policy if exists vibe_comment_reactions_delete on public.vibe_comment_reactions;
+create policy vibe_comment_reactions_delete on public.vibe_comment_reactions as PERMISSIVE for delete to public using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists vibe_comment_reactions_insert on public.vibe_comment_reactions;
+create policy vibe_comment_reactions_insert on public.vibe_comment_reactions as PERMISSIVE for insert to public with check (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists vibe_comment_reactions_select on public.vibe_comment_reactions;
+create policy vibe_comment_reactions_select on public.vibe_comment_reactions as PERMISSIVE for select to public using ((((( SELECT auth.uid() AS uid))::text = user_id) OR (EXISTS ( SELECT 1
+   FROM vibe_comments c
+  WHERE ((c.id = vibe_comment_reactions.comment_id) AND (c.user_id = (( SELECT auth.uid() AS uid))::text))))));
+drop policy if exists vibe_comments_delete on public.vibe_comments;
+create policy vibe_comments_delete on public.vibe_comments as PERMISSIVE for delete to public using ((((( SELECT auth.uid() AS uid))::text = user_id) OR (EXISTS ( SELECT 1
+   FROM vibes v
+  WHERE ((v.id = vibe_comments.vibe_id) AND (v.user_id = (( SELECT auth.uid() AS uid))::text))))));
+drop policy if exists vibe_comments_insert on public.vibe_comments;
+create policy vibe_comments_insert on public.vibe_comments as PERMISSIVE for insert to public with check ((((( SELECT auth.uid() AS uid))::text = user_id) AND (EXISTS ( SELECT 1
+   FROM vibes v
+  WHERE ((v.id = vibe_comments.vibe_id) AND (((v.group_id IS NULL) AND (v.instant_scope = 'public'::text)) OR ((v.group_id IS NULL) AND (v.instant_scope = 'private'::text) AND (((( SELECT auth.uid() AS uid))::text = v.user_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (v.instant_member_ids)))) OR ((v.group_id IS NOT NULL) AND (EXISTS ( SELECT 1
+           FROM vibe_groups g
+          WHERE ((g.id = v.group_id) AND ((g.kind = ANY (ARRAY['official'::text, 'public'::text])) OR ((( SELECT auth.uid() AS uid))::text = g.owner_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (g.member_ids)))))))))))));
+drop policy if exists vibe_comments_select on public.vibe_comments;
+create policy vibe_comments_select on public.vibe_comments as PERMISSIVE for select to public using ((EXISTS ( SELECT 1
+   FROM vibes v
+  WHERE ((v.id = vibe_comments.vibe_id) AND (((v.group_id IS NULL) AND (v.instant_scope = 'public'::text)) OR ((v.group_id IS NULL) AND (v.instant_scope = 'private'::text) AND (((( SELECT auth.uid() AS uid))::text = v.user_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (v.instant_member_ids)))) OR ((v.group_id IS NOT NULL) AND (EXISTS ( SELECT 1
+           FROM vibe_groups g
+          WHERE ((g.id = v.group_id) AND ((g.kind = ANY (ARRAY['official'::text, 'public'::text])) OR ((( SELECT auth.uid() AS uid))::text = g.owner_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (g.member_ids))))))))))));
+drop policy if exists vibe_groups_delete on public.vibe_groups;
+create policy vibe_groups_delete on public.vibe_groups as PERMISSIVE for delete to public using (((( SELECT auth.uid() AS uid))::text = owner_id));
+drop policy if exists vibe_groups_insert on public.vibe_groups;
+create policy vibe_groups_insert on public.vibe_groups as PERMISSIVE for insert to public with check (((kind = ANY (ARRAY['public'::text, 'private'::text])) AND ((( SELECT auth.uid() AS uid))::text = owner_id)));
+drop policy if exists vibe_groups_private_needs_plus on public.vibe_groups;
+create policy vibe_groups_private_needs_plus on public.vibe_groups as RESTRICTIVE for insert to authenticated with check (((kind <> 'private'::text) OR velo_is_premium((( SELECT auth.uid() AS uid))::text)));
+drop policy if exists vibe_groups_select on public.vibe_groups;
+create policy vibe_groups_select on public.vibe_groups as PERMISSIVE for select to public using (((kind = ANY (ARRAY['official'::text, 'public'::text])) OR ((( SELECT auth.uid() AS uid))::text = owner_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (member_ids))));
+drop policy if exists vibe_groups_update on public.vibe_groups;
+create policy vibe_groups_update on public.vibe_groups as PERMISSIVE for update to public using (((( SELECT auth.uid() AS uid))::text = owner_id));
+drop policy if exists vibe_reactions_delete on public.vibe_reactions;
+create policy vibe_reactions_delete on public.vibe_reactions as PERMISSIVE for delete to public using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists vibe_reactions_insert on public.vibe_reactions;
+create policy vibe_reactions_insert on public.vibe_reactions as PERMISSIVE for insert to public with check (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists vibe_reactions_select on public.vibe_reactions;
+create policy vibe_reactions_select on public.vibe_reactions as PERMISSIVE for select to public using ((EXISTS ( SELECT 1
+   FROM vibes v
+  WHERE (v.id = vibe_reactions.vibe_id))));
+drop policy if exists vibe_reactions_update on public.vibe_reactions;
+create policy vibe_reactions_update on public.vibe_reactions as PERMISSIVE for update to public using (((( SELECT auth.uid() AS uid))::text = user_id));
+drop policy if exists vibe_views_insert_own on public.vibe_views;
+create policy vibe_views_insert_own on public.vibe_views as PERMISSIVE for insert to authenticated with check ((viewer_id = (( SELECT auth.uid() AS uid))::text));
+drop policy if exists vibe_views_select on public.vibe_views;
+create policy vibe_views_select on public.vibe_views as PERMISSIVE for select to authenticated using (((viewer_id = (( SELECT auth.uid() AS uid))::text) OR (EXISTS ( SELECT 1
+   FROM vibes v
+  WHERE ((v.id = vibe_views.vibe_id) AND (v.user_id = (( SELECT auth.uid() AS uid))::text))))));
+drop policy if exists vibes_delete on public.vibes;
+create policy vibes_delete on public.vibes as PERMISSIVE for delete to public using ((((( SELECT auth.uid() AS uid))::text = user_id) OR (EXISTS ( SELECT 1
+   FROM vibe_groups g
+  WHERE ((g.id = vibes.group_id) AND (g.owner_id = (( SELECT auth.uid() AS uid))::text))))));
+drop policy if exists vibes_insert on public.vibes;
+create policy vibes_insert on public.vibes as PERMISSIVE for insert to public with check ((((( SELECT auth.uid() AS uid))::text = user_id) AND (((group_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM vibe_groups g
+  WHERE ((g.id = vibes.group_id) AND ((g.kind = ANY (ARRAY['official'::text, 'public'::text])) OR ((( SELECT auth.uid() AS uid))::text = g.owner_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (g.member_ids))))))) OR ((group_id IS NULL) AND (instant_scope = ANY (ARRAY['public'::text, 'private'::text]))))));
+drop policy if exists vibes_select on public.vibes;
+create policy vibes_select on public.vibes as PERMISSIVE for select to public using ((((group_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM vibe_groups g
+  WHERE ((g.id = vibes.group_id) AND ((g.kind = ANY (ARRAY['official'::text, 'public'::text])) OR ((( SELECT auth.uid() AS uid))::text = g.owner_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (g.member_ids))))))) OR ((group_id IS NULL) AND (instant_scope = 'public'::text)) OR ((group_id IS NULL) AND (instant_scope = 'private'::text) AND (((( SELECT auth.uid() AS uid))::text = user_id) OR ((( SELECT auth.uid() AS uid))::text = ANY (instant_member_ids))))));
+drop policy if exists vibes_update on public.vibes;
+create policy vibes_update on public.vibes as PERMISSIVE for update to public using (((( SELECT auth.uid() AS uid))::text = user_id));
+
+-- == PERMISOS ==
+
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.admin_news to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.admin_news to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.admin_news to service_role;
+grant DELETE, REFERENCES, TRIGGER, UPDATE on public.bitacora_comment_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bitacora_comment_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_comment_reactions to service_role;
+grant DELETE, REFERENCES, TRIGGER, UPDATE on public.bitacora_comments to anon;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.bitacora_comments to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_comments to service_role;
+grant SELECT on public.bitacora_comments_full to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_comments_full to service_role;
+grant DELETE, REFERENCES, TRIGGER, UPDATE on public.bitacora_posts to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bitacora_posts to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_posts to service_role;
+grant SELECT on public.bitacora_posts_full to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_posts_full to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.bitacora_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bitacora_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_reactions to service_role;
+grant SELECT on public.bitacora_reported_ids to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_reported_ids to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bitacora_reports to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bitacora_reports to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bitacora_reports to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bookings to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bookings to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bookings to service_role;
+grant INSERT, REFERENCES, SELECT, TRIGGER on public.bot_attempts to anon;
+grant INSERT, REFERENCES, SELECT, TRIGGER on public.bot_attempts to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bot_attempts to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.bottle_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bottle_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bottle_reactions to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bottle_replies to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bottle_replies to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bottle_replies to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bottles to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.bottles to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.bottles to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.broadcasts to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.broadcasts to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.broadcasts to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.buddy_requests to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.buddy_requests to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.buddy_requests to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.circle_members to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.circle_members to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.circle_members to service_role;
+grant DELETE, REFERENCES, SELECT, TRIGGER, UPDATE on public.circle_messages to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.circle_messages to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.circle_messages to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.circles to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.circles to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.circles to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.contacts to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.contacts to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.contacts to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.content_reports to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.content_reports to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.content_reports to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.daily_responses to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.daily_responses to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.daily_responses to service_role;
+grant SELECT on public.daily_responses_feed to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.daily_responses_feed to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.data_requests to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.data_requests to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.data_requests to service_role;
+grant REFERENCES, SELECT, TRIGGER on public.deleted_accounts to anon;
+grant REFERENCES, SELECT, TRIGGER on public.deleted_accounts to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.deleted_accounts to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.diary_entries to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.diary_entries to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.direct_messages to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.direct_messages to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.direct_messages to service_role;
+grant INSERT, REFERENCES, SELECT, TRIGGER on public.donations to anon;
+grant INSERT, REFERENCES, SELECT, TRIGGER on public.donations to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.donations to service_role;
+grant DELETE, REFERENCES, TRIGGER, UPDATE on public.dq_comments to anon;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.dq_comments to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.dq_comments to service_role;
+grant SELECT on public.dq_comments_feed to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.dq_comments_feed to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.dq_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.dq_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.dq_reactions to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.guardian_presence to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.guardian_presence to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.guardian_presence to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.guardian_requests to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.guardian_requests to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.guardian_requests to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.happy_history to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.happy_history to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.happy_history to service_role;
+grant DELETE, REFERENCES, TRIGGER on public.happy_posts to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER on public.happy_posts to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.happy_posts to service_role;
+grant SELECT on public.happy_posts_full to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.happy_posts_full to service_role;
+grant DELETE, REFERENCES, TRIGGER on public.help_posts to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER on public.help_posts to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.help_posts to service_role;
+grant SELECT on public.help_posts_feed to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.help_posts_feed to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.ia_usage to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.ia_usage to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.ia_usage to service_role;
+grant INSERT, REFERENCES, TRIGGER on public.moderation_flags to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.moderation_flags to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.moderation_flags to service_role;
+grant DELETE, REFERENCES, TRIGGER, UPDATE on public.momento_comments to anon;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.momento_comments to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.momento_comments to service_role;
+grant SELECT on public.momento_comments_feed to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.momento_comments_feed to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER on public.momentos to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER on public.momentos to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.momentos to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.mood_entries to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.mood_entries to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.news_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.news_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.news_reactions to service_role;
+grant REFERENCES, SELECT, TRIGGER on public.plus_grants to anon;
+grant REFERENCES, SELECT, TRIGGER on public.plus_grants to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.plus_grants to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.pro_patient_notes to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.pro_patient_notes to service_role;
+grant REFERENCES, TRIGGER on public.profiles to anon;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.profiles to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.profiles to service_role;
+grant SELECT on public.profiles_full to anon;
+grant SELECT on public.profiles_full to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.profiles_full to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.push_history to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.push_history to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.push_history to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.quote_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.quote_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.quote_reactions to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.referrals to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.referrals to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.referrals to service_role;
+grant INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.reportes to anon;
+grant INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.reportes to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.reportes to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.reviews to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.reviews to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.reviews to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.sessions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.sessions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.sessions to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.solidarity_requests to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.solidarity_requests to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.support_matches to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.support_matches to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.support_matches to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.surveys to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.surveys to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.surveys to service_role;
+grant INSERT, REFERENCES, SELECT, TRIGGER on public.terms_acceptance to anon;
+grant INSERT, REFERENCES, SELECT, TRIGGER on public.terms_acceptance to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.terms_acceptance to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.usage_events to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.usage_events to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.usage_events to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.user_blocks to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.user_blocks to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.user_blocks to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.user_favorites to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.user_favorites to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.user_favorites to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.velo_api_usage to service_role;
+grant DELETE, REFERENCES, SELECT, TRIGGER, UPDATE on public.velo_notifications to anon;
+grant DELETE, REFERENCES, SELECT, TRIGGER, UPDATE on public.velo_notifications to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.velo_notifications to service_role;
+grant REFERENCES, SELECT, TRIGGER on public.velo_retention_policy to anon;
+grant REFERENCES, SELECT, TRIGGER on public.velo_retention_policy to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.velo_retention_policy to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibe_comment_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibe_comment_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.vibe_comment_reactions to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.vibe_comments to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibe_comments to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.vibe_comments to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.vibe_groups to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibe_groups to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.vibe_groups to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.vibe_reactions to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibe_reactions to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.vibe_reactions to service_role;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibe_views to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibe_views to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.vibe_views to service_role;
+grant DELETE, INSERT, REFERENCES, TRIGGER, UPDATE on public.vibes to anon;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, UPDATE on public.vibes to authenticated;
+grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on public.vibes to service_role;
+
+grant execute on function public._bottle_check_rate_limit() to service_role;
+grant execute on function public._bottle_react_rate_limit() to service_role;
+grant execute on function public._bt_check_rate_limit() to service_role;
+grant execute on function public._mo_check_rate_limit() to service_role;
+grant execute on function public.accept_help_post(p_post_id text, p_req_id text, p_guardian_name text, p_guardian_av text) to authenticated;
+grant execute on function public.accept_help_post(p_post_id text, p_req_id text, p_guardian_name text, p_guardian_av text) to service_role;
+grant execute on function public.claim_referral_qualification() to authenticated;
+grant execute on function public.claim_referral_qualification() to service_role;
+grant execute on function public.delete_my_account(p_reason text) to authenticated;
+grant execute on function public.delete_my_account(p_reason text) to service_role;
+grant execute on function public.dm_push_notify_fn() to service_role;
+grant execute on function public.get_user_session_counts(p_user_id text) to authenticated;
+grant execute on function public.get_user_session_counts(p_user_id text) to service_role;
+grant execute on function public.grant_diamante_plus() to authenticated;
+grant execute on function public.grant_diamante_plus() to service_role;
+grant execute on function public.increment_momento_hearts(post_id text) to authenticated;
+grant execute on function public.increment_momento_hearts(post_id text) to service_role;
+grant execute on function public.leave_vibe_group(gid uuid) to authenticated;
+grant execute on function public.leave_vibe_group(gid uuid) to service_role;
+grant execute on function public.velo_apply_retention() to service_role;
+grant execute on function public.velo_cleanup_api_usage() to service_role;
+grant execute on function public.velo_cleanup_ia_usage() to service_role;
+grant execute on function public.velo_consume_quota(p_kind text) to authenticated;
+grant execute on function public.velo_consume_quota(p_kind text) to service_role;
+grant execute on function public.velo_create_notif(p_recipient uuid, p_type text, p_title text, p_body text, p_related text) to authenticated;
+grant execute on function public.velo_create_notif(p_recipient uuid, p_type text, p_title text, p_body text, p_related text) to service_role;
+grant execute on function public.velo_dump_auth_users() to service_role;
+grant execute on function public.velo_dump_schema() to service_role;
+grant execute on function public.velo_is_admin() to anon;
+grant execute on function public.velo_is_admin() to authenticated;
+grant execute on function public.velo_is_admin() to service_role;
+grant execute on function public.velo_is_premium(uid text) to authenticated;
+grant execute on function public.velo_is_premium(uid text) to service_role;
+grant execute on function public.velo_notify_bitacora_author(p_post_id text, p_type text, p_title text, p_body text) to authenticated;
+grant execute on function public.velo_notify_bitacora_author(p_post_id text, p_type text, p_title text, p_body text) to service_role;
+grant execute on function public.velo_protect_role() to service_role;
+grant execute on function public.velo_retention_report() to authenticated;
+grant execute on function public.velo_retention_report() to service_role;
+
+-- Las funciones nacen con EXECUTE concedido a PUBLIC. Se lo quitamos a las
+-- que no deben estar abiertas a anonimos (ver HANDOVER 12).
+revoke execute on function public._bottle_check_rate_limit() from public;
+revoke execute on function public._bottle_react_rate_limit() from public;
+revoke execute on function public._bt_check_rate_limit() from public;
+revoke execute on function public._mo_check_rate_limit() from public;
+revoke execute on function public.accept_help_post(p_post_id text, p_req_id text, p_guardian_name text, p_guardian_av text) from public;
+revoke execute on function public.claim_referral_qualification() from public;
+revoke execute on function public.delete_my_account(p_reason text) from public;
+revoke execute on function public.dm_push_notify_fn() from public;
+revoke execute on function public.get_user_session_counts(p_user_id text) from public;
+revoke execute on function public.grant_diamante_plus() from public;
+revoke execute on function public.increment_momento_hearts(post_id text) from public;
+revoke execute on function public.leave_vibe_group(gid uuid) from public;
+revoke execute on function public.velo_apply_retention() from public;
+revoke execute on function public.velo_cleanup_api_usage() from public;
+revoke execute on function public.velo_cleanup_ia_usage() from public;
+revoke execute on function public.velo_consume_quota(p_kind text) from public;
+revoke execute on function public.velo_create_notif(p_recipient uuid, p_type text, p_title text, p_body text, p_related text) from public;
+revoke execute on function public.velo_dump_auth_users() from public;
+revoke execute on function public.velo_dump_schema() from public;
+revoke execute on function public.velo_is_premium(uid text) from public;
+revoke execute on function public.velo_notify_bitacora_author(p_post_id text, p_type text, p_title text, p_body text) from public;
+revoke execute on function public.velo_protect_role() from public;
+revoke execute on function public.velo_retention_report() from public;
