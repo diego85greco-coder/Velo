@@ -54,13 +54,17 @@ jobs:
 
       - name: Commitear la estructura si cambió
         run: |
-          if git diff --quiet -- supabase/schema.sql; then
+          git config user.name  "velo-backup"
+          git config user.email "consultas@heyvelo.app"
+          # `git add` ANTES de comparar: `git diff` a secas no ve un archivo
+          # nuevo sin seguimiento. La primera ejecución (13/08) salió en verde
+          # diciendo «la estructura no cambió» cuando en realidad el archivo no
+          # existía todavía y nunca llegó a commitearse.
+          git add supabase/schema.sql
+          if git diff --cached --quiet -- supabase/schema.sql; then
             echo "La estructura no cambió."
             exit 0
           fi
-          git config user.name  "velo-backup"
-          git config user.email "consultas@heyvelo.app"
-          git add supabase/schema.sql
           git commit -m "Estructura de la base al $(date -u +%d/%m/%Y)
 
           Volcado automático de velo_dump_schema(). Si aparece un cambio que no
