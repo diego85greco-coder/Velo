@@ -1,0 +1,55 @@
+/* VELO — Design System 2026
+   Additive visual layer. No JS, IDs or handlers are changed. */
+:root{
+  --velo-surface:rgba(255,255,255,.68);
+  --velo-surface-strong:rgba(255,255,255,.84);
+  --velo-border:rgba(27,94,58,.12);
+  --velo-shadow:0 10px 30px rgba(35,55,40,.08);
+  --velo-radius:24px;
+  --velo-radius-sm:16px;
+  --velo-space:16px;
+}
+body:not(.r-dark){
+  --velo-text:#1b2a20;
+  --velo-muted:#5c6b60;
+}
+body.r-dark{
+  --velo-surface:rgba(22,38,29,.72);
+  --velo-surface-strong:rgba(25,44,33,.88);
+  --velo-border:rgba(160,220,180,.13);
+  --velo-shadow:0 12px 34px rgba(0,0,0,.22);
+  --velo-text:#edf6ef;
+  --velo-muted:#b5c6b9;
+}
+/* Shared surfaces: subtle, consistent, and intentionally non-invasive. */
+.home-greeting,#homeDailyQuote,#homePulse,#homeReflexionDia,#homeMomentoSection,
+#homeRegisterOuter,#homeBitacoraWidget,#homeMedWidget,.r-home-quick-panel,
+.r-home-shortcut-grid,#homeParaVosPanel{
+  border-radius:var(--velo-radius) !important;
+  box-shadow:var(--velo-shadow) !important;
+}
+/* Keep content readable above decorative effects. */
+.home-header,.home-greeting,#homeDailyQuote,#homePulse,#homeReflexionDia,
+#homeRegisterOuter,#homeBitacoraWidget,#homeMedWidget,#homeMomentoSection{
+  position:relative;
+  isolation:isolate;
+}
+/* Primary action: clearer hierarchy without changing its behavior. */
+#homeRegisterOuter button,.r-hero-actions .p-btn--primary{
+  border-radius:999px !important;
+  min-height:48px;
+  font-weight:700 !important;
+  letter-spacing:.1px;
+}
+/* Mobile breathing room. */
+@media(max-width:767px){
+  .home-header{padding-left:16px !important;padding-right:16px !important;}
+  .home-header h1.p-title#homeGreetTxt{font-size:clamp(34px,11vw,48px) !important;letter-spacing:-.8px !important;}
+  .home-greeting{margin-left:12px !important;margin-right:12px !important;}
+  #homeDailyQuote{padding:20px !important;}
+  #homeDailyQuoteText{max-width:100% !important;font-size:18px !important;}
+}
+/* Respect reduced-motion preferences. */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto !important;animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+}
