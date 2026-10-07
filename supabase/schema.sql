@@ -701,10 +701,10 @@ select setval('public.bot_attempts_id_seq', 2, true);
 select setval('public.deleted_accounts_id_seq', 1, true);
 select setval('public.ia_usage_id_seq', 120, true);
 select setval('public.news_reactions_id_seq', 3, true);
-select setval('public.push_history_id_seq', 325, true);
+select setval('public.push_history_id_seq', 329, true);
 select setval('public.quote_reactions_id_seq', 6, true);
-select setval('public.usage_events_id_seq', 814, true);
-select setval('public.velo_api_usage_id_seq', 479, true);
+select setval('public.usage_events_id_seq', 817, true);
+select setval('public.velo_api_usage_id_seq', 481, true);
 
 -- == RESTRICCIONES ==
 
